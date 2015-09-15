@@ -6,37 +6,51 @@ var PouchDB = require('pouchdb')
 var localDB = new PouchDB('annotations')
 var remoteDB = new PouchDB('http://127.0.0.1:5984/annotations')
 
+var annotations
 
-localDB.changes({
-	since: 'now',
-	live: true,
-	include_docs: true
-}).on('change', function(change) {
-	// handle change
-	console.log('chchachange');
-	console.log(JSON.stringify(change));
-}).on('complete', function(info) {
-	console.log('change complete');
-	// changes() was canceled
-}).on('error', function (err) {
-	console.log(err);
-});
+// DOM elements
+var imageContainer
 
-remoteDB.changes({
-	since: 'now',
-	live: true,
-	include_docs: true
-}).on('change', function(change) {
-	// handle change
-	console.log('change');
-}).on('complete', function(info) {
-	console.log('change complete');
-	// changes() was canceled
-}).on('error', function (err) {
-	console.log(err);
-});
+function rebuildUI() {
+	imageContainer = document.querySelector('.imageContainer')
+	var overlays = imageContainer.querySelectorAll('.annotationOverlay')
+	// in chrome45/electron 0.32: Array.from(imageContainer.querySelectorAll('.annotationOverlay'))
 
+	// first clean old overlays
+	for (var i = 0; i < overlays.length; i++) {
+		imageContainer.removeChild(overlays[i])
+	}
+	
+	// ES6 object destructuring comes really handy here!
+	// see: https://leanpub.com/understandinges6/read#leanpub-auto-object-destructuring
+	for (let {doc: {name, description, position, _id, _attachments}} of annotations) {
+		let overlay = document.createElement('div')
+		overlay.classList.add('annotationOverlay')
+		overlay.style.position = 'absolute'
+		overlay.style.left = position[0] + 'px'
+		overlay.style.top = position[1] + 'px'
+		overlay.innerHTML = description
+		overlay.contentEditable = true
+		overlay.id = _id
 
+		imageContainer.appendChild(overlay)
+	}
+
+}
+
+function fetchAnnotations() {
+
+	return remoteDB.allDocs({
+		include_docs: true,
+		attachments: true
+
+	}).then(result => {
+		annotations = result.rows
+
+	}).catch(err => {
+		console.error(err)
+	})
+}
 
 
 var alertOnlineStatus = function() {
@@ -50,8 +64,11 @@ var sync = PouchDB.sync(localDB, remoteDB, {
   live: true,
   retry: true
 }).on('change', function (info) {
-  // handle change
-	console.log('sync change')
+	console.log(info)
+	if(info.direction === 'pull') {
+		fetchAnnotations().then(() => rebuildUI())
+	}
+
 }).on('paused', function () {
 	console.log('sync pause')
 
@@ -71,7 +88,38 @@ var sync = PouchDB.sync(localDB, remoteDB, {
 	console.log('sync error')
 
   // handle error
-});
+})
+
+function init() {
+	localDB.changes({
+		since: 'now',
+		live: true,
+		include_docs: true
+
+	}).on('change', change => {
+
+	}).on('complete', info => {
+
+	}).on('error', err => {
+		console.error(err)
+	})
+
+	fetchAnnotations().then(() => rebuildUI())
+
+}
+
+init()
+
+
+
+
+
+
+
+/////////////////////////////////////////////
+// OLD STUFF down there. maybe useful later!?
+/////////////////////////////////////////////
+
 
 
 // ipc.on('annotation_with_image', function(annotation, status) {

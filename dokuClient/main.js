@@ -1,12 +1,12 @@
 'use strict' /*eslint global-strict:0*/
 
-// require('electron-compile').init() // to compile to ES6/harmony
+require('electron-compile').init() // to compile to ES6/harmony
 
 var app = require('app') // Module to control application life.
 var ipc = require('ipc') // module for interprocess communication (renderer <-> backend)
 var BrowserWindow = require('browser-window') // Module to create native browser window.
 var socket = require('socket.io-client')('http://localhost:3000/DokuClients')
-var PouchDB = require('pouchdb')
+
 
 // Report crashes to our server.
 require('crash-reporter').start()
@@ -39,33 +39,13 @@ app.on('ready', function() {
 
 	// Open the devtools.
 	mainWindow.openDevTools()
-	
 
 	socket.on('connect', function() {
 		console.log('Connected to socket server')
 
-		// remoteDB.allDocs({
-		// 	include_docs: true,
-		// 	attachments: true
-		// }).then(function(result) {
-		//
-		// }).catch(function(err) {
-		// 	console.log(err);
-		// });
-
-
-
 		socket.on('disconnect', function() {
 			console.log('Disconnected from server')
 		})
-
-		//
-		//
-		// socket.on('image', function(imageBuffer) {
-		// 	// IDEA: maybe better save image first then use filename to load
-		// 	// 				that would be better in terms of caching etc.
-		// 	mainWindow.webContents.send('image-arrived', imageBuffer.toString('base64'))
-		// })
 
 	})
 
