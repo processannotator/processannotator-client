@@ -1,0 +1,19 @@
+{
+  "name": "DokuClient",
+  "version": "0.1.0",
+  "main": "main.js",
+  "dependencies": {
+    "electron-compile": "^0.9.0",
+    "leveldown": "^1.4.1",
+    "pouchdb": "^4.0.2",
+    "socket.io-client": "^1.3.6"
+  },
+  "scripts": {
+    "rebuild-leveldb": "cd node_modules/leveldown && HOME=~/.electron-gyp node-gyp rebuild --target=0.30.6 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron-prebuilt": "^0.30.6",
+    "electron-rebuild": "^1.0.0"
+  }
+}
