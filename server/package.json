@@ -1,0 +1,11 @@
+{
+  "name": "projectx-server",
+  "version": "0.0.1",
+  "description": "Server application for project X",
+  "dependencies": {
+    "express": "^4.10.2",
+    "google-speech-api": "^1.1.3",
+    "pouchdb": "^4.0.2",
+    "socket.io": "^1.3.6"
+  }
+}
