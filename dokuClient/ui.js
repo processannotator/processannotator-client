@@ -23,15 +23,40 @@ function rebuildUI() {
 	
 	// ES6 object destructuring comes really handy here!
 	// see: https://leanpub.com/understandinges6/read#leanpub-auto-object-destructuring
+	// console.log(annotations)
 	for (let {doc: {name, description, position, _id, _attachments}} of annotations) {
 		let overlay = document.createElement('div')
 		overlay.classList.add('annotationOverlay')
+		if(position[0] === undefined) console.log(doc)
 		overlay.style.position = 'absolute'
 		overlay.style.left = position[0] + 'px'
 		overlay.style.top = position[1] + 'px'
 		overlay.innerHTML = description
 		overlay.contentEditable = true
 		overlay.id = _id
+overlay.addEventListener('blur', function({target: {id, innerHTML}}) {
+	
+	// update document in localDB
+	localDB.get(id).then(doc => {
+		console.log('log doc')
+		console.log(doc)
+		return localDB.put({
+			_id: id,
+			_rev: doc._rev,
+			description: innerHTML,
+			position: doc.position,
+			name: doc.name,
+			_annotations: doc._annotations
+		})
+	}).then(response => {
+		console.log(response)
+		// handle response
+	}).catch(err => {
+		console.log(err)
+	})
+
+
+})
 
 		imageContainer.appendChild(overlay)
 	}
@@ -64,27 +89,28 @@ var sync = PouchDB.sync(localDB, remoteDB, {
   live: true,
   retry: true
 }).on('change', function (info) {
-	console.log(info)
-	if(info.direction === 'pull') {
-		fetchAnnotations().then(() => rebuildUI())
+
+	// only rebuild UI if there are changes after a pull from remoteDB
+	if(info.direction === 'pull' && info.change.docs.length !== 0) {
+		fetchAnnotations().then(() => {rebuildUI()})
 	}
 
-}).on('paused', function () {
+}).on('paused', () => {
 	console.log('sync pause')
 
   // replication paused (e.g. user went offline)
-}).on('active', function () {
+}).on('active', () => {
 	console.log('sync active')
 
   // replicate resumed (e.g. user went back online)
-}).on('denied', function (info) {
+}).on('denied', info => {
 	console.log('sync denied')
 
   // a document failed to replicate, e.g. due to permissions
-}).on('complete', function (info) {
+}).on('complete', info => {
 	console.log('sync complete')
   // handle complete
-}).on('error', function (err) {
+}).on('error', err => {
 	console.log('sync error')
 
   // handle error
