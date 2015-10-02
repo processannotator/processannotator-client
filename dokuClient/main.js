@@ -30,8 +30,8 @@ app.on('window-all-closed', function() {
 app.on('ready', function() {
 
 	mainWindow = new BrowserWindow({
-		width: 800,
-		height: 600
+		width: 1200,
+		height: 800
 	})
 
 	// load the index.html of the app.

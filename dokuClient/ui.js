@@ -5,12 +5,13 @@ var ipc = require('ipc')
 var PouchDB = require('pouchdb')
 var localDB = new PouchDB('annotations')
 var remoteDB = new PouchDB('http://127.0.0.1:5984/annotations')
+var sync
 
-var annotations
 var annotationElements = new Map()
 
 // DOM elements
 var imageContainer
+var annotationList
 
 
 function removeAnnotationElements(id) {
@@ -21,14 +22,16 @@ function removeAnnotationElements(id) {
 }
 
 
-function addAnnotationElements({doc: {name, description, position, _id, _attachments}})
+function addAnnotationElements({doc: {name, description, position, _id, _attachments}}){
 	// add both, annotation box and annotation point to DOM
 	// only handle creation of DOM element, actual DB updates
 	// are done independently
 	
-	imageContainer = document.querySelector('.object-view')
 	let annotationPoint = document.createElement('div')
-	let annotationBox = document.createElement('annotationBox')
+	let annotationBox = document.createElement('annotation-box')
+	annotationBox.annotationText = description
+	annotationBox.timestamp = _id
+	annotationBox._id = _id
 	annotationPoint.classList.add('annotationPoint')
 
 	if (position[0] === undefined) {
@@ -53,8 +56,7 @@ function addAnnotationElements({doc: {name, description, position, _id, _attachm
 				_rev: doc._rev,
 				description: innerHTML,
 				position: doc.position,
-				name: doc.name,
-				_annotations: doc._annotations
+				name: doc.name
 			})
 
 		}).then(response => {
@@ -63,117 +65,128 @@ function addAnnotationElements({doc: {name, description, position, _id, _attachm
 			console.log(err)
 		})
 
-
 	})
-	
+
 	imageContainer.appendChild(annotationPoint)
-	imageContainer.appendChild(annotationBox)
+	annotationList.appendChild(annotationBox)
 	annotationElements.set(_id, [annotationPoint, annotationBox])
-
 }
 
-
-function rebuildAnnotations() {
-	// this function removes all created representations for annotations
-	// and re-creates and appends them to the view
-
-	// first clean old annotation elements
-	for (let id of annotationElements.keys()) {
-		removeAnnotationElements(id)
-	}
-	
-	// then add new annotation elements
-	for (let annotation of annotations) {
-		addAnnotationElements(annotation)
-	}
-	
-}
 
 function fetchAnnotations() {
 
 	return remoteDB.allDocs({
 		include_docs: true,
 		attachments: true
-
-	}).then(result => {
-		annotations = result.rows
-
-	}).catch(err => {
+	})
+	.then(result => result.rows)
+	.catch(err => {
 		console.error(err)
 	})
 }
 
 
+function rebuildAnnotationElements() {
+	// this function removes all created representations for annotations
+	// and re-creates and appends them to the view
+
+		return fetchAnnotations().then( function(annotations) {
+
+			// first clean old annotation elements
+			for (let id of annotationElements.keys()) {
+				removeAnnotationElements(id)
+			}
+
+			// then add new annotation elements
+			for (let annotation of annotations) {
+				addAnnotationElements(annotation)
+			}
+		})
+}
+
+
+
+
 var alertOnlineStatus = function() {
-	window.alert(navigator.onLine ? 'online' : 'offline')
+	// window.alert(navigator.onLine ? 'online' : 'offline')
 }
 
 window.addEventListener('online', alertOnlineStatus)
 window.addEventListener('offline', alertOnlineStatus)
 
-var sync = PouchDB.sync(localDB, remoteDB, {
-	live: true,
-	retry: true
-}).on('change', function(info) {
 
-	// only rebuild UI if there are changes after a pull from remoteDB
-	if (info.direction === 'pull' && info.change.docs.length !== 0) {
-		// console.log(info)
-		// FIXME: instead of completely rebuilding
-		// just delete/modifiy/add the ones that changed
-
-		// go through all changes
-		// trigger delete actions and edit/actions
-		// for (let annotation of info.change.docs) {
-		// 	console.log(annotation)
-		// 		if(annotation._deleted === true){
-		// 				let
-		// 		} else {
-		//
-		// 		}
-		// }
-
-		fetchAnnotations().then(() => {
-			rebuildAnnotations()
-		})
-	}
-
-}).on('paused', () => {
-	console.log('sync pause')
-
-	// replication paused (e.g. user went offline)
-}).on('active', () => {
-	console.log('sync active')
-
-	// replicate resumed (e.g. user went back online)
-}).on('denied', info => {
-	console.log('sync denied')
-
-	// a document failed to replicate, e.g. due to permissions
-}).on('complete', info => {
-	console.log('sync complete')
-		// handle complete
-}).on('error', err => {
-	console.log('sync error')
-
-	// handle error
-})
 
 function init() {
+	
+	imageContainer = document.querySelector('.object-view')
+	annotationList = document.querySelector('.annotation-list')
+	
 	localDB.changes({
 		since: 'now',
 		live: true,
 		include_docs: true
 
-	}).on('change', change => {
+	}).on('change', info => {
+		
+		
+		// only rebuild UI if there are changes after a pull from remoteDB
+		if (info.direction === 'pull' && info.change.docs.length !== 0) {
+			// console.log(info)
+			// FIXME: instead of completely rebuilding
+			// just delete/modifiy/add the ones that changed
 
+			// go through all changes
+			// trigger delete actions and edit/actions
+			// for (let annotation of info.change.docs) {
+			// 	console.log(annotation)
+			// 		if(annotation._deleted === true){
+			// 				let
+			// 		} else {
+			//
+			// 		}
+			// }
+		}
 	}).on('complete', info => {
 
 	}).on('error', err => {
-		console.error(err)
+		console.log("FOOOOO");
+		// console.error(err)
+	}).on('pause', err => {
+		console.log('pause')
 	})
 
-	fetchAnnotations().then(() => rebuildAnnotations())
+
+	sync = PouchDB.sync(localDB, remoteDB, {
+		live: true,
+		retry: true
+	}).on('change', function(info) {
+		console.log('change!!')
+		console.log('TODO: now sync all DOM elements...')
+		rebuildAnnotationElements()
+
+
+	}).on('paused', () => {
+		console.log('sync pause')
+
+		// replication paused (e.g. user went offline)
+	}).on('active', () => {
+		console.log('sync active')
+
+		// replicate resumed (e.g. user went back online)
+	}).on('denied', info => {
+		console.log('sync denied')
+
+		// a document failed to replicate, e.g. due to permissions
+	}).on('complete', info => {
+		console.log('sync complete')
+			// handle complete
+	}).on('error', err => {
+		console.log('sync error')
+
+		// handle error
+	})
+
+	rebuildAnnotationElements()
 
 }
 
@@ -227,4 +240,3 @@ init()
 //
 // })
 
-alertOnlineStatus()
