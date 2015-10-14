@@ -26,7 +26,7 @@ function addAnnotationElements({doc: {name, description, position, _id, _attachm
 	// add both, annotation box and annotation point to DOM
 	// only handle creation of DOM element, actual DB updates
 	// are done independently
-	
+
 	let annotationPoint = document.createElement('div')
 	let annotationBox = document.createElement('annotation-box')
 	annotationBox.annotationText = description
@@ -67,7 +67,7 @@ function addAnnotationElements({doc: {name, description, position, _id, _attachm
 
 	})
 
-	imageContainer.appendChild(annotationPoint)
+	// imageContainer.appendChild(annotationPoint) // FIXME: create points in threejs
 	annotationList.appendChild(annotationBox)
 	annotationElements.set(_id, [annotationPoint, annotationBox])
 }

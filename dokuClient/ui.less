@@ -29,7 +29,8 @@ html, body {
 }
 
 .main-container {
-  width: 80vw;
+  -webkit-flex: 4 0 0;
+  flex: 4 0 0;
   max-height: 100%;
 
 }
@@ -66,26 +67,25 @@ html, body {
 
 // OBJECT/CAMERA/3D VIEW
 
-.object-view {
-  
-  width: 100%;
-  max-width: 100%;
+object-view {
+
+  border-color: green;
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
   height: auto;
-  max-height:100%;
+  max-height:100px;
   background-color: @baseWhite;
-  
-  img {
-    max-width:100%;
-    max-height:100%;
-  }
-  
 }
 
 // SIDE BAR
 
 .side-container {
+  -webkit-flex: 1 0 0;
+  flex: 1 0 0;
   background-color: @darkGrey;
   height: 100%;
+  min-width: 15em;
 
   .menu-item {
     min-width: 2.5em;
@@ -93,14 +93,14 @@ html, body {
   
 }
 
-
-
 .annotation-list {
   display:flex;
   flex-direction: column;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
   overflow : scroll;
-  width: 20vw;
-  margin: 0;
   max-height: auto;
   height: 100%;
 }

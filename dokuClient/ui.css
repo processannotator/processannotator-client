@@ -18,7 +18,8 @@ body {
   height: 80vh;
 }
 .main-container {
-  width: 80vw;
+  -webkit-flex: 4 0 0;
+  flex: 4 0 0;
   max-height: 100%;
 }
 .menu {
@@ -34,20 +35,21 @@ body {
 .main-container .menu-item {
   min-width: 10em;
 }
-.object-view {
-  width: 100%;
-  max-width: 100%;
+object-view {
+  border-color: green;
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
   height: auto;
-  max-height: 100%;
+  max-height: 100px;
   background-color: #f5f5f5;
 }
-.object-view img {
-  max-width: 100%;
-  max-height: 100%;
-}
 .side-container {
+  -webkit-flex: 1 0 0;
+  flex: 1 0 0;
   background-color: #4a4a4a;
   height: 100%;
+  min-width: 15em;
 }
 .side-container .menu-item {
   min-width: 2.5em;
@@ -55,9 +57,11 @@ body {
 .annotation-list {
   display: flex;
   flex-direction: column;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
   overflow: scroll;
-  width: 20vw;
-  margin: 0;
   max-height: auto;
   height: 100%;
 }
