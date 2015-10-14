@@ -55,15 +55,12 @@ object-view {
   min-width: 2.5em;
 }
 .annotation-list {
-  display: flex;
-  flex-direction: column;
-  -webkit-align-items: center;
-  align-items: center;
-  -webkit-justify-content: center;
-  justify-content: center;
   overflow: scroll;
   max-height: auto;
   height: 100%;
+}
+annotation-box {
+  margin-bottom: 1em;
 }
 .session-container {
   display: flex;
