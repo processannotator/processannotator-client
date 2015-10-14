@@ -41,7 +41,8 @@ html, body {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  height: 2em;
+  min-height: 2.2em;
+  background-color: yellow;
 }
 
 .menu-item {
@@ -83,6 +84,10 @@ object-view {
 .side-container {
   -webkit-flex: 1 0 0;
   flex: 1 0 0;
+  
+  display: flex;
+  flex-direction: column;
+
   background-color: @darkGrey;
   height: 100%;
   min-width: 15em;
@@ -100,7 +105,10 @@ object-view {
   // align-items: center;
   // -webkit-justify-content: center;
   // justify-content: center;
-  overflow : scroll;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0px;
+
   max-height: auto;
   height: 100%;
 }
