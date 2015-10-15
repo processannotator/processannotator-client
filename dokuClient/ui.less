@@ -4,21 +4,30 @@
 @baseText: rgba(200, 200, 200, 1.0);
 @baseWhite: rgb(245, 245, 245);
 
+@font-face {
+  font-family: "SourceSansPro-Light";
+  src: url("fonts/SourceSansPro-Light.otf.woff2");
+}
+
+@font-face {
+  font-family: "SourceSansPro-Semibold";
+  src: url("fonts/SourceSansPro-Semibold.otf.woff2");
+}
+
 
 body {
   margin: 0;
-  font-size: 10pt;
+  font-size: 13pt;
   display:flex;
   flex-direction: column;
-  font-family: sans-serif;
+  font-family: "SourceSansPro-Light";
   background: @baseGrey;
   overflow:hidden;
 }
 
-html, body {
-    height: 100%;
-}
-
+///////////////////
+// TOP CONTAINER //
+///////////////////
 
 .top-container {
   display: flex;
@@ -29,34 +38,84 @@ html, body {
 }
 
 .main-container {
-  -webkit-flex: 4 0 0;
   flex: 4 0 0;
-  max-height: 100%;
-
+  display: flex;
+  flex-direction: column;
 }
 
-// MENU
+//////////////
+// SIDE BAR //
+//////////////
+
+.side-container {
+  flex: 1 0 0;
+  display: flex;
+  flex-direction: column;
+
+  background-color: @darkGrey;
+  height: 100%;
+  min-width: 15em;
+
+
+  .menu-item {
+    min-width: 2.5em;
+  }
+  
+}
+
+.annotation-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0px;
+  max-height: auto;
+  height: 100%;
+  padding: 1em 1em 0em;
+}
+
+.annotation-list > annotation-box {
+  margin-bottom: 1em;
+}
+
+//////////
+// MENU //
+//////////
 
 .menu {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  min-height: 2.2em;
-  background-color: yellow;
+  
+  align-items: center;
+  font-size: 11px;
+  height: 2.9em;
+  padding-left: 2em;
+  background-color: #4A4A4A;
 }
 
 .menu-item {
-  padding: 0.5em;
+  opacity: 0.70;
   color: @baseText;
+  cursor: pointer;
+  transition: opacity 0.25s ease-out;
+}
+
+.menu-item:hover {
+  opacity: 1.0;
 }
 
 .main-container .menu-item {
-  min-width: 10em;
+  padding-right: 5em;
+}
+
+.side-container .menu-item {
+  padding-right: 5em;
 }
 
 
 
-// TOOLS
+///////////
+// TOOLS //
+///////////
 
 .tools {
   
@@ -66,62 +125,24 @@ html, body {
   
 }
 
-// OBJECT/CAMERA/3D VIEW
+///////////////////////////
+// OBJECT/CAMERA/3D VIEW //
+///////////////////////////
 
-object-view {
-
-  border-color: green;
-  width: 100px;
-  min-width: 100px;
-  max-width: 100px;
+.object-view {
+  flex: 1 1 auto;
   height: auto;
-  max-height:100px;
   background-color: @baseWhite;
 }
 
-// SIDE BAR
-
-.side-container {
-  -webkit-flex: 1 0 0;
-  flex: 1 0 0;
-  
-  display: flex;
-  flex-direction: column;
-
-  background-color: @darkGrey;
-  height: 100%;
-  min-width: 15em;
-
-  .menu-item {
-    min-width: 2.5em;
-  }
-  
-}
-
-.annotation-list {
-  // display:flex;
-  // flex-direction: column;
-  // -webkit-align-items: center;
-  // align-items: center;
-  // -webkit-justify-content: center;
-  // justify-content: center;
-  flex: 1 1 auto;
-  overflow-y: auto;
-  min-height: 0px;
-
-  max-height: auto;
-  height: 100%;
-}
-
-annotation-box {
-  margin-bottom: 1em;
-}
 
 
-
-// BOTTOM / TIMELINE
+//////////////////////
+//BOTTOM / TIMELINE //
+//////////////////////
 
 .session-container {
+  opacity: 0.0;
   display:flex;
   flex-direction: row;
   min-height: 20vh;

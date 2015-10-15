@@ -8,7 +8,7 @@
 	<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 	<script src="libs/three.min.js"></script>
 	<link rel="import" href="UIComponents/annotation-box.html">
-	<link rel="import" href="UIComponents/object-view.html">
+	<link rel="import" href="UIComponents/render-view.html">
 
 
 
@@ -28,18 +28,22 @@
 				<div class="menu-item"> </div>
 			</div>
 
-			<div class="tools">
-				<tool-button id="tool-text">
-					<img src="" alt="" /> </tool-button>
-				<tool-button id="tool-freehand">
-					<img src="" alt="" /> </tool-button>
-				<tool-button id="tool-path">
-					<img src="" alt="" /> </tool-button>
-				<tool-button id="tool-compare">
-					<img src="" alt="" /> </tool-button>
+			<div class="object-view">
+				<div class="tools">
+					<tool-button id="tool-text">
+						<img src="" alt="" /> </tool-button>
+					<tool-button id="tool-freehand">
+						<img src="" alt="" /> </tool-button>
+					<tool-button id="tool-path">
+						<img src="" alt="" /> </tool-button>
+					<tool-button id="tool-compare">
+						<img src="" alt="" /> </tool-button>
+				</div>
+				<render-view></render-view>
 			</div>
 
-			<object-view></object-view>
+
+			
 
 		</div>
 

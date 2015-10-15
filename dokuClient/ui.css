@@ -1,15 +1,19 @@
+@font-face {
+  font-family: "SourceSansPro-Light";
+  src: url("fonts/SourceSansPro-Light.otf.woff2");
+}
+@font-face {
+  font-family: "SourceSansPro-Semibold";
+  src: url("fonts/SourceSansPro-Semibold.otf.woff2");
+}
 body {
   margin: 0;
-  font-size: 10pt;
+  font-size: 13pt;
   display: flex;
   flex-direction: column;
-  font-family: sans-serif;
+  font-family: "SourceSansPro-Light";
   background: #646464;
   overflow: hidden;
-}
-html,
-body {
-  height: 100%;
 }
 .top-container {
   display: flex;
@@ -18,35 +22,11 @@ body {
   height: 80vh;
 }
 .main-container {
-  -webkit-flex: 4 0 0;
   flex: 4 0 0;
-  max-height: 100%;
-}
-.menu {
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  min-height: 2.2em;
-  background-color: yellow;
-}
-.menu-item {
-  padding: 0.5em;
-  color: #c8c8c8;
-}
-.main-container .menu-item {
-  min-width: 10em;
-}
-object-view {
-  border-color: green;
-  width: 100px;
-  min-width: 100px;
-  max-width: 100px;
-  height: auto;
-  max-height: 100px;
-  background-color: #f5f5f5;
+  flex-direction: column;
 }
 .side-container {
-  -webkit-flex: 1 0 0;
   flex: 1 0 0;
   display: flex;
   flex-direction: column;
@@ -63,11 +43,43 @@ object-view {
   min-height: 0px;
   max-height: auto;
   height: 100%;
+  padding: 1em 1em 0em;
 }
-annotation-box {
+.annotation-list > annotation-box {
   margin-bottom: 1em;
 }
+.menu {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  font-size: 11px;
+  height: 2.9em;
+  padding-left: 2em;
+  background-color: #4A4A4A;
+}
+.menu-item {
+  opacity: 0.70;
+  color: #c8c8c8;
+  cursor: pointer;
+  transition: opacity 0.25s ease-out;
+}
+.menu-item:hover {
+  opacity: 1.0;
+}
+.main-container .menu-item {
+  padding-right: 5em;
+}
+.side-container .menu-item {
+  padding-right: 5em;
+}
+.object-view {
+  flex: 1 1 auto;
+  height: auto;
+  background-color: #f5f5f5;
+}
 .session-container {
+  opacity: 0.0;
   display: flex;
   flex-direction: row;
   min-height: 20vh;

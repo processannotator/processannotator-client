@@ -12,6 +12,7 @@ var annotationElements = new Map()
 // DOM elements
 var imageContainer
 var annotationList
+var renderView
 
 
 function removeAnnotationElements(id) {
@@ -111,24 +112,31 @@ var alertOnlineStatus = function() {
 	// window.alert(navigator.onLine ? 'online' : 'offline')
 }
 
+function handleResize(event) {
+	if(renderView === undefined) {
+		renderView = document.querySelector('render-view')
+	}
+	if(renderView) renderView.resize()
+}
+
 window.addEventListener('online', alertOnlineStatus)
 window.addEventListener('offline', alertOnlineStatus)
-
+window.addEventListener('resize', handleResize)
 
 
 function init() {
-	
+
+
 	imageContainer = document.querySelector('.object-view')
 	annotationList = document.querySelector('.annotation-list')
-	
+
 	localDB.changes({
 		since: 'now',
 		live: true,
 		include_docs: true
 
 	}).on('change', info => {
-		
-		
+
 		// only rebuild UI if there are changes after a pull from remoteDB
 		if (info.direction === 'pull' && info.change.docs.length !== 0) {
 			// console.log(info)
