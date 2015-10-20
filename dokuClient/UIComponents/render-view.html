@@ -24,7 +24,9 @@
 		var scene = new THREE.Scene()
 		var camera
 		var controls
-		var renderer = new THREE.WebGLRenderer()
+		var glRenderer = new THREE.WebGLRenderer()
+		var cssRenderer = new THREE.CSS3DRenderer();
+
 		var render
 		var animate
 		
@@ -48,7 +50,7 @@
 					// cube.rotation.x += 0.01
 					// cube.rotation.y += 0.015
 					
-					renderer.render( scene, camera )
+					glRenderer.render( scene, camera )
 				}
 
   			
@@ -59,11 +61,11 @@
 				
 				camera = new THREE.PerspectiveCamera( 75, width / height, 0.05, width/20 )
 				
-				renderer = new THREE.WebGLRenderer( { antialias: false, alpha:true } );
-				renderer.setClearColor( 0xeeeeee );
-				renderer.setSize(width, height)
+				glRenderer = new THREE.WebGLRenderer( { antialias: false, alpha:true } );
+				glRenderer.setClearColor( 0xeeeeee );
+				glRenderer.setSize(width, height)
 				
-				controls = new THREE.TrackballControls( camera, renderer.domElement )
+				controls = new THREE.TrackballControls( camera, glRenderer.domElement )
 
 				controls.rotateSpeed = 1.0;
 				controls.zoomSpeed = 1.2;
@@ -84,7 +86,7 @@
 
 				camera.position.z = 2
 				
-				Polymer.dom(this.root).appendChild(renderer.domElement)
+				Polymer.dom(this.root).appendChild(glRenderer.domElement)
 				controls.addEventListener( 'change', render )
 				controls.handleResize()
 				render()
@@ -93,7 +95,7 @@
 			resize: function (event) {
 				let width = this.parentNode.getBoundingClientRect().width
 				let height = this.parentNode.getBoundingClientRect().height
-				renderer.setSize(width, height)
+				glRenderer.setSize(width, height)
 				camera.aspect = width / height
 				camera.updateProjectionMatrix()
 				controls.handleResize()
