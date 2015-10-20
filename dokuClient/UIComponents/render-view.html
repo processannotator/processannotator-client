@@ -41,7 +41,7 @@
       properties: {
         model: Object,
 				annotations: {
-					type: Array
+					type: Array,
 					observer: "renderAnnotations"
 				}
       },
@@ -49,7 +49,6 @@
 				animate = function () {
 					requestAnimationFrame( animate )
 					controls.update()
-					cssObject.lookAt(camera.position)
 					// render()
 				}
 				
@@ -66,15 +65,15 @@
 				let width = this.parentNode.getBoundingClientRect().width
 				let height = this.parentNode.getBoundingClientRect().height
 				
-				camera = new THREE.PerspectiveCamera( 75, width / height, 0.05, width )
-				camera.position.set(400,400,400)
-				glRenderer = new THREE.WebGLRenderer( { antialias: false, alpha:true } )
+				camera = new THREE.PerspectiveCamera( 75, width / height, 0.025, width*4 )
+				camera.position.set(800,800,800)
+				glRenderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } )
 				glRenderer.setClearColor(0x00ff00, 0.0)
 				// glRenderer.setClearColor( 0xeeeeee );
 				glRenderer.setSize(width, height)
 				cssRenderer.setSize( width, height )
-				cssRenderer.domElement.style.position = 'absolute';
-				cssRenderer.domElement.style.top = 0;
+				glRenderer.domElement.style.position = 'absolute';
+				glRenderer.domElement.style.top = 0;
 
 
 				
@@ -91,7 +90,7 @@
 				controls.dynamicDampingFactor = 0.3
 				controls.keys = [ 65, 83, 68 ]
 				
-				var geometry = new THREE.BoxGeometry( 100, 100, 100 )
+				var geometry = new THREE.BoxGeometry( 700, 700, 700 )
 				var material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } )
 				cube = new THREE.Mesh( geometry, material )
 				cube.rotation.y = 1
@@ -99,9 +98,9 @@
 				
 				blubb = document.createElement( 'div' )
 				blubb.style.opacity = 1.0
-				blubb.style.fontSize = "20px"
+				blubb.style.fontSize = '50px'
 				blubb.style.background = "rgba(200, 200, 200, 0.5)"
-				blubb.textContent = "this is an annotation."
+				blubb.innerHTML = "this is an annotation.<br>with some text."
 				cssObject = new THREE.CSS3DSprite( blubb )
 				cssScene.add( cssObject )
 
@@ -116,6 +115,7 @@
 				let width = this.parentNode.getBoundingClientRect().width
 				let height = this.parentNode.getBoundingClientRect().height
 				glRenderer.setSize(width, height)
+				cssRenderer.setSize( width, height )
 				camera.aspect = width / height
 				camera.updateProjectionMatrix()
 				controls.handleResize()
@@ -123,6 +123,31 @@
 			},
 			renderAnnotations: function () {
 				console.log('render annotations')
+				console.log(this.annotations)
+				
+				// first remove all previous annotations
+				// FIXME: only update modified ones, instead of removing and completely re-creating
+				for (var child of cssScene.children) {
+					cssScene.remove(child)
+				}
+				
+				for (var {doc} of this.annotations) {
+					console.log(doc.position)
+					console.log(doc)
+					var annotationCSS3DElement = document.createElement( 'div' )
+					annotationCSS3DElement.style.opacity = 1.0
+					annotationCSS3DElement.style.fontSize = '50px'
+					annotationCSS3DElement.style.background = "rgba(200, 200, 200, 0.5)"
+					annotationCSS3DElement.innerHTML = doc.description
+					var annotationCSS3DObject = new THREE.CSS3DSprite( annotationCSS3DElement )
+					annotationCSS3DObject.position.set(doc.position[0] * 2, doc.position[1] * 2, 0)
+					console.log(annotationCSS3DObject.position)
+					cssScene.add( annotationCSS3DObject )
+				}
+				
+				render()
+				
+				
 			}
 
 		})

@@ -17,8 +17,8 @@ var renderView
 
 function removeAnnotationElements(id) {
 	// get DOM objects belonging to id
-	let [annotationPoint, annotationBox] = annotationElements.get(id)
-	annotationPoint.parentNode.removeChild(annotationPoint)
+	let [annotationBox] = annotationElements.get(id)
+	// annotationPoint.parentNode.removeChild(annotationPoint)
 	annotationBox.parentNode.removeChild(annotationBox)
 }
 
@@ -28,49 +28,39 @@ function addAnnotationElements({doc: {name, description, position, _id, _attachm
 	// only handle creation of DOM element, actual DB updates
 	// are done independently
 
-	let annotationPoint = document.createElement('div')
 	let annotationBox = document.createElement('annotation-box')
 	annotationBox.annotationText = description
 	annotationBox.timestamp = _id
 	annotationBox._id = _id
-	annotationPoint.classList.add('annotationPoint')
 
 	if (position[0] === undefined) {
 		throw Error('position[0] === undefined', doc)
 	}
 	
-	annotationPoint.style.position = 'absolute'
-	annotationPoint.style.left = position[0] + 'px'
-	annotationPoint.style.top = position[1] + 'px'
-	annotationPoint.innerHTML = description
-	annotationPoint.contentEditable = true
-	annotationPoint.id = _id
-	
-	annotationPoint.addEventListener('blur', function({target: {id, innerHTML}}) {
+	// annotationPoint.addEventListener('blur', function({target: {id, innerHTML}}) {
+	//
+	// 	// TODO: move this event listener to the web components code later
+	// 	// update document in localDB
+	// 	localDB.get(id).then(doc => {
+	//
+	// 		return localDB.put({
+	// 			_id: id,
+	// 			_rev: doc._rev,
+	// 			description: innerHTML,
+	// 			position: doc.position,
+	// 			name: doc.name
+	// 		})
+	//
+	// 	}).then(response => {
+	// 		console.log(response)
+	// 	}).catch(err => {
+	// 		console.log(err)
+	// 	})
+	//
+	// })
 
-		// TODO: move this event listener to the web components code later
-		// update document in localDB
-		localDB.get(id).then(doc => {
-
-			return localDB.put({
-				_id: id,
-				_rev: doc._rev,
-				description: innerHTML,
-				position: doc.position,
-				name: doc.name
-			})
-
-		}).then(response => {
-			console.log(response)
-		}).catch(err => {
-			console.log(err)
-		})
-
-	})
-
-	// imageContainer.appendChild(annotationPoint) // FIXME: create points in threejs
 	annotationList.appendChild(annotationBox)
-	annotationElements.set(_id, [annotationPoint, annotationBox])
+	annotationElements.set(_id, [/*annotationPoint,*/ annotationBox])
 }
 
 
@@ -86,7 +76,6 @@ function fetchAnnotations() {
 	})
 }
 
-
 function rebuildAnnotationElements() {
 	// this function removes all created representations for annotations
 	// and re-creates and appends them to the view
@@ -98,10 +87,17 @@ function rebuildAnnotationElements() {
 				removeAnnotationElements(id)
 			}
 
-			// then add new annotation elements
+			// then add new annotation elements to the list
+			// FIXME: outsource this to the annotationlist element
 			for (let annotation of annotations) {
 				addAnnotationElements(annotation)
 			}
+			
+			// update the renderView with new annotation
+			if(renderView)
+				renderView.annotations = annotations
+			
+			
 		})
 }
 
@@ -113,13 +109,8 @@ var alertOnlineStatus = function() {
 }
 
 function handleResize(event) {
-
-	if(renderView === undefined) {
-		renderView = document.querySelector('render-view')
-	}
 	if(renderView) {
 		renderView.resize()
-		renderView.annotations = ['bla', 'blub']
 	}
 }
 
@@ -133,6 +124,7 @@ function init() {
 
 	imageContainer = document.querySelector('.object-view')
 	annotationList = document.querySelector('.annotation-list')
+	renderView = document.querySelector('render-view')
 
 	localDB.changes({
 		since: 'now',
