@@ -1,0 +1,109 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="render-view">
+	
+	<template>
+		<style>
+			:host {
+				margin: 0;
+			}
+			
+			:host:hover {
+			}
+			
+			canvas {
+				width: 100%;
+				height: 100%;
+			}
+			
+		</style>
+
+	</template>
+
+	<script>
+		var scene = new THREE.Scene()
+		var camera
+		var controls
+		var renderer = new THREE.WebGLRenderer()
+		var render
+		var animate
+		
+
+	
+	
+		Polymer({
+			is: "render-view",
+      properties: {
+        model: Object,
+				annotations: Array
+      },
+			ready: function() {
+				animate = function () {
+					requestAnimationFrame( animate )
+					controls.update()
+				}
+				
+				render = function() {
+					// triggered on controls.update() and resize()
+					// cube.rotation.x += 0.01
+					// cube.rotation.y += 0.015
+					
+					renderer.render( scene, camera )
+				}
+
+  			
+			},
+			attached: function () {
+				let width = this.parentNode.getBoundingClientRect().width
+				let height = this.parentNode.getBoundingClientRect().height
+				
+				camera = new THREE.PerspectiveCamera( 75, width / height, 0.05, width/20 )
+				
+				renderer = new THREE.WebGLRenderer( { antialias: false, alpha:true } );
+				renderer.setClearColor( 0xeeeeee );
+				renderer.setSize(width, height)
+				
+				controls = new THREE.TrackballControls( camera, renderer.domElement )
+
+				controls.rotateSpeed = 1.0;
+				controls.zoomSpeed = 1.2;
+				controls.panSpeed = 0.8;
+				
+				controls.noZoom = false;
+				controls.noPan = false;
+				
+				controls.staticMoving = true;
+				controls.dynamicDampingFactor = 0.3
+				controls.keys = [ 65, 83, 68 ]
+				
+				var geometry = new THREE.BoxGeometry( 1, 1, 1 )
+				var material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } )
+				var cube = new THREE.Mesh( geometry, material )
+				cube.rotation.y = 1
+				scene.add( cube );
+
+				camera.position.z = 2
+				
+				Polymer.dom(this.root).appendChild(renderer.domElement)
+				controls.addEventListener( 'change', render )
+				controls.handleResize()
+				render()
+				animate()
+			},
+			resize: function (event) {
+				let width = this.parentNode.getBoundingClientRect().width
+				let height = this.parentNode.getBoundingClientRect().height
+				renderer.setSize(width, height)
+				camera.aspect = width / height
+				camera.updateProjectionMatrix()
+				controls.handleResize()
+				render()
+			}
+        
+		})
+    
+    
+    
+	</script>
+
+</dom-module>

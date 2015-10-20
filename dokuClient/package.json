@@ -11,9 +11,11 @@
   },
   "scripts": {
     "rebuild-leveldb": "cd node_modules/leveldown && HOME=~/.electron-gyp node-gyp rebuild --target=0.33.4 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
-    "start": "lessc ui.less ui.css; ./node_modules/.bin/electron ."
+    "start": "lessc ui.less ui.css; ./node_modules/.bin/electron .",
+    "package": "./node_modules/.bin/electron-packager ./ DocumentDesktopClient --platform=darwin --arch=x64 --version 0.33.4"
   },
   "devDependencies": {
+    "electron-packager": "^5.1.0",
     "electron-prebuilt": "^0.33.4",
     "electron-rebuild": "^1.0.0"
   }

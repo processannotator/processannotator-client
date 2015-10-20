@@ -1,0 +1,183 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="annotation-box">
+
+	<template>
+		<style>
+			
+			:host {
+				display: block;
+				box-sizing: border-box;
+				perspective: 600px;
+				transition: all 5s ease-out;
+				width: auto;
+				height: auto;
+
+			}
+			
+			:host:hover {}
+			
+			#container {
+				display: flex;
+				flex-direction: column;
+				background-color: #c11a1a;
+				transition: all 0.2125s ease-out;
+				height: 15em;
+				min-height: 15em;
+				max-height: 15em;
+			}
+			
+			#container:hover {
+				-webkit-transform: scale(1.1);
+				background-color: rgba(200, 50, 50, 0.5);
+				/*-webkit-transform:rotateY(50deg);*/
+				/*-webkit-transform:rotateZ(25deg);*/
+			}
+			
+			#header,
+			#main,
+			#tags,
+			#task,
+			#footer {
+				padding: 0.25em;
+				/*min-width: 100%;
+				width: 100%;*/
+			}
+			
+			#header {
+				padding: 0;
+				flex: 1 0 0;
+				display: flex;
+				flex-direction: row;
+				color: #4A4A4A;
+				background-color: #E0E0E0;
+			}
+			
+			#header > #letters_id {
+				text-align: center;
+				min-height: 100%;
+				padding-top: 0.1em;
+				padding-bottom: 0.1em;
+				min-width: 2em;
+				background: #9B9B9B;
+				color: white;
+				font-family: "SourceSansPro-Semibold";
+			}
+			
+			#header > #profile_name {
+				min-height: 100%;
+				padding-left: 0.5em;
+				padding-top: 0.1em;
+				padding-bottom: 0.1em;
+			}
+			
+			#main {
+				flex: 4 0 0;
+				background-color: white;
+				color: #4A4A4A;
+			}
+			
+			#tags_and_tasks {
+				flex: 1 0 0;
+				display: flex;
+				flex-direction: row;
+				color: white;
+			}
+			
+			#tags_and_tasks > #tags {
+				flex: 2 0 0;
+				vertical-align: middle;
+				background-color: #4A4A4A;
+			}
+			
+			#tags_and_tasks > #task {
+				flex: 1 0 0;
+				text-align: center;
+				background-color: #F5A623;
+			}
+			
+			#footer {
+				flex: 1 0 0;
+				text-align: center;
+				vertical-align: bottom;
+				color: #303030;
+				background-color: #696565;
+			}
+			
+			.annotationText {}
+			
+
+		</style>
+
+		<div id="container">
+
+			<div id="header">
+				<div id="letters_id">MM</div>
+				<div id="profile_name">
+					Max Mustermann
+				</div>
+			</div>
+
+			<div id="main">
+				<span>[[timestamp]]</span>
+				<br>
+				<div contenteditable="true" class="annotationText" on-blur="handleTextChange">{{annotationText}}</div>
+			</div>
+
+			<div id="tags_and_tasks">
+				<div id="tags">Tag1, tag2, tag3</div>
+				<div id="task">task</div>
+			</div>
+
+
+			<div id="footer">
+				<span>footerstuff</span>
+			</div>
+		</div>
+
+	</template>
+
+	<script>
+		Polymer({
+			is: "annotation-box",
+			properties: {
+				db: Object,
+				_id: String,
+				timestamp: String,
+				creator: String,
+				annotationText: {
+					type: String,
+					value: 'foo',
+					notify: true
+				}
+			},
+			attached: function() {
+
+			},
+			handleTextChange: function(event, detail, sender) {
+				console.log('timestamp', this.timestamp)
+				console.log('textchange!!');
+
+				// when text changed on element, update its element
+				// hmm, probably wait until typing stopped
+				console.log(this.annotationText)
+				console.log(event)
+				localDB.get(this._id).then(doc => {
+
+					localDB.put({
+						_id: this._id,
+						_rev: doc._rev,
+						description: event.srcElement.innerHTML,
+						position: doc.position,
+						name: doc.name,
+						_annotations: doc._annotations
+					})
+
+				})
+
+			}
+
+		});
+	</script>
+
+</dom-module>
