@@ -21,11 +21,14 @@
 	</template>
 
 	<script>
-		var scene = new THREE.Scene()
+		var glScene = new THREE.Scene()
+		var cssScene = new THREE.Scene()
 		var camera
 		var controls
-		var glRenderer = new THREE.WebGLRenderer()
-		var cssRenderer = new THREE.CSS3DRenderer();
+		var cssObject
+		var glRenderer
+		var cube
+		var cssRenderer = new THREE.CSS3DRenderer()
 
 		var render
 		var animate
@@ -37,20 +40,24 @@
 			is: "render-view",
       properties: {
         model: Object,
-				annotations: Array
+				annotations: {
+					type: Array
+					observer: "renderAnnotations"
+				}
       },
 			ready: function() {
 				animate = function () {
 					requestAnimationFrame( animate )
 					controls.update()
+					cssObject.lookAt(camera.position)
+					// render()
 				}
 				
 				render = function() {
 					// triggered on controls.update() and resize()
-					// cube.rotation.x += 0.01
-					// cube.rotation.y += 0.015
 					
-					glRenderer.render( scene, camera )
+					glRenderer.render( glScene, camera )
+					cssRenderer.render( cssScene, camera )
 				}
 
   			
@@ -59,34 +66,47 @@
 				let width = this.parentNode.getBoundingClientRect().width
 				let height = this.parentNode.getBoundingClientRect().height
 				
-				camera = new THREE.PerspectiveCamera( 75, width / height, 0.05, width/20 )
-				
-				glRenderer = new THREE.WebGLRenderer( { antialias: false, alpha:true } );
-				glRenderer.setClearColor( 0xeeeeee );
+				camera = new THREE.PerspectiveCamera( 75, width / height, 0.05, width )
+				camera.position.set(400,400,400)
+				glRenderer = new THREE.WebGLRenderer( { antialias: false, alpha:true } )
+				glRenderer.setClearColor(0x00ff00, 0.0)
+				// glRenderer.setClearColor( 0xeeeeee );
 				glRenderer.setSize(width, height)
-				
-				controls = new THREE.TrackballControls( camera, glRenderer.domElement )
+				cssRenderer.setSize( width, height )
+				cssRenderer.domElement.style.position = 'absolute';
+				cssRenderer.domElement.style.top = 0;
 
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.8;
+
 				
-				controls.noZoom = false;
-				controls.noPan = false;
+				controls = new THREE.TrackballControls( camera, cssRenderer.domElement )
+
+				controls.rotateSpeed = 1.0
+				controls.zoomSpeed = 1.2
+				controls.panSpeed = 0.8
+				
+				controls.noZoom = false
+				controls.noPan = false
 				
 				controls.staticMoving = true;
 				controls.dynamicDampingFactor = 0.3
 				controls.keys = [ 65, 83, 68 ]
 				
-				var geometry = new THREE.BoxGeometry( 1, 1, 1 )
+				var geometry = new THREE.BoxGeometry( 100, 100, 100 )
 				var material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } )
-				var cube = new THREE.Mesh( geometry, material )
+				cube = new THREE.Mesh( geometry, material )
 				cube.rotation.y = 1
-				scene.add( cube );
-
-				camera.position.z = 2
+				glScene.add( cube )
 				
+				blubb = document.createElement( 'div' )
+				blubb.style.opacity = 1.0
+				blubb.style.fontSize = "20px"
+				blubb.style.background = "rgba(200, 200, 200, 0.5)"
+				blubb.textContent = "this is an annotation."
+				cssObject = new THREE.CSS3DSprite( blubb )
+				cssScene.add( cssObject )
+
 				Polymer.dom(this.root).appendChild(glRenderer.domElement)
+				Polymer.dom(this.root).appendChild(cssRenderer.domElement)
 				controls.addEventListener( 'change', render )
 				controls.handleResize()
 				render()
@@ -100,8 +120,11 @@
 				camera.updateProjectionMatrix()
 				controls.handleResize()
 				render()
+			},
+			renderAnnotations: function () {
+				console.log('render annotations')
 			}
-        
+
 		})
     
     

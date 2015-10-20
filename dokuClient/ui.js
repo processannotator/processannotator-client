@@ -113,10 +113,14 @@ var alertOnlineStatus = function() {
 }
 
 function handleResize(event) {
+
 	if(renderView === undefined) {
 		renderView = document.querySelector('render-view')
 	}
-	if(renderView) renderView.resize()
+	if(renderView) {
+		renderView.resize()
+		renderView.annotations = ['bla', 'blub']
+	}
 }
 
 window.addEventListener('online', alertOnlineStatus)
@@ -157,7 +161,7 @@ function init() {
 	}).on('complete', info => {
 
 	}).on('error', err => {
-		console.log("FOOOOO");
+		console.log("FOOOOO")
 		// console.error(err)
 	}).on('pause', err => {
 		console.log('pause')
