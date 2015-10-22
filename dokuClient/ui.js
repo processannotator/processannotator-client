@@ -94,8 +94,9 @@ function rebuildAnnotationElements() {
 			}
 			
 			// update the renderView with new annotation
-			if(renderView)
+			if(renderView){
 				renderView.annotations = annotations
+			}
 			
 			
 		})
