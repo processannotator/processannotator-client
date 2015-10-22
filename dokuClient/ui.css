@@ -73,9 +73,28 @@ body {
 .side-container .menu-item {
   padding-right: 5em;
 }
+#tool-box {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  max-width: 50px;
+  color: #646464;
+  background-color: #4a4a4a;
+  cursor: pointer;
+}
+.iron-selected {
+  background-color: var(--google-blue-500);
+  color: white;
+}
+#tool-box > *:not(.iron-selected):hover {
+  color: #979797;
+}
 .object-view {
   flex: 1 1 auto;
   height: auto;
+  position: relative;
   background-color: #f5f5f5;
 }
 .session-container {

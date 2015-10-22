@@ -6,12 +6,18 @@
 		<style>
 			:host {
 				margin: 0;
+				cursor:-webkit-grab;
+			}
+			
+			:host.track {
+				cursor:-webkit-grabbing;
 			}
 			
 			:host:hover {
 			}
 			
 			canvas {
+				
 				width: 100%;
 				height: 100%;
 			}
@@ -44,6 +50,11 @@
 					observer: "updateAnnotations"
 				}
       },
+			listeners: {
+				'up': 'toggleTrack',
+				'down': 'toggleTrack'
+			},
+			
 			ready: function() {
 				
 				// init animate() and render()
@@ -60,6 +71,17 @@
 
 			},
 			attached: function () {
+				
+				// the render-view is interested in the state of the tool-box selector
+				// lets add the event listener then
+				var toolBox = document.querySelector('#tool-box')
+				if (toolBox) {
+						toolBox.addEventListener('iron-activate', this.toolChanged)
+				} else {
+					console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
+				}
+				
+				
 				let width = this.parentNode.getBoundingClientRect().width
 				let height = this.parentNode.getBoundingClientRect().height
 				
@@ -78,7 +100,7 @@
 				cssRenderer.setSize(width, height)
 
 
-				controls = new THREE.TrackballControls( camera, cssRenderer.domElement )
+				controls = new THREE.TrackballControls( camera, this )
 
 				controls.rotateSpeed = 1.0
 				controls.zoomSpeed = 1.2
@@ -114,6 +136,7 @@
 				controls.handleResize()
 				render()
 			},
+			
 			updateAnnotations: function () {
 				// debug output of annotations
 				console.log(this.annotations)
@@ -145,6 +168,14 @@
 				
 				render()
 				
+			},
+			toggleTrack: function(e) {
+					Polymer.dom(this).classList.toggle('track')
+			},
+			toolChanged: function (e) {
+				// this is render-view's event listener on the toolBox
+				// when a different tool is selected, this function is triggered
+				console.log(e.target.selected)
 			}
 
 		})

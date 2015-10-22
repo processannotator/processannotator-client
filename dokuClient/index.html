@@ -9,12 +9,17 @@
 	<script src="libs/three/three.js"></script>
 	<script src="libs/three/controls/TrackballControls.js"></script>
 	<script src="libs/three/renderers/CSS3DRenderer.js"></script>
+	
+	<link rel="import" href="bower_components/iron-icons/iron-icons.html">
+	<link rel="import" href="bower_components/iron-selector/iron-selector.html">
+	<link rel="import" href="UIComponents/tool-box.html">
 	<link rel="import" href="UIComponents/annotation-box.html">
 	<link rel="import" href="UIComponents/render-view.html">
 
 
 
 </head>
+
 
 <body>
 
@@ -31,17 +36,14 @@
 			</div>
 
 			<div class="object-view">
-				<div class="tools">
-					<tool-button id="tool-text">
-						<img src="" alt="" /> </tool-button>
-					<tool-button id="tool-freehand">
-						<img src="" alt="" /> </tool-button>
-					<tool-button id="tool-path">
-						<img src="" alt="" /> </tool-button>
-					<tool-button id="tool-compare">
-						<img src="" alt="" /> </tool-button>
-				</div>
-				<render-view></render-view>
+				<render-view> </render-view>
+				<iron-selector id="tool-box" attr-for-selected="name" selected="polygon">
+					<iron-icon name="text" icon="menu"></iron-icon>
+					<iron-icon name="polygon" icon="menu"></iron-icon>
+					<iron-icon name="compare" icon="menu"></iron-icon>
+					<iron-icon name="freehand" icon="menu"></iron-icon>
+				</iron-selector>
+				<!-- <tool-box> </tool-box> -->
 			</div>
 
 
