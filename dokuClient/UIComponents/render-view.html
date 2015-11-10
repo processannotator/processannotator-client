@@ -3,183 +3,324 @@
 <dom-module id="render-view">
 	
 	<template>
-		<style>
-			:host {
-				margin: 0;
-				cursor:-webkit-grab;
-			}
-			
-			:host.track {
-				cursor:-webkit-grabbing;
-			}
-			
-			:host:hover {
-			}
-			
-			canvas {
-				
-				width: 100%;
-				height: 100%;
-			}
+	<style>
+	:host {
+		margin: 0;
+		cursor: -webkit-grab;
+	}
+	
+	:host.track {
+		cursor: -webkit-grabbing;
+	}
+	
+	
+	
+	:host:hover {}
 		
-			
+	canvas {
+		width: 100%;
+		height: 100%;
+	}
+	
+	:host.polygonCursor {
+		cursor: crosshair;
+		
+	}
 		</style>
-
-	</template>
-
-	<script>
-		// FIXME: shouldnt those global variables better reside inside the element
-		// vis this.glRenderer = ...
-		var glScene = new THREE.Scene()
-		var cssScene = new THREE.Scene()
-		var camera
-		var controls
-		var cssObject
-		var glRenderer
-		var cube
-		var cssRenderer
-		var render
-		var animate
 		
-		Polymer({
-			is: "render-view",
-      properties: {
-        model: Object,
-				annotations: {
-					type: Array,
-					observer: "updateAnnotations"
-				}
-      },
-			listeners: {
-				'up': 'toggleTrack',
-				'down': 'toggleTrack'
-			},
-			
-			ready: function() {
-				
-				// init animate() and render()
-				animate = function () {
-					requestAnimationFrame( animate )
-					controls.update()
-				}
-				
-				render = function() {
-					// triggered on controls.update() and resize()
-					glRenderer.render( glScene, camera )
-					cssRenderer.render( cssScene, camera )
-				}
-
-			},
-			attached: function () {
-				
-				// the render-view is interested in the state of the tool-box selector
-				// lets add the event listener then
-				var toolBox = document.querySelector('#tool-box')
-				if (toolBox) {
-						toolBox.addEventListener('iron-activate', this.toolChanged)
-				} else {
-					console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
-				}
-				
-				
-				let width = this.parentNode.getBoundingClientRect().width
-				let height = this.parentNode.getBoundingClientRect().height
-				
-				camera = new THREE.PerspectiveCamera( 75, width / height, 0.025, width*4 )
-				camera.position.set(800, 800, 800)
-				
-				glRenderer = new THREE.WebGLRenderer( { antialias: true, alpha:true } )
-				glRenderer.setClearColor(0x00ff00, 0.0)
-				glRenderer.setSize(width, height)
-				
-				// let both renderers/canvases overlap
-				glRenderer.domElement.style.position = 'absolute';
-				glRenderer.domElement.style.top = 0;
-				
-				cssRenderer = new THREE.CSS3DRenderer()
-				cssRenderer.setSize(width, height)
-
-
-				controls = new THREE.TrackballControls( camera, this )
-
-				controls.rotateSpeed = 1.0
-				controls.zoomSpeed = 1.2
-				controls.panSpeed = 0.8
-				
-				controls.noZoom = false
-				controls.noPan = false
-				
-				controls.staticMoving = true;
-				controls.dynamicDampingFactor = 0.3
-				controls.keys = [ 65, 83, 68 ]
-				
-				var geometry = new THREE.BoxGeometry( 700, 700, 700 )
-				var material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } )
-				cube = new THREE.Mesh( geometry, material )
-				cube.rotation.y = 1
-				glScene.add( cube )
-
-				Polymer.dom(this.root).appendChild(glRenderer.domElement)
-				Polymer.dom(this.root).appendChild(cssRenderer.domElement)
-				controls.addEventListener( 'change', render )
-				controls.handleResize()
-				render()
-				animate()
-			},
-			resize: function (event) {
-				let width = this.parentNode.getBoundingClientRect().width
-				let height = this.parentNode.getBoundingClientRect().height
-				glRenderer.setSize(width, height)
-				cssRenderer.setSize(width, height)
-				camera.aspect = width / height
-				camera.updateProjectionMatrix()
-				controls.handleResize()
-				render()
-			},
-			
-			updateAnnotations: function () {
-				// debug output of annotations
-				console.log(this.annotations)
-				
-				// first remove all previous annotations
-				// FIXME: only update modified ones, instead of removing and completely re-creating
-				for (let child of cssScene.children) {
-					cssScene.remove(child)
-				}
-				
-				for (let {doc} of this.annotations) {
-					console.log(doc.position)
-					console.log(doc)
-					var annotationCSS3DElement = document.createElement( 'div' )
-					var textElement = document.createElement('span')
-					annotationCSS3DElement.style.opacity = '0.85'
-					annotationCSS3DElement.style.fontSize = '40px'
-					annotationCSS3DElement.style.padding = "0.35em"
-					annotationCSS3DElement.style.background = "rgb(255, 255, 255)"
-					annotationCSS3DElement.style.border = "rgb(247, 156, 62) solid 0.125em"
-					annotationCSS3DElement.innerHTML = doc.description
-					annotationCSS3DElement.addEventListener('mouseover', () => console.log('over'))
-
-					var annotationCSS3DObject = new THREE.CSS3DSprite( annotationCSS3DElement )
-					annotationCSS3DObject.position.set(doc.position[0] * 2, doc.position[1] * 2, 0)
-					console.log(annotationCSS3DObject.position)
-					cssScene.add( annotationCSS3DObject )
-				}
-				
-				render()
-				
-			},
-			toggleTrack: function(e) {
-					Polymer.dom(this).classList.toggle('track')
-			},
-			toolChanged: function (e) {
-				// this is render-view's event listener on the toolBox
-				// when a different tool is selected, this function is triggered
-				console.log(e.target.selected)
+	</template>
+	
+	<script>
+	
+	
+	
+	// FIXME: shouldnt those global variables better reside inside the element
+	// vis this.glRenderer = ...
+	var glScene = new THREE.Scene()
+	var cssScene = new THREE.Scene()
+	var camera
+	var controls
+	var cssObject
+	var glRenderer
+	var cube
+	var cssRenderer
+	var render
+	var animate
+	
+	Polymer({
+		is: "render-view",
+		properties: {
+			model: Object,
+			annotations: {
+				type: Array,
+				observer: "updateAnnotations"
 			}
+		},
+		listeners: {
+			'up': 'toggleTrack',
+			'down': 'toggleTrack',
+			'mousemove': 'mouseMoved',
+			'tap': 'tap'
+		},
+		
+		ready: function() {
+			
+			// init animate() and render()
+			animate = function() {
+				requestAnimationFrame(animate)
+				controls.update()
+			}
+			
+			render = function() {
+				// triggered on controls.update() and resize()
+				glRenderer.render(glScene, camera)
+				cssRenderer.render(cssScene, camera)
+			}
+			
+		},
+		attached: function() {
+			
+			// the render-view is interested in the state of the tool-box selector
+			// lets add the event listener then
+			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
+			if (toolBox) {
+				toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
+			} else {
+				console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
+			}
+			
+			
+			let width = this.parentNode.getBoundingClientRect().width
+			let height = this.parentNode.getBoundingClientRect().height
+			
+			camera = new THREE.PerspectiveCamera(45, width / height, 1, width * 4)
+			camera.position.set(800, 800, 800)
+			
+			glRenderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true
+			})
+			glRenderer.setClearColor(0x00ff00, 0.0)
+			glRenderer.setSize(width, height)
+			
+			// let both renderers/canvases overlap
+			glRenderer.domElement.style.position = 'absolute';
+			glRenderer.domElement.style.top = 0;
+			
+			cssRenderer = new THREE.CSS3DRenderer()
+			cssRenderer.setSize(width, height)
+			
+			
+			controls = new THREE.TrackballControls(camera, this)
+			
+			controls.rotateSpeed = 1.0
+			controls.zoomSpeed = 1.2
+			controls.panSpeed = 0.8
+			
+			controls.noZoom = false
+			controls.noPan = false
+			
+			controls.staticMoving = true;
+			controls.dynamicDampingFactor = 0.3
+			controls.keys = [65, 83, 68]
+			
+			var geometry = new THREE.BoxGeometry(700, 700, 700)
+			var material = new THREE.MeshNormalMaterial({
+				color: 0x00ff00,
+				transparent: true,
+				opacity: 0.5,
+				side: THREE.DoubleSide
+			})
+			
+			cube = new THREE.Mesh(geometry, material)
 
-		})
+			var sphereGeometry = new THREE.SphereGeometry( 50, 32, 32 )
+			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
+			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
 
+			glScene.add(cube)
+			glScene.add(this.pointerSphere)
+			
+			
+			
+			// create Raycaster used for polygon editing tool
+			this.raycaster = new THREE.Raycaster()
+			
+			
+			glRenderer.domElement.id = 'glRenderer'
+			cssRenderer.domElement.id = 'cssRenderer'
+			Polymer.dom(this.root).appendChild(glRenderer.domElement)
+			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
+			controls.addEventListener('change', render)
+			controls.handleResize()
+			render()
+			animate()
+		},
+		resize: function(event) {
+			let width = this.parentNode.getBoundingClientRect().width
+			let height = this.parentNode.getBoundingClientRect().height
+			glRenderer.setSize(width, height)
+			cssRenderer.setSize(width, height)
+			camera.aspect = width / height
+			camera.updateProjectionMatrix()
+			controls.handleResize()
+			render()
+		},
+		
+		updateAnnotations: function() {
+			// debug output of annotations
+			console.log(this.annotations)
+			
+			// first remove all previous annotations
+			// FIXME: only update modified ones, instead of removing and completely re-creating
+			for (let child of cssScene.children) {
+				cssScene.remove(child)
+			}
+			
+			for (let {
+				doc
+			}
+			of this.annotations) {
+				console.log(doc.position)
+				console.log(doc)
+				var annotationCSS3DElement = document.createElement('div')
+				var textElement = document.createElement('span')
+				annotationCSS3DElement.style.opacity = '0.85'
+				annotationCSS3DElement.style.fontSize = '40px'
+				annotationCSS3DElement.style.padding = "0.35em"
+				annotationCSS3DElement.style.background = "rgb(255, 255, 255)"
+				annotationCSS3DElement.style.border = "rgb(247, 156, 62) solid 0.125em"
+				annotationCSS3DElement.innerHTML = doc.description
+				annotationCSS3DElement.addEventListener('mouseover', () => console.log('over'))
+				
+				var annotationCSS3DObject = new THREE.CSS3DSprite(annotationCSS3DElement)
+				annotationCSS3DObject.position.set(doc.position[0] * 2, doc.position[1] * 2, 0)
+				console.log(annotationCSS3DObject.position)
+				cssScene.add(annotationCSS3DObject)
+			}
+			
+			render()
+			
+		},
+		toggleTrack: function(e) {
+			Polymer.dom(this).classList.toggle('track')
+		},
+		updateMouse: function (mouseEvent) {
+			// console.log(mouseEvent)
+			var canvas = this.$$('canvas')
+			this.mouse = new THREE.Vector2(
+				// FIXME: offsetHeight is not correct i think, its 30px off
+				(mouseEvent.layerX / canvas.width) * 2 - 1,
+				-((mouseEvent.layerY / canvas.height) * 2 - 1)
+			)
+			// console.log('\n')
+			// console.log(canvas.width, canvas.height)
+			// console.log(mouseEvent.layerX, mouseEvent.layerY)
+			// console.log(this.mouse)
+		},
+		mouseMoved: function (e) {
+
+			// console.log(e)
+			if(this.selectedTool === 'polygon') {
+				// console.log(e)
+				this.updateMouse(e)
+				this.raycaster.setFromCamera(this.mouse, camera)
+				var intersections = this.raycaster.intersectObject(cube)
+				// console.log(intersections)
+				
+				if(intersections.length !== 0){
+					Polymer.dom(this).classList.add('polygonCursor')
+					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z)
+					console.log(intersections[0].point)
+					render()
+				} else {
+					
+					Polymer.dom(this).classList.remove('polygonCursor')
+				}
+			}
+		},
+		tap: function(e) {
+			console.log(this.selectedTool)
+			switch (this.selectedTool) {
+				case 'polygon':
+		
+				// console.log(e.detail.sourceEvent)
+				// console.log(e.detail.sourceEvent.layerX, e.detail.sourceEvent.layerY)
+				this.updateMouse(e.detail.sourceEvent)
+				// console.log(this.mouse.x, this.mouse.y)
+				
+				// update the picking ray with the camera and mouse position
+				this.raycaster.setFromCamera(this.mouse, camera);
+				
+				// calculate objects intersecting the picking ray
+				// only use the frontmost intersection  -> [0]
+				var intersections = this.raycaster.intersectObjects(glScene.children)
+				var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null
+				console.log(intersection)
+				
+				this.verticesPolygonTool.push(intersection.point)
+				console.log(this.verticesPolygonTool)
+				
+				// create new preview polygon/shape when enough points are available
+				if(this.verticesPolygonTool.length >= 3) {
+					console.log('show preview polygon shape')
+					var previewGeometry = new THREE.Geometry()
+					previewGeometry.vertices = this.verticesPolygonTool
+					console.log(previewGeometry.vertices)
+					// calculate faces of preview polygon
+					for (var i = 1; i < previewGeometry.vertices.length - 1; i++) {
+						console.log('index:',i)
+						previewGeometry.faces.push( new THREE.Face3( 0, i, i+1 ) )
+						previewGeometry.vertices[i]
+					}
+					console.log('foo2')
+					previewGeometry.computeBoundingSphere()
+					
+					if(this.previewPolygon === undefined){
+						this.previewPolygon = new THREE.Mesh(
+							previewGeometry,
+							new THREE.MeshNormalMaterial( { color: 0x00ff00 } )
+						)
+						glScene.add(this.previewPolygon)
+						
+					} else {
+						this.previewPolygon.geometry = previewGeometry
+					}
+					render()
+
+					
+				}
+				
+				break;
+				default:
+				
+			}
+			
+		},
+		toolChanged: function(e) {
+			// this is render-view's event listener on the toolBox
+			// when a different tool is selected, this function is triggered
+			
+			//do some cleanup/inits
+			glScene.remove(this.previewPolygon)
+			this.previewPolygon = undefined
+			this.verticesPolygonTool = []
+			
+			// set this.selectedTool to the tool clicked in the box
+			this.selectedTool = e.target.selected
+			
+			switch (this.selectedTool) {
+				case 'polygon':
+					
+					break;
+				default:
+					
+			}
+			
+			console.log(this.selectedTool)
+		}
+		
+	})
 	</script>
-
+	
 </dom-module>

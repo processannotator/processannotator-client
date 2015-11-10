@@ -36,7 +36,7 @@ function addAnnotationElements({doc: {name, description, position, _id, _attachm
 	if (position[0] === undefined) {
 		throw Error('position[0] === undefined', doc)
 	}
-	
+
 	// annotationPoint.addEventListener('blur', function({target: {id, innerHTML}}) {
 	//
 	// 	// TODO: move this event listener to the web components code later
@@ -92,13 +92,13 @@ function rebuildAnnotationElements() {
 			for (let annotation of annotations) {
 				addAnnotationElements(annotation)
 			}
-			
+
 			// update the renderView with new annotation
 			if(renderView){
 				renderView.annotations = annotations
 			}
-			
-			
+
+
 		})
 }
 

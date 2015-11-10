@@ -79,17 +79,22 @@ body {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  max-width: 50px;
+  -webkit-align-items: center;
+  -webkit-justify-content: center;
+  width: 4em;
+  height: 4em;
   color: #646464;
   background-color: #4a4a4a;
   cursor: pointer;
 }
-.iron-selected {
-  background-color: var(--google-blue-500);
-  color: white;
+#tool-box > * {
+  margin: 0.1em;
 }
-#tool-box > *:not(.iron-selected):hover {
-  color: #979797;
+.tool-box-icon .iron-selected {
+  --iron-icon-fill-color: white;
+}
+.tool-box-icon *:not(.iron-selected):hover {
+  --iron-icon-fill-color: blue;
 }
 .object-view {
   flex: 1 1 auto;

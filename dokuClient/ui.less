@@ -123,22 +123,33 @@ body {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  max-width: 50px;
+  -webkit-align-items: center;
+  -webkit-justify-content: center;
+  width: 4em;
+  height:4em;
   color: @baseGrey;
   background-color: @darkGrey;
   cursor: pointer;
   
+  
 }
 
-
-
-.iron-selected {
-background-color: var(--google-blue-500);
-color: white;
+#tool-box>* {
+  margin:0.1em;
 }
 
-#tool-box>*:not(.iron-selected):hover {
-	color: @lightGrey;
+.tool-box-icon {
+}
+
+.tool-box-icon .iron-selected {
+
+  --iron-icon-fill-color: white;
+}
+
+.tool-box-icon *:not(.iron-selected):hover {
+
+	--iron-icon-fill-color: blue;
+  
 }
 
 ///////////////////////////

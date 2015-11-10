@@ -12,7 +12,6 @@
 	
 	<link rel="import" href="bower_components/iron-icons/iron-icons.html">
 	<link rel="import" href="bower_components/iron-icons/image-icons.html">
-	<link rel="import" href="bower_components/iron-icons/editor-icons.html">
 	<link rel="import" href="bower_components/iron-selector/iron-selector.html">
 	<link rel="import" href="UIComponents/tool-box.html">
 	<link rel="import" href="UIComponents/annotation-box.html">
@@ -40,12 +39,12 @@
 			<div class="object-view">
 				<render-view> </render-view>
 				<iron-selector id="tool-box" attr-for-selected="name" selected="polygon">
-					<iron-icon name="text" icon="menu"></iron-icon>
-					<iron-icon name="polygon" icon="menu"></iron-icon>
-					<iron-icon name="compare" icon="menu"></iron-icon>
-					<iron-icon name="freehand" icon="image:brush"></iron-icon>
+					<iron-icon class="tool-box-icon" name="polygon" src="images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
+					<iron-icon class="tool-box-icon" name="compare" src="images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
+					<iron-icon class="tool-box-icon" name="freehand" src="images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
+					<iron-icon class="tool-box-icon" name="text" src="images/IconTool_BLACK/IconTools_Text_black.svg"></iron-icon>
 				</iron-selector>
-				<!-- <tool-box> </tool-box> -->
+
 			</div>
 
 
