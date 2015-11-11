@@ -60,11 +60,14 @@
 			'up': 'toggleTrack',
 			'down': 'toggleTrack',
 			'mousemove': 'mouseMoved',
-			'tap': 'tap',
-			'keydown': 'keydown'
+			'tap': 'tap'
 		},
 		
 		ready: function() {
+			
+			// doesnt work with listeners on this very element
+			// so create start event listener
+			document.addEventListener('keydown', this.keydown.bind(this))
 			
 			// init animate() and render()
 			animate = function() {
@@ -127,9 +130,8 @@
 			
 			var geometry = new THREE.BoxGeometry(700, 700, 700)
 			var material = new THREE.MeshNormalMaterial({
-				color: 0x00ff00,
 				transparent: true,
-				opacity: 0.5,
+				opacity: 0.95,
 				side: THREE.DoubleSide
 			})
 			
@@ -229,16 +231,27 @@
 			}
 		},
 		keydown: function (e) {
-			console.log('keydown')
 			if (event.defaultPrevented) {
 				return; // Should do nothing if the key event was already consumed.
 			}
-			
-			switch (e.key) {
+			switch (e.keyIdentifier) {
 				case 'Enter':
+					console.log('enter??')
 					if(this.selectedTool === 'polygon'){
 						// TODO: finish shape and create annotation
 						console.log('pressed enter in polygon mode')
+						addAnnotationToDB({
+							description: 'new polygon...',
+							polygon: this.verticesPolygonTool,
+							position: [
+								this.verticesPolygonTool[0].x,
+								this.verticesPolygonTool[0].y,
+								this.verticesPolygonTool[0].z
+							]
+						}).then(() => {
+							this.verticesPolygonTool = []
+							console.log('added polygon annotation')
+						})
 					}
 					break;
 				default:
@@ -251,41 +264,44 @@
 			switch (this.selectedTool) {
 				case 'polygon':
 		
-				this.updateMouse(e.detail.sourceEvent)
+					this.updateMouse(e.detail.sourceEvent)
 
-				// update the picking ray with the camera and mouse position
-				this.raycaster.setFromCamera(this.mouse, camera);
+					// update the picking ray with the camera and mouse position
+					this.raycaster.setFromCamera(this.mouse, camera);
 				
-				// calculate objects intersecting the picking ray
-				// only use the frontmost intersection  -> [0]
-				var intersections = this.raycaster.intersectObjects(glScene.children)
-				var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null
-				this.verticesPolygonTool.push(intersection.point)
+					// calculate objects intersecting the picking ray
+					// only use the frontmost intersection  -> [0]
+					var intersections = this.raycaster.intersectObjects(glScene.children)
+					var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null
+					this.verticesPolygonTool.push(intersection.point)
 				
-				// create new preview polygon/shape when enough points are available
-				if(this.verticesPolygonTool.length >= 3) {
-					var previewGeometry = new THREE.Geometry()
-					previewGeometry.vertices = this.verticesPolygonTool
+					// create new preview polygon/shape when enough points are available
+					if(this.verticesPolygonTool.length >= 3) {
+						var previewGeometry = new THREE.Geometry()
+						previewGeometry.vertices = this.verticesPolygonTool
 					
-					// calculate faces of preview polygon
-					for (var i = 1; i < previewGeometry.vertices.length - 1; i++) {
-						previewGeometry.faces.push( new THREE.Face3( 0, i, i+1 ) )
-					}
+						// calculate faces of preview polygon
+						for (var i = 1; i < previewGeometry.vertices.length - 1; i++) {
+							previewGeometry.faces.push( new THREE.Face3( 0, i, i+1 ) )
+						}
 					
-					previewGeometry.computeBoundingSphere()
+						previewGeometry.computeBoundingSphere()
 					
-					if(this.previewPolygon === undefined){
-						this.previewPolygon = new THREE.Mesh(
-							previewGeometry,
-							new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
-						)
-						glScene.add(this.previewPolygon)
+						if(this.previewPolygon === undefined){
+							this.previewPolygon = new THREE.Mesh(
+								previewGeometry,
+								new THREE.MeshBasicMaterial( {
+									color: 0x00ff00,
+									side: THREE.DoubleSide
+								} )
+							)
+							glScene.add(this.previewPolygon)
 						
-					} else {
-						this.previewPolygon.geometry = previewGeometry
+						} else {
+							this.previewPolygon.geometry = previewGeometry
+						}
+						render()
 					}
-					render()
-				}
 				
 				break;
 				default:

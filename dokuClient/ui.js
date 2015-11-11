@@ -23,11 +23,13 @@ function removeAnnotationElements(id) {
 }
 
 
-function addAnnotationElements({doc: {name, description, position, _id, _attachments}}){
+function addAnnotationElements(annotation){
 	// add both, annotation box and annotation point to DOM
 	// only handle creation of DOM element, actual DB updates
 	// are done independently
-
+	let doc = annotation.doc
+	let {name, description, position, _id, _attachments} = doc
+	console.log(doc)
 	let annotationBox = document.createElement('annotation-box')
 	annotationBox.annotationText = description
 	annotationBox.timestamp = _id
@@ -58,14 +60,14 @@ function addAnnotationElements({doc: {name, description, position, _id, _attachm
 	// 	})
 	//
 	// })
-
+	
 	annotationList.appendChild(annotationBox)
 	annotationElements.set(_id, [/*annotationPoint,*/ annotationBox])
 }
 
 
 function fetchAnnotations() {
-
+	
 	return remoteDB.allDocs({
 		include_docs: true,
 		attachments: true
@@ -79,27 +81,28 @@ function fetchAnnotations() {
 function rebuildAnnotationElements() {
 	// this function removes all created representations for annotations
 	// and re-creates and appends them to the view
-
-		return fetchAnnotations().then( function(annotations) {
-
-			// first clean old annotation elements
-			for (let id of annotationElements.keys()) {
-				removeAnnotationElements(id)
-			}
-
-			// then add new annotation elements to the list
-			// FIXME: outsource this to the annotationlist element
-			for (let annotation of annotations) {
-				addAnnotationElements(annotation)
-			}
-
-			// update the renderView with new annotation
-			if(renderView){
-				renderView.annotations = annotations
-			}
-
-
-		})
+	
+	return fetchAnnotations().then( function(annotations) {
+		
+		// first clean old annotation elements
+		for (let id of annotationElements.keys()) {
+			removeAnnotationElements(id)
+		}
+		
+		// then add new annotation elements to the list
+		// FIXME: outsource this to the annotationlist element
+		for (let annotation of annotations) {
+			console.log(annotation)
+			addAnnotationElements(annotation)
+		}
+		
+		// update the renderView with new annotation
+		if(renderView){
+			renderView.annotations = annotations
+		}
+		
+		
+	})
 }
 
 
@@ -119,130 +122,140 @@ window.addEventListener('online', alertOnlineStatus)
 window.addEventListener('offline', alertOnlineStatus)
 window.addEventListener('resize', handleResize)
 
+function addAnnotationToDB({description='', position=[0, 0], polygon=[]}) {
+	var annotation = {
+		'_id': new Date().toISOString(),
+		'description': description,
+		'position': position,
+		'polygon': polygon
+	}
 
-function init() {
-
-
-	imageContainer = document.querySelector('.object-view')
-	annotationList = document.querySelector('.annotation-list')
-	renderView = document.querySelector('render-view')
-
-	localDB.changes({
-		since: 'now',
-		live: true,
-		include_docs: true
-
-	}).on('change', info => {
-
-		// only rebuild UI if there are changes after a pull from remoteDB
-		if (info.direction === 'pull' && info.change.docs.length !== 0) {
-			// console.log(info)
-			// FIXME: instead of completely rebuilding
-			// just delete/modifiy/add the ones that changed
-
-			// go through all changes
-			// trigger delete actions and edit/actions
-			// for (let annotation of info.change.docs) {
-			// 	console.log(annotation)
-			// 		if(annotation._deleted === true){
-			// 				let
-			// 		} else {
-			//
-			// 		}
-			// }
-		}
-	}).on('complete', info => {
-
-	}).on('error', err => {
-		console.error('Error while syncing localDB with remoteDB', err)
-	}).on('pause', msg => {
-		console.log('pause', msg)
-	})
-
-
-	sync = PouchDB.sync(localDB, remoteDB, {
-		live: true,
-		retry: true
-	}).on('change', function(info) {
-		console.log('change!!')
-		console.log('TODO: now sync all DOM elements...')
-		rebuildAnnotationElements()
-
-
-	}).on('paused', () => {
-		console.log('sync pause')
-
-		// replication paused (e.g. user went offline)
-	}).on('active', () => {
-		console.log('sync active')
-
-		// replicate resumed (e.g. user went back online)
-	}).on('denied', info => {
-		console.log('sync denied')
-
-		// a document failed to replicate, e.g. due to permissions
-	}).on('complete', info => {
-		console.log('sync complete')
-			// handle complete
-	}).on('error', err => {
-		console.log('sync error')
-
-		// handle error
-	})
-
-	rebuildAnnotationElements()
-
+	console.log('put annotation into DB')
+	return localDB.put(annotation)
 }
 
+	function init() {
 
+		imageContainer = document.querySelector('.object-view')
+		annotationList = document.querySelector('.annotation-list')
+		renderView = document.querySelector('render-view')
 
-init()
+		localDB.changes({
+			since: 'now',
+			live: true,
+			include_docs: true
 
+		}).on('change', info => {
 
+			// only rebuild UI if there are changes after a pull from remoteDB
+			if (info.direction === 'pull' && info.change.docs.length !== 0) {
+				// console.log(info)
+				// FIXME: instead of completely rebuilding
+				// just delete/modifiy/add the ones that changed
 
+				// go through all changes
+				// trigger delete actions and edit/actions
+				// for (let annotation of info.change.docs) {
+				// 	console.log(annotation)
+				// 		if(annotation._deleted === true){
+				// 				let
+				// 		} else {
+				//
+				// 		}
+				// }
+			}
+		}).on('complete', info => {
 
+		}).on('error', err => {
+			console.error('Error while syncing localDB with remoteDB', err)
+		}).on('pause', msg => {
+			console.log('pause', msg)
+		})
 
-
-
-/////////////////////////////////////////////
-// OLD STUFF down there. maybe useful later!?
-/////////////////////////////////////////////
-
-
-
-// ipc.on('annotation_with_image', function(annotation, status) {
-// 	console.log('annotation with image arrived')
-// 		// let img = new Image()
-// 	let imgContainer = document.querySelector('.imageContainer')
-// 	let img = imgContainer.querySelector('img')
-// 	img.src = 'data:image/jpg;base64,' + annotation.image
-//
-// 	let annotationPoint = document.createElement('div')
-// 	annotationPoint.style.position = 'absolute'
-// 	annotationPoint.style.left = annotation.position[0] + 'px'
-// 	annotationPoint.style.top = annotation.position[1] + 'px'
-// 	annotationPoint.innerHTML = annotation.description
-// 	annotationPoint.contentEditable = true
-//
-// 	let audio = document.createElement('audio')
-// 		// audio.src = 'test.wav'
-//
-// 	annotationPoint.addEventListener('mouseover', function(e) {
-// 		audio.play()
-// 	})
-// 	annotationPoint.addEventListener('mouseout', function(e) {
-// 		audio.pause()
-// 	})
-//
-// 	annotationPoint.appendChild(audio)
-//
-// 	annotationPoint.addEventListener('input', function(e) {
-// 		console.log('annotation changed')
-// 		console.log(e)
-// 			// probably use a MVC lib here (angular?, react)
-// 			// ipc.send('annotation_changed', {id:1, newAnnotation: })
-// 	})
-// 	imgContainer.appendChild(annotationPoint)
-//
-// })
-
+		
+		sync = PouchDB.sync(localDB, remoteDB, {
+			live: true,
+			retry: true
+		}).on('change', function(info) {
+			console.log('change!!')
+			console.log('TODO: now sync all DOM elements...')
+			rebuildAnnotationElements()
+			
+			
+		}).on('paused', () => {
+			console.log('sync pause')
+			
+			// replication paused (e.g. user went offline)
+		}).on('active', () => {
+			console.log('sync active')
+			
+			// replicate resumed (e.g. user went back online)
+		}).on('denied', info => {
+			console.log('sync denied')
+			
+			// a document failed to replicate, e.g. due to permissions
+		}).on('complete', info => {
+			console.log('sync complete')
+			// handle complete
+		}).on('error', err => {
+			console.log('sync error')
+			
+			// handle error
+		})
+		
+		rebuildAnnotationElements()
+		
+	}
+	
+	
+	
+	init()
+	
+	
+	
+	
+	
+	
+	
+	/////////////////////////////////////////////
+	// OLD STUFF down there. maybe useful later!?
+	/////////////////////////////////////////////
+	
+	
+	
+	// ipc.on('annotation_with_image', function(annotation, status) {
+	// 	console.log('annotation with image arrived')
+	// 		// let img = new Image()
+	// 	let imgContainer = document.querySelector('.imageContainer')
+	// 	let img = imgContainer.querySelector('img')
+	// 	img.src = 'data:image/jpg;base64,' + annotation.image
+	//
+	// 	let annotationPoint = document.createElement('div')
+	// 	annotationPoint.style.position = 'absolute'
+	// 	annotationPoint.style.left = annotation.position[0] + 'px'
+	// 	annotationPoint.style.top = annotation.position[1] + 'px'
+	// 	annotationPoint.innerHTML = annotation.description
+	// 	annotationPoint.contentEditable = true
+	//
+	// 	let audio = document.createElement('audio')
+	// 		// audio.src = 'test.wav'
+	//
+	// 	annotationPoint.addEventListener('mouseover', function(e) {
+	// 		audio.play()
+	// 	})
+	// 	annotationPoint.addEventListener('mouseout', function(e) {
+	// 		audio.pause()
+	// 	})
+	//
+	// 	annotationPoint.appendChild(audio)
+	//
+	// 	annotationPoint.addEventListener('input', function(e) {
+	// 		console.log('annotation changed')
+	// 		console.log(e)
+	// 			// probably use a MVC lib here (angular?, react)
+	// 			// ipc.send('annotation_changed', {id:1, newAnnotation: })
+	// 	})
+	// 	imgContainer.appendChild(annotationPoint)
+	//
+	// })
+	

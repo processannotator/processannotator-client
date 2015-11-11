@@ -90,12 +90,6 @@ body {
 #tool-box > * {
   margin: 0.1em;
 }
-iron-icon.tool-box-icon .iron-selected {
-  --iron-icon-fill-color: white;
-}
-iron-icon.tool-box-icon *:not(.iron-selected):hover {
-  --iron-icon-fill-color: blue;
-}
 .object-view {
   flex: 1 1 auto;
   height: auto;
