@@ -3,7 +3,7 @@
 <dom-module id="render-view">
 	
 	<template>
-	<style>
+	<style is="custom-style">
 	:host {
 		margin: 0;
 		cursor: -webkit-grab;
@@ -60,7 +60,8 @@
 			'up': 'toggleTrack',
 			'down': 'toggleTrack',
 			'mousemove': 'mouseMoved',
-			'tap': 'tap'
+			'tap': 'tap',
+			'keydown': 'keydown'
 		},
 		
 		ready: function() {
@@ -93,7 +94,7 @@
 			let width = this.parentNode.getBoundingClientRect().width
 			let height = this.parentNode.getBoundingClientRect().height
 			
-			camera = new THREE.PerspectiveCamera(45, width / height, 1, width * 4)
+			camera = new THREE.PerspectiveCamera(45, width / height, 0.1, width * 50)
 			camera.position.set(800, 800, 800)
 			
 			glRenderer = new THREE.WebGLRenderer({
@@ -110,7 +111,7 @@
 			cssRenderer = new THREE.CSS3DRenderer()
 			cssRenderer.setSize(width, height)
 			
-			
+			// setup 3d-controls (rotating the camera with cursor)
 			controls = new THREE.TrackballControls(camera, this)
 			
 			controls.rotateSpeed = 1.0
@@ -134,14 +135,12 @@
 			
 			cube = new THREE.Mesh(geometry, material)
 
-			var sphereGeometry = new THREE.SphereGeometry( 50, 32, 32 )
+			var sphereGeometry = new THREE.SphereGeometry( 20, 16, 16 )
 			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
 
 			glScene.add(cube)
 			glScene.add(this.pointerSphere)
-			
-			
 			
 			// create Raycaster used for polygon editing tool
 			this.raycaster = new THREE.Raycaster()
@@ -206,49 +205,54 @@
 			Polymer.dom(this).classList.toggle('track')
 		},
 		updateMouse: function (mouseEvent) {
-			// console.log(mouseEvent)
-			var canvas = this.$$('canvas')
+			let canvas = this.$$('canvas')
 			this.mouse = new THREE.Vector2(
-				// FIXME: offsetHeight is not correct i think, its 30px off
 				(mouseEvent.layerX / canvas.width) * 2 - 1,
 				-((mouseEvent.layerY / canvas.height) * 2 - 1)
 			)
-			// console.log('\n')
-			// console.log(canvas.width, canvas.height)
-			// console.log(mouseEvent.layerX, mouseEvent.layerY)
-			// console.log(this.mouse)
 		},
 		mouseMoved: function (e) {
 
-			// console.log(e)
 			if(this.selectedTool === 'polygon') {
-				// console.log(e)
+
 				this.updateMouse(e)
 				this.raycaster.setFromCamera(this.mouse, camera)
-				var intersections = this.raycaster.intersectObject(cube)
-				// console.log(intersections)
+				let intersections = this.raycaster.intersectObject(cube)
 				
 				if(intersections.length !== 0){
 					Polymer.dom(this).classList.add('polygonCursor')
 					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z)
-					console.log(intersections[0].point)
 					render()
 				} else {
-					
 					Polymer.dom(this).classList.remove('polygonCursor')
 				}
 			}
+		},
+		keydown: function (e) {
+			console.log('keydown')
+			if (event.defaultPrevented) {
+				return; // Should do nothing if the key event was already consumed.
+			}
+			
+			switch (e.key) {
+				case 'Enter':
+					if(this.selectedTool === 'polygon'){
+						// TODO: finish shape and create annotation
+						console.log('pressed enter in polygon mode')
+					}
+					break;
+				default:
+					
+			}
+			
 		},
 		tap: function(e) {
 			console.log(this.selectedTool)
 			switch (this.selectedTool) {
 				case 'polygon':
 		
-				// console.log(e.detail.sourceEvent)
-				// console.log(e.detail.sourceEvent.layerX, e.detail.sourceEvent.layerY)
 				this.updateMouse(e.detail.sourceEvent)
-				// console.log(this.mouse.x, this.mouse.y)
-				
+
 				// update the picking ray with the camera and mouse position
 				this.raycaster.setFromCamera(this.mouse, camera);
 				
@@ -256,30 +260,24 @@
 				// only use the frontmost intersection  -> [0]
 				var intersections = this.raycaster.intersectObjects(glScene.children)
 				var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null
-				console.log(intersection)
-				
 				this.verticesPolygonTool.push(intersection.point)
-				console.log(this.verticesPolygonTool)
 				
 				// create new preview polygon/shape when enough points are available
 				if(this.verticesPolygonTool.length >= 3) {
-					console.log('show preview polygon shape')
 					var previewGeometry = new THREE.Geometry()
 					previewGeometry.vertices = this.verticesPolygonTool
-					console.log(previewGeometry.vertices)
+					
 					// calculate faces of preview polygon
 					for (var i = 1; i < previewGeometry.vertices.length - 1; i++) {
-						console.log('index:',i)
 						previewGeometry.faces.push( new THREE.Face3( 0, i, i+1 ) )
-						previewGeometry.vertices[i]
 					}
-					console.log('foo2')
+					
 					previewGeometry.computeBoundingSphere()
 					
 					if(this.previewPolygon === undefined){
 						this.previewPolygon = new THREE.Mesh(
 							previewGeometry,
-							new THREE.MeshNormalMaterial( { color: 0x00ff00 } )
+							new THREE.MeshBasicMaterial( { color: 0x00ff00 } )
 						)
 						glScene.add(this.previewPolygon)
 						
@@ -287,8 +285,6 @@
 						this.previewPolygon.geometry = previewGeometry
 					}
 					render()
-
-					
 				}
 				
 				break;
@@ -297,6 +293,7 @@
 			}
 			
 		},
+		
 		toolChanged: function(e) {
 			// this is render-view's event listener on the toolBox
 			// when a different tool is selected, this function is triggered

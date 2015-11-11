@@ -154,10 +154,9 @@ function init() {
 	}).on('complete', info => {
 
 	}).on('error', err => {
-		console.log("FOOOOO")
-		// console.error(err)
-	}).on('pause', err => {
-		console.log('pause')
+		console.error('Error while syncing localDB with remoteDB', err)
+	}).on('pause', msg => {
+		console.log('pause', msg)
 	})
 
 
