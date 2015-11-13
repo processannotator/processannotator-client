@@ -66,37 +66,34 @@
 		ready: function() {
 			// doesnt work with listeners on this very element
 			// so create start event listener
+			console.log('ready!!!')
 			document.addEventListener('keydown', this.keydown.bind(this))
-
-			// init animate() and render()
-			animate = function() {
-				requestAnimationFrame(animate.bind(this))
-				controls.update()
-			}
-
-			render = function() {
-				// triggered on controls.update() and resize()
-				// calculate visibility of annotations
-				// FIXME: this should only be called on rotation update!!
-				let raycaster = new THREE.Raycaster()
-				console.log(this);
-				console.log(this.annotationRenderGroup)
-				// try {
-				// 	for(annotation of this.annotationRenderGroup.children) {
-				// 		raycaster.setFromCamera(this.annotation, camera)
-				// 		let intersect = raycaster.intersectObject(cube)
-				// 		console.log(intersect)
-				// 	}
-				// }
-				// catch (e) {
-				// 	console.error(e)
-				// }
+		},
+		animate: function() {
+			requestAnimationFrame(this.animate.bind(this))
+			controls.update()
+		},
+		render: function() {
+			// triggered on controls.update() and resize()
+			// calculate visibility of annotations
+			// FIXME: this should only be called on rotation update!!
+			let raycaster = new THREE.Raycaster()
+			console.log(this);
+			console.log(this.annotationRenderGroup)
+			// try {
+			// 	for(annotation of this.annotationRenderGroup.children) {
+			// 		raycaster.setFromCamera(this.annotation, camera)
+			// 		let intersect = raycaster.intersectObject(cube)
+			// 		console.log(intersect)
+			// 	}
+			// }
+			// catch (e) {
+			// 	console.error(e)
+			// }
 
 
-				glRenderer.render(glScene, camera)
-				cssRenderer.render(cssScene, camera)
-			}
-
+			glRenderer.render(glScene, camera)
+			cssRenderer.render(cssScene, camera)
 		},
 		attached: function() {
 
@@ -177,11 +174,11 @@
 			cssRenderer.domElement.id = 'cssRenderer'
 			Polymer.dom(this.root).appendChild(glRenderer.domElement)
 			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
-			controls.addEventListener('change', render)
+			controls.addEventListener('change', this.render.bind(this))
 			controls.handleResize()
 
-			render()
-			animate()
+			this.render()
+			this.animate()
 		},
 		resize: function(event) {
 			let width = this.parentNode.getBoundingClientRect().width
@@ -191,7 +188,7 @@
 			camera.aspect = width / height
 			camera.updateProjectionMatrix()
 			controls.handleResize()
-			render()
+			this.render()
 		},
 
 		updateAnnotations: function() {
@@ -226,7 +223,7 @@
 			}
 			console.log(this.annotations)
 
-			render()
+			this.render()
 
 		},
 		toggleTrack: function(e) {
@@ -252,7 +249,7 @@
 					if(this.modus.modelGrabbing === false)
 						Polymer.dom(this).classList.add('polygonCursor')
 					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z)
-					render()
+					this.render()
 				} else {
 					Polymer.dom(this).classList.remove('polygonCursor')
 				}
@@ -328,7 +325,7 @@
 						} else {
 							this.previewPolygon.geometry = previewGeometry
 						}
-						render()
+						this.render()
 					}
 
 				break;
