@@ -1,39 +1,39 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
 <dom-module id="render-view">
-	
+
 	<template>
 	<style is="custom-style">
 	:host {
 		margin: 0;
 		cursor: -webkit-grab;
 	}
-	
+
 	:host.track {
 		cursor: -webkit-grabbing;
 	}
-	
-	
-	
+
+
+
 	:host:hover {}
-		
+
 	canvas {
 		width: 100%;
 		height: 100%;
 	}
-	
+
 	:host.polygonCursor {
 		cursor: crosshair;
-		
+
 	}
 		</style>
-		
+
 	</template>
-	
+
 	<script>
-	
-	
-	
+
+
+
 	// FIXME: shouldnt those global variables better reside inside the element
 	// vis this.glRenderer = ...
 	var glScene = new THREE.Scene()
@@ -46,7 +46,7 @@
 	var cssRenderer
 	var render
 	var animate
-	
+
 	Polymer({
 		is: "render-view",
 		properties: {
@@ -62,28 +62,29 @@
 			'mousemove': 'mouseMoved',
 			'tap': 'tap'
 		},
-		
+
 		ready: function() {
-			
 			// doesnt work with listeners on this very element
 			// so create start event listener
 			document.addEventListener('keydown', this.keydown.bind(this))
-			
+
 			// init animate() and render()
 			animate = function() {
 				requestAnimationFrame(animate)
 				controls.update()
 			}
-			
+
 			render = function() {
 				// triggered on controls.update() and resize()
 				glRenderer.render(glScene, camera)
 				cssRenderer.render(cssScene, camera)
 			}
-			
+
 		},
 		attached: function() {
-			
+
+			this.modus = {tool: '', modelGrabbing: false}
+
 			// the render-view is interested in the state of the tool-box selector
 			// lets add the event listener then
 			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
@@ -92,49 +93,49 @@
 			} else {
 				console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
 			}
-			
-			
+
+
 			let width = this.parentNode.getBoundingClientRect().width
 			let height = this.parentNode.getBoundingClientRect().height
-			
+
 			camera = new THREE.PerspectiveCamera(45, width / height, 0.1, width * 50)
 			camera.position.set(800, 800, 800)
-			
+
 			glRenderer = new THREE.WebGLRenderer({
 				antialias: true,
 				alpha: true
 			})
 			glRenderer.setClearColor(0x00ff00, 0.0)
 			glRenderer.setSize(width, height)
-			
+
 			// let both renderers/canvases overlap
 			glRenderer.domElement.style.position = 'absolute';
 			glRenderer.domElement.style.top = 0;
-			
+
 			cssRenderer = new THREE.CSS3DRenderer()
 			cssRenderer.setSize(width, height)
-			
+
 			// setup 3d-controls (rotating the camera with cursor)
 			controls = new THREE.TrackballControls(camera, this)
-			
+
 			controls.rotateSpeed = 1.0
 			controls.zoomSpeed = 1.2
 			controls.panSpeed = 0.8
-			
+
 			controls.noZoom = false
 			controls.noPan = false
-			
+
 			controls.staticMoving = true;
 			controls.dynamicDampingFactor = 0.3
 			controls.keys = [65, 83, 68]
-			
+
 			var geometry = new THREE.BoxGeometry(700, 700, 700)
 			var material = new THREE.MeshNormalMaterial({
 				transparent: true,
 				opacity: 0.95,
 				side: THREE.DoubleSide
 			})
-			
+
 			cube = new THREE.Mesh(geometry, material)
 
 			var sphereGeometry = new THREE.SphereGeometry( 20, 16, 16 )
@@ -143,11 +144,11 @@
 
 			glScene.add(cube)
 			glScene.add(this.pointerSphere)
-			
+
 			// create Raycaster used for polygon editing tool
 			this.raycaster = new THREE.Raycaster()
-			
-			
+
+
 			glRenderer.domElement.id = 'glRenderer'
 			cssRenderer.domElement.id = 'cssRenderer'
 			Polymer.dom(this.root).appendChild(glRenderer.domElement)
@@ -167,17 +168,17 @@
 			controls.handleResize()
 			render()
 		},
-		
+
 		updateAnnotations: function() {
 			// debug output of annotations
 			console.log(this.annotations)
-			
+
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
 			for (let child of cssScene.children) {
 				cssScene.remove(child)
 			}
-			
+
 			for (let {
 				doc
 			}
@@ -193,17 +194,18 @@
 				annotationCSS3DElement.style.border = "rgb(247, 156, 62) solid 0.125em"
 				annotationCSS3DElement.innerHTML = doc.description
 				annotationCSS3DElement.addEventListener('mouseover', () => console.log('over'))
-				
+
 				var annotationCSS3DObject = new THREE.CSS3DSprite(annotationCSS3DElement)
-				annotationCSS3DObject.position.set(doc.position[0] * 2, doc.position[1] * 2, 0)
+				annotationCSS3DObject.position.set(doc.position[0], doc.position[1], doc.position[2])
 				console.log(annotationCSS3DObject.position)
 				cssScene.add(annotationCSS3DObject)
 			}
-			
+
 			render()
-			
+
 		},
 		toggleTrack: function(e) {
+			this.modus.modelGrabbing = !this.modus.modelGrabbing
 			Polymer.dom(this).classList.toggle('track')
 		},
 		updateMouse: function (mouseEvent) {
@@ -215,14 +217,15 @@
 		},
 		mouseMoved: function (e) {
 
-			if(this.selectedTool === 'polygon') {
+			if(this.modus.tool === 'polygon') {
 
 				this.updateMouse(e)
 				this.raycaster.setFromCamera(this.mouse, camera)
 				let intersections = this.raycaster.intersectObject(cube)
-				
+
 				if(intersections.length !== 0){
-					Polymer.dom(this).classList.add('polygonCursor')
+					if(this.modus.modelGrabbing === false)
+						Polymer.dom(this).classList.add('polygonCursor')
 					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z)
 					render()
 				} else {
@@ -237,7 +240,7 @@
 			switch (e.keyIdentifier) {
 				case 'Enter':
 					console.log('enter??')
-					if(this.selectedTool === 'polygon'){
+					if(this.modus.tool === 'polygon'){
 						// TODO: finish shape and create annotation
 						console.log('pressed enter in polygon mode')
 						addAnnotationToDB({
@@ -255,38 +258,38 @@
 					}
 					break;
 				default:
-					
+
 			}
-			
+
 		},
 		tap: function(e) {
-			console.log(this.selectedTool)
-			switch (this.selectedTool) {
+			console.log(this.modus.tool)
+			switch (this.modus.tool) {
 				case 'polygon':
-		
+
 					this.updateMouse(e.detail.sourceEvent)
 
 					// update the picking ray with the camera and mouse position
 					this.raycaster.setFromCamera(this.mouse, camera);
-				
+
 					// calculate objects intersecting the picking ray
 					// only use the frontmost intersection  -> [0]
 					var intersections = this.raycaster.intersectObjects(glScene.children)
 					var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null
 					this.verticesPolygonTool.push(intersection.point)
-				
+
 					// create new preview polygon/shape when enough points are available
 					if(this.verticesPolygonTool.length >= 3) {
 						var previewGeometry = new THREE.Geometry()
 						previewGeometry.vertices = this.verticesPolygonTool
-					
+
 						// calculate faces of preview polygon
 						for (var i = 1; i < previewGeometry.vertices.length - 1; i++) {
 							previewGeometry.faces.push( new THREE.Face3( 0, i, i+1 ) )
 						}
-					
+
 						previewGeometry.computeBoundingSphere()
-					
+
 						if(this.previewPolygon === undefined){
 							this.previewPolygon = new THREE.Mesh(
 								previewGeometry,
@@ -296,44 +299,45 @@
 								} )
 							)
 							glScene.add(this.previewPolygon)
-						
+
 						} else {
 							this.previewPolygon.geometry = previewGeometry
 						}
 						render()
 					}
-				
+
 				break;
 				default:
-				
+
 			}
-			
+
 		},
-		
+
 		toolChanged: function(e) {
 			// this is render-view's event listener on the toolBox
 			// when a different tool is selected, this function is triggered
-			
+
 			//do some cleanup/inits
 			glScene.remove(this.previewPolygon)
 			this.previewPolygon = undefined
 			this.verticesPolygonTool = []
-			
-			// set this.selectedTool to the tool clicked in the box
-			this.selectedTool = e.target.selected
-			
-			switch (this.selectedTool) {
+
+			// set this.modus.tool to the tool clicked in the box
+			this.modus.tool = e.target.selected
+			console.log(this.modus.tool)
+
+			switch (this.modus.tool) {
 				case 'polygon':
-					
+
 					break;
 				default:
-					
+
 			}
-			
-			console.log(this.selectedTool)
+
+			console.log(this.modus.tool)
 		}
-		
+
 	})
 	</script>
-	
+
 </dom-module>
