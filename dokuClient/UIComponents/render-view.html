@@ -215,20 +215,14 @@
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster()
 
-			console.log('\n\n')
 			for(let annotation of this.annotationRenderGroup.children) {
 				let normalizedDirection = (annotation.position.clone().sub(camera.position)).normalize()
 				raycaster.set(camera.position.clone(), normalizedDirection)
 				let intersections = raycaster.intersectObject(cube)
 				if(intersections.length !== 0) {
-					console.log(annotation.element.innerText)
-					console.log(annotation.element)
 					annotation.element.style.opacity = 0.0
-
-					annotation.visible = false
 				} else {
-					annotation.element.style.opacity = 1.0
-					annotation.visible = true
+					annotation.element.style.opacity = 0.8
 				}
 
 
