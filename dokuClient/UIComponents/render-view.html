@@ -70,12 +70,29 @@
 
 			// init animate() and render()
 			animate = function() {
-				requestAnimationFrame(animate)
+				requestAnimationFrame(animate.bind(this))
 				controls.update()
 			}
 
 			render = function() {
 				// triggered on controls.update() and resize()
+				// calculate visibility of annotations
+				// FIXME: this should only be called on rotation update!!
+				let raycaster = new THREE.Raycaster()
+				console.log(this);
+				console.log(this.annotationRenderGroup)
+				// try {
+				// 	for(annotation of this.annotationRenderGroup.children) {
+				// 		raycaster.setFromCamera(this.annotation, camera)
+				// 		let intersect = raycaster.intersectObject(cube)
+				// 		console.log(intersect)
+				// 	}
+				// }
+				// catch (e) {
+				// 	console.error(e)
+				// }
+
+
 				glRenderer.render(glScene, camera)
 				cssRenderer.render(cssScene, camera)
 			}
@@ -114,6 +131,13 @@
 
 			cssRenderer = new THREE.CSS3DRenderer()
 			cssRenderer.setSize(width, height)
+
+			// create group for text annotations in 3D
+			this.annotationRenderGroup = new THREE.Object3D()
+			console.log('the annotation group:')
+			console.log(this)
+			console.log(this.annotationRenderGroup)
+			cssScene.add(this.annotationRenderGroup)
 
 			// setup 3d-controls (rotating the camera with cursor)
 			controls = new THREE.TrackballControls(camera, this)
@@ -155,6 +179,7 @@
 			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
 			controls.addEventListener('change', render)
 			controls.handleResize()
+
 			render()
 			animate()
 		},
@@ -171,35 +196,35 @@
 
 		updateAnnotations: function() {
 			// debug output of annotations
-			console.log(this.annotations)
-
+			console.log('update annotations')
+			console.log(this.annotationRenderGroup)
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
-			for (let child of cssScene.children) {
-				cssScene.remove(child)
+			for (let child of this.annotationRenderGroup.children) {
+				this.annotationRenderGroup.remove(child)
 			}
 
-			for (let {
-				doc
-			}
-			of this.annotations) {
+			for (let annotation of this.annotations) {
+				doc = annotation.doc
 				console.log(doc.position)
 				console.log(doc)
-				var annotationCSS3DElement = document.createElement('div')
-				var textElement = document.createElement('span')
-				annotationCSS3DElement.style.opacity = '0.85'
-				annotationCSS3DElement.style.fontSize = '40px'
-				annotationCSS3DElement.style.padding = "0.35em"
-				annotationCSS3DElement.style.background = "rgb(255, 255, 255)"
-				annotationCSS3DElement.style.border = "rgb(247, 156, 62) solid 0.125em"
-				annotationCSS3DElement.innerHTML = doc.description
-				annotationCSS3DElement.addEventListener('mouseover', () => console.log('over'))
 
-				var annotationCSS3DObject = new THREE.CSS3DSprite(annotationCSS3DElement)
-				annotationCSS3DObject.position.set(doc.position[0], doc.position[1], doc.position[2])
-				console.log(annotationCSS3DObject.position)
-				cssScene.add(annotationCSS3DObject)
+				let div = document.createElement('div')
+				let textElement = document.createElement('span')
+				div.style.opacity = '0.85'
+				div.style.fontSize = '40px'
+				div.style.padding = "0.35em"
+				div.style.background = "rgb(255, 255, 255)"
+				div.style.border = "rgb(247, 156, 62) solid 0.125em"
+				div.innerHTML = doc.description
+				div.addEventListener('mouseover', () => console.log('over'))
+
+				let CSS3DObject = new THREE.CSS3DSprite(div)
+				CSS3DObject.position.set(doc.position[0], doc.position[1], doc.position[2])
+				console.log(CSS3DObject.position)
+				this.annotationRenderGroup.add(CSS3DObject)
 			}
+			console.log(this.annotations)
 
 			render()
 
