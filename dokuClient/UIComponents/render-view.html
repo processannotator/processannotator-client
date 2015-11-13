@@ -74,24 +74,6 @@
 			controls.update()
 		},
 		render: function() {
-			// triggered on controls.update() and resize()
-			// calculate visibility of annotations
-			// FIXME: this should only be called on rotation update!!
-			let raycaster = new THREE.Raycaster()
-			console.log(this);
-			console.log(this.annotationRenderGroup)
-			// try {
-			// 	for(annotation of this.annotationRenderGroup.children) {
-			// 		raycaster.setFromCamera(this.annotation, camera)
-			// 		let intersect = raycaster.intersectObject(cube)
-			// 		console.log(intersect)
-			// 	}
-			// }
-			// catch (e) {
-			// 	console.error(e)
-			// }
-
-
 			glRenderer.render(glScene, camera)
 			cssRenderer.render(cssScene, camera)
 		},
@@ -175,6 +157,8 @@
 			Polymer.dom(this.root).appendChild(glRenderer.domElement)
 			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
 			controls.addEventListener('change', this.render.bind(this))
+			controls.addEventListener('change', this.updateAnnotationVisibility.bind(this))
+
 			controls.handleResize()
 
 			this.render()
@@ -217,13 +201,33 @@
 				div.addEventListener('mouseover', () => console.log('over'))
 
 				let CSS3DObject = new THREE.CSS3DSprite(div)
-				CSS3DObject.position.set(doc.position[0], doc.position[1], doc.position[2])
+				CSS3DObject.position.set(doc.position[0], doc.position[1], doc.position[2] + 100)
 				console.log(CSS3DObject.position)
 				this.annotationRenderGroup.add(CSS3DObject)
 			}
 			console.log(this.annotations)
 
 			this.render()
+
+		},
+		updateAnnotationVisibility: function () {
+			// triggered on controls update
+			let raycaster = new THREE.Raycaster()
+
+			for(let annotation of this.annotationRenderGroup.children) {
+				raycaster.set(annotation.position, camera.position)
+				let intersections = raycaster.intersectObject(cube)
+				if(intersections.length !== 0) {
+
+					this.annotationRenderGroup.visible = false
+					console.log(this.annotationRenderGroup.visible)
+				} else {
+					// this.annotationRenderGroup.visible = true
+					// console.log(this.annotationRenderGroup.visible)
+				}
+
+
+			}
 
 		},
 		toggleTrack: function(e) {
