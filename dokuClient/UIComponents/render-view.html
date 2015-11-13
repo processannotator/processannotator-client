@@ -197,11 +197,12 @@
 				div.style.padding = "0.35em"
 				div.style.background = "rgb(255, 255, 255)"
 				div.style.border = "rgb(247, 156, 62) solid 0.125em"
+				div.style.transition = "opacity 0.5s"
 				div.innerHTML = doc.description
 				div.addEventListener('mouseover', () => console.log('over'))
 
 				let CSS3DObject = new THREE.CSS3DSprite(div)
-				CSS3DObject.position.set(doc.position[0], doc.position[1], doc.position[2] + 100)
+				CSS3DObject.position.set(doc.position[0] + 100, doc.position[1] + 100, doc.position[2] + 100)
 				console.log(CSS3DObject.position)
 				this.annotationRenderGroup.add(CSS3DObject)
 			}
@@ -214,20 +215,25 @@
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster()
 
+			console.log('\n\n')
 			for(let annotation of this.annotationRenderGroup.children) {
-				raycaster.set(annotation.position, camera.position)
+				let normalizedDirection = (annotation.position.clone().sub(camera.position)).normalize()
+				raycaster.set(camera.position.clone(), normalizedDirection)
 				let intersections = raycaster.intersectObject(cube)
 				if(intersections.length !== 0) {
+					console.log(annotation.element.innerText)
+					console.log(annotation.element)
+					annotation.element.style.opacity = 0.0
 
-					this.annotationRenderGroup.visible = false
-					console.log(this.annotationRenderGroup.visible)
+					annotation.visible = false
 				} else {
-					// this.annotationRenderGroup.visible = true
-					// console.log(this.annotationRenderGroup.visible)
+					annotation.element.style.opacity = 1.0
+					annotation.visible = true
 				}
 
 
 			}
+			this.render()
 
 		},
 		toggleTrack: function(e) {
