@@ -126,11 +126,11 @@
 			cssRenderer.setSize(width, height)
 
 			// create group for text annotations in 3D
-			this.annotationRenderGroup = new THREE.Object3D()
+			this.labelGroup = new THREE.Object3D()
 			console.log('the annotation group:')
 			console.log(this)
-			console.log(this.annotationRenderGroup)
-			cssScene.add(this.annotationRenderGroup)
+			console.log(this.labelGroup)
+			cssScene.add(this.labelGroup)
 
 			// setup 3d-controls (rotating the camera with cursor)
 			controls = new THREE.TrackballControls(camera, this)
@@ -191,12 +191,11 @@
 
 		updateAnnotations: function() {
 			// debug output of annotations
-			console.log('update annotations')
-			console.log(this.annotationRenderGroup)
+			console.log(this.labelGroup)
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
-			for (let child of this.annotationRenderGroup.children) {
-				this.annotationRenderGroup.remove(child)
+			for (let child of this.labelGroup.children) {
+				this.labelGroup.remove(child)
 			}
 
 			for (let annotation of this.annotations) {
@@ -216,18 +215,18 @@
 				div.addEventListener('mouseover', () => console.log('over'))
 
 				let multFactor = 2
-				let CSS3DObject = new THREE.CSS3DSprite(div)
-				CSS3DObject.position.set(
+				let label = new THREE.CSS3DSprite(div)
+				label.position.set(
 					doc.position[0] * multFactor,
 					doc.position[1] * multFactor,
 					doc.position[2] * multFactor)
 
-					// TODO: add arrow, CSS3DObject to a group/structure to be selectable
+					// TODO: add arrow, label to a group/structure to be selectable
 				let arrow = createArrow(
 					new THREE.Vector3(doc.position[0], doc.position[1], doc.position[2]),
 					 multFactor)
 				glScene.add(arrow)
-				this.annotationRenderGroup.add(CSS3DObject)
+				this.labelGroup.add(label)
 			}
 			console.log(this.annotations)
 
@@ -238,15 +237,15 @@
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster()
 
-			for(let annotation of this.annotationRenderGroup.children) {
-				let normalizedDirection = (annotation.position.clone().sub(camera.position)).normalize()
+			for(let label of this.labelGroup.children) {
+				let normalizedDirection = (label.position.clone().sub(camera.position)).normalize()
 				raycaster.set(camera.position.clone(), normalizedDirection)
-				raycaster.far = camera.position.distanceTo(annotation.position)
+				raycaster.far = camera.position.distanceTo(label.position)
 				let intersections = raycaster.intersectObject(cube)
 				if(intersections.length !== 0) {
-					annotation.element.style.opacity = 0.0
+					label.element.style.opacity = 0.0
 				} else {
-					annotation.element.style.opacity = 0.8
+					label.element.style.opacity = 0.8
 				}
 
 
