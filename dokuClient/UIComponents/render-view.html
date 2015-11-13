@@ -32,6 +32,20 @@
 
 	<script>
 
+	createArrow = function (point, multFactor) {
+		var material = new THREE.LineBasicMaterial({
+			color: 0xdd8822
+		})
+
+		var geometry = new THREE.Geometry();
+		geometry.vertices.push(
+			point,
+			point.multiplyScalar(multFactor),
+			new THREE.Vector3( 10, 0, 0 )
+		)
+
+		return new THREE.Line( geometry, material )
+	}
 
 
 	// FIXME: shouldnt those global variables better reside inside the element
@@ -134,8 +148,8 @@
 
 			var geometry = new THREE.BoxGeometry(700, 700, 700)
 			var material = new THREE.MeshNormalMaterial({
-				transparent: true,
-				opacity: 0.95,
+				transparent: false,
+				opacity: 1.0,
 				side: THREE.DoubleSide
 			})
 
@@ -201,9 +215,18 @@
 				div.innerHTML = doc.description
 				div.addEventListener('mouseover', () => console.log('over'))
 
+				let multFactor = 2
 				let CSS3DObject = new THREE.CSS3DSprite(div)
-				CSS3DObject.position.set(doc.position[0] + 100, doc.position[1] + 100, doc.position[2] + 100)
-				console.log(CSS3DObject.position)
+				CSS3DObject.position.set(
+					doc.position[0] * multFactor,
+					doc.position[1] * multFactor,
+					doc.position[2] * multFactor)
+
+					// TODO: add arrow, CSS3DObject to a group/structure to be selectable
+				let arrow = createArrow(
+					new THREE.Vector3(doc.position[0], doc.position[1], doc.position[2]),
+					 multFactor)
+				glScene.add(arrow)
 				this.annotationRenderGroup.add(CSS3DObject)
 			}
 			console.log(this.annotations)
@@ -218,6 +241,7 @@
 			for(let annotation of this.annotationRenderGroup.children) {
 				let normalizedDirection = (annotation.position.clone().sub(camera.position)).normalize()
 				raycaster.set(camera.position.clone(), normalizedDirection)
+				raycaster.far = camera.position.distanceTo(annotation.position)
 				let intersections = raycaster.intersectObject(cube)
 				if(intersections.length !== 0) {
 					annotation.element.style.opacity = 0.0
