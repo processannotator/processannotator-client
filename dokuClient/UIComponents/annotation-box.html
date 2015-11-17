@@ -4,7 +4,7 @@
 
 	<template>
 		<style>
-			
+
 			:host {
 				display: block;
 				box-sizing: border-box;
@@ -14,9 +14,9 @@
 				height: auto;
 
 			}
-			
+
 			:host:hover {}
-			
+
 			#container {
 				display: flex;
 				flex-direction: column;
@@ -26,14 +26,14 @@
 				min-height: 15em;
 				max-height: 15em;
 			}
-			
+
 			#container:hover {
 				-webkit-transform: scale(1.1);
 				background-color: rgba(200, 50, 50, 0.5);
 				/*-webkit-transform:rotateY(50deg);*/
 				/*-webkit-transform:rotateZ(25deg);*/
 			}
-			
+
 			#header,
 			#main,
 			#tags,
@@ -43,7 +43,7 @@
 				/*min-width: 100%;
 				width: 100%;*/
 			}
-			
+
 			#header {
 				padding: 0;
 				flex: 1 0 0;
@@ -52,7 +52,7 @@
 				color: #4A4A4A;
 				background-color: #E0E0E0;
 			}
-			
+
 			#header > #letters_id {
 				text-align: center;
 				min-height: 100%;
@@ -63,39 +63,39 @@
 				color: white;
 				font-family: "SourceSansPro-Semibold";
 			}
-			
+
 			#header > #profile_name {
 				min-height: 100%;
 				padding-left: 0.5em;
 				padding-top: 0.1em;
 				padding-bottom: 0.1em;
 			}
-			
+
 			#main {
 				flex: 4 0 0;
 				background-color: white;
 				color: #4A4A4A;
 			}
-			
+
 			#tags_and_tasks {
 				flex: 1 0 0;
 				display: flex;
 				flex-direction: row;
 				color: white;
 			}
-			
+
 			#tags_and_tasks > #tags {
 				flex: 2 0 0;
 				vertical-align: middle;
 				background-color: #4A4A4A;
 			}
-			
+
 			#tags_and_tasks > #task {
 				flex: 1 0 0;
 				text-align: center;
 				background-color: #F5A623;
 			}
-			
+
 			#footer {
 				flex: 1 0 0;
 				text-align: center;
@@ -103,9 +103,9 @@
 				color: #303030;
 				background-color: #696565;
 			}
-			
+
 			.annotationText {}
-			
+
 
 		</style>
 
@@ -143,7 +143,7 @@
 			properties: {
 				db: Object,
 				_id: String,
-				timestamp: String,
+				creationDate: String,
 				creator: String,
 				annotationText: {
 					type: String,
@@ -163,16 +163,8 @@
 				console.log(this.annotationText)
 				console.log(event)
 				localDB.get(this._id).then(doc => {
-
-					localDB.put({
-						_id: this._id,
-						_rev: doc._rev,
-						description: event.srcElement.innerHTML,
-						position: doc.position,
-						name: doc.name,
-						_annotations: doc._annotations
-					})
-
+					doc.description = event.srcElement.innerHTML
+					localDB.put(doc)
 				})
 
 			}

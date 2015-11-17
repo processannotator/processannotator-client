@@ -1,12 +1,5 @@
 // google speech api key: AIzaSyB6Wgr15OViZNoFwAe3NNwCjBjM0kR-iGQ
 
-/* TODO: Entscheiden welche Datenbank zu nutzen ist.
---> wir werden pouchDB (couchDB-Derivat) nutzen. Vorteile:
-  - replication!!!!!! der Vorteil überhaupt. einfacher sync zwischen allen Partien
-  (Hauptserver und allen Dokuclients, der Kameraclient ist immer noch singulär und schickt events
-  mit socket.io raus.)
-
-*/
 var fs = require('fs')
 var express = require('express')
 var app = express()
@@ -16,7 +9,7 @@ var http = require('http').Server(app)
 var io = require('socket.io')(http)
 var speech = require('google-speech-api')
 
-var db = new PouchDB('http://127.0.0.1:5984/annotations')
+var db = new PouchDB('http://127.0.0.1:5984/collabDB')
 db.changes().then(function(a) {
 	console.log('change local')
 }).catch(function(err) {

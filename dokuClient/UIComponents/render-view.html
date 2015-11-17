@@ -200,8 +200,6 @@
 
 			for (let annotation of this.annotations) {
 				doc = annotation.doc
-				console.log(doc.position)
-				console.log(doc)
 
 				let div = document.createElement('div')
 				let textElement = document.createElement('span')
@@ -228,7 +226,6 @@
 				glScene.add(arrow)
 				this.labelGroup.add(label)
 			}
-			console.log(this.annotations)
 
 			this.render()
 
@@ -292,7 +289,7 @@
 					if(this.modus.tool === 'polygon'){
 						// TODO: finish shape and create annotation
 						console.log('pressed enter in polygon mode')
-						addAnnotationToDB({
+						addAnnotation({
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
 							position: [

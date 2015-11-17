@@ -3,8 +3,8 @@
 
 var ipc = require('ipc')
 var PouchDB = require('pouchdb')
-var localDB = new PouchDB('annotations')
-var remoteDB = new PouchDB('http://127.0.0.1:5984/annotations')
+var localDB = new PouchDB('collabdb')
+var remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 var sync
 
 var annotationElements = new Map()
@@ -13,6 +13,87 @@ var annotationElements = new Map()
 var imageContainer
 var annotationList
 var renderView
+var activeProfile = {_id: 'profile_1'}
+var activeProject = {_id: 'project_1'}
+var activeTopic = {_id: 'topic_1'}
+
+function addProject(file) {
+	// first create DB entry for new project
+	// then create a new topic from file/.. which belongs to the newly created project
+	return localDB.put({
+		_id: 'project_' + 1,
+		type: 'project',
+		creator: activeProfile._id,
+		creationDate: new Date().toISOString(),
+		title: 'a project title',
+		description: 'a description to a project'
+	})
+	.then(localDB.get('project' + 1))
+	.then((newProject) => {
+		activeProject = newProject
+		return addNewTopic(file)
+	})
+	// finally return the new projects object
+	.then(() => activeProject)
+	.catch((err) => {
+		console.error('error creating new project in DB', err)
+	})
+
+
+}
+
+function addTopic() {
+	// add new topic to active project
+	return localDB.put({
+		_id: 'topic_' + 1,
+		type: 'topic',
+		parentProject: activeProject._id,
+		creator: activeProfile._id,
+		creationDate: new Date().toISOString(),
+		title: 'a topic title',
+		description: 'a description to a topic'
+	})
+}
+
+function addAnnotation({description='', position=[0, 0], polygon=[]}) {
+	let annotation = {
+		_id: 'annotation_' + new Date().toISOString(),
+		type: 'annotation',
+		parentProject: activeProject._id,
+		parentTopic: activeTopic._id,
+		creator: activeProfile._id,
+		creationDate: new Date().toISOString(),
+		title: 'a topic title',
+		description: description,
+		position: position,
+		polygon: polygon
+	}
+
+	console.log('put annotation into DB')
+	console.log(annotation)
+	return localDB.put(annotation)
+}
+
+function savePreferences() {
+	db.put({
+	  _id: '_local/lastSession',
+	  activeProfile: activeProfile,
+		activeProject: activeProject,
+		activeTopic: activeTopic
+	})
+}
+
+function setNewProfile({username, email, color}) {
+
+	db.put({
+		_id: 'profile_' + 1,
+		type: 'userProfile',
+		username: username,
+		email: email,
+		color: color,
+		creationDate: new Date().toISOString()
+	})
+}
 
 
 function removeAnnotationElements(id) {
@@ -23,10 +104,11 @@ function removeAnnotationElements(id) {
 }
 
 
-function addAnnotationElements(annotation){
+function addElementsForAnnotation(annotation){
 	// add both, annotation box and annotation point to DOM
 	// only handle creation of DOM element, actual DB updates
 	// are done independently
+	// TODO: also create 3D Labels here??
 	let doc = annotation.doc
 	let {name, description, position, _id, _attachments} = doc
 	console.log(doc)
@@ -39,28 +121,6 @@ function addAnnotationElements(annotation){
 		throw Error('position[0] === undefined', doc)
 	}
 
-	// annotationPoint.addEventListener('blur', function({target: {id, innerHTML}}) {
-	//
-	// 	// TODO: move this event listener to the web components code later
-	// 	// update document in localDB
-	// 	localDB.get(id).then(doc => {
-	//
-	// 		return localDB.put({
-	// 			_id: id,
-	// 			_rev: doc._rev,
-	// 			description: innerHTML,
-	// 			position: doc.position,
-	// 			name: doc.name
-	// 		})
-	//
-	// 	}).then(response => {
-	// 		console.log(response)
-	// 	}).catch(err => {
-	// 		console.log(err)
-	// 	})
-	//
-	// })
-
 	annotationList.appendChild(annotationBox)
 	annotationElements.set(_id, [/*annotationPoint,*/ annotationBox])
 }
@@ -68,14 +128,14 @@ function addAnnotationElements(annotation){
 
 function fetchAnnotations() {
 
-	return remoteDB.allDocs({
+	return localDB.allDocs({
 		include_docs: true,
-		attachments: true
+		attachments: true,
+		startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
+		endkey: 'annotation\uffff' /* and keeps the cod more readable  */
 	})
 	.then(result => result.rows)
-	.catch(err => {
-		console.error(err)
-	})
+	.catch(err => console.error('error fetching annotations', err))
 }
 
 function rebuildAnnotationElements() {
@@ -93,7 +153,7 @@ function rebuildAnnotationElements() {
 		// FIXME: outsource this to the annotationlist element
 		for (let annotation of annotations) {
 			console.log(annotation)
-			addAnnotationElements(annotation)
+			addElementsForAnnotation(annotation)
 		}
 
 		// update the renderView with new annotation
@@ -120,17 +180,7 @@ window.addEventListener('online', alertOnlineStatus)
 window.addEventListener('offline', alertOnlineStatus)
 window.addEventListener('resize', handleResize)
 
-function addAnnotationToDB({description='', position=[0, 0], polygon=[]}) {
-	var annotation = {
-		'_id': new Date().toISOString(),
-		'description': description,
-		'position': position,
-		'polygon': polygon
-	}
 
-	console.log('put annotation into DB')
-	return localDB.put(annotation)
-}
 
 function init() {
 
@@ -138,44 +188,12 @@ function init() {
 	annotationList = document.querySelector('.annotation-list')
 	renderView = document.querySelector('render-view')
 
-	localDB.changes({
-		since: 'now',
-		live: true,
-		include_docs: true
-
-	}).on('change', info => {
-
-		// only rebuild UI if there are changes after a pull from remoteDB
-		if (info.direction === 'pull' && info.change.docs.length !== 0) {
-			// console.log(info)
-			// FIXME: instead of completely rebuilding
-			// just delete/modifiy/add the ones that changed
-
-			// go through all changes
-			// trigger delete actions and edit/actions
-			// for (let annotation of info.change.docs) {
-			// 	console.log(annotation)
-			// 		if(annotation._deleted === true){
-			// 				let
-			// 		} else {
-			//
-			// 		}
-			// }
-		}
-	}).on('complete', info => {
-
-	}).on('error', err => {
-		console.error('Error while syncing localDB with remoteDB', err)
-	}).on('pause', msg => {
-		console.log('pause', msg)
-	})
-
-
+	// perhaps also on change localDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localDB, remoteDB, {
 		live: true,
 		retry: true
 	}).on('change', function(info) {
-		console.log('change!!')
+		console.log('sync change!!')
 		console.log('TODO: now sync all DOM elements...')
 		rebuildAnnotationElements()
 
@@ -206,11 +224,7 @@ function init() {
 }
 
 
-
 init()
-
-
-
 
 
 
@@ -219,41 +233,6 @@ init()
 // OLD STUFF down there. maybe useful later!?
 /////////////////////////////////////////////
 
-
-
-// ipc.on('annotation_with_image', function(annotation, status) {
+// ipc.on('someNotification', function(annotation, status) {
 // 	console.log('annotation with image arrived')
-// 		// let img = new Image()
-// 	let imgContainer = document.querySelector('.imageContainer')
-// 	let img = imgContainer.querySelector('img')
-// 	img.src = 'data:image/jpg;base64,' + annotation.image
-//
-// 	let annotationPoint = document.createElement('div')
-// 	annotationPoint.style.position = 'absolute'
-// 	annotationPoint.style.left = annotation.position[0] + 'px'
-// 	annotationPoint.style.top = annotation.position[1] + 'px'
-// 	annotationPoint.innerHTML = annotation.description
-// 	annotationPoint.contentEditable = true
-//
-// 	let audio = document.createElement('audio')
-// 		// audio.src = 'test.wav'
-//
-// 	annotationPoint.addEventListener('mouseover', function(e) {
-// 		audio.play()
-// 	})
-// 	annotationPoint.addEventListener('mouseout', function(e) {
-// 		audio.pause()
-// 	})
-//
-// 	annotationPoint.appendChild(audio)
-//
-// 	annotationPoint.addEventListener('input', function(e) {
-// 		console.log('annotation changed')
-// 		console.log(e)
-// 			// probably use a MVC lib here (angular?, react)
-// 			// ipc.send('annotation_changed', {id:1, newAnnotation: })
-// 	})
-// 	imgContainer.appendChild(annotationPoint)
-//
 // })
-
