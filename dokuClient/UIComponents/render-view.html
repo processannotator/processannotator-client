@@ -326,24 +326,8 @@
 
 					// create new preview polygon/shape when enough points are available
 					if(this.verticesPolygonTool.length >= 3) {
-						var previewGeometry = new THREE.Geometry()
-						previewGeometry.vertices = this.verticesPolygonTool
-
-						// calculate faces of preview polygon
-						for (var i = 1; i < previewGeometry.vertices.length - 1; i++) {
-							previewGeometry.faces.push( new THREE.Face3( 0, i, i+1 ) )
-						}
-
-						previewGeometry.computeBoundingSphere()
-
-						if(this.previewPolygon === undefined){
-							this.previewPolygon = new THREE.Mesh(
-								previewGeometry,
-								new THREE.MeshBasicMaterial( {
-									color: 0x00ff00,
-									side: THREE.DoubleSide
-								} )
-							)
+							glScene.remove(this.previewPolygon)
+							this.previewPolygon = this.polygonFromPoints(this.verticesPolygonTool, 0x00ff00)
 							glScene.add(this.previewPolygon)
 
 						} else {
@@ -357,6 +341,26 @@
 
 			}
 
+		},
+		polygonFromPoints: function (vertices, color) {
+			// IDEA: move to helper object?
+			let polygon = new THREE.Geometry()
+			polygon.vertices = vertices
+
+			// calculate faces of preview polygon
+			for (var i = 1; i < polygon.vertices.length - 1; i++) {
+				polygon.faces.push( new THREE.Face3( 0, i, i+1 ) )
+			}
+
+			polygon.computeBoundingSphere()
+
+				return new THREE.Mesh(
+					polygon,
+					new THREE.MeshBasicMaterial( {
+						color: color,
+						side: THREE.DoubleSide
+					} )
+				)
 		},
 
 		toolChanged: function(e) {
