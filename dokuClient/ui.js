@@ -55,7 +55,7 @@ function addTopic() {
 	})
 }
 
-function addAnnotation({description='', position=[0, 0], polygon=[]}) {
+function addAnnotation({description='', position={x: 0 , y: 0, z: 0}, polygon=[]}) {
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
@@ -117,8 +117,8 @@ function addElementsForAnnotation(annotation){
 	annotationBox.timestamp = _id
 	annotationBox._id = _id
 
-	if (position[0] === undefined) {
-		throw Error('position[0] === undefined', doc)
+	if (position.x === undefined) {
+		throw Error('position.x === undefined', doc)
 	}
 
 	annotationList.appendChild(annotationBox)
@@ -157,9 +157,7 @@ function rebuildAnnotationElements() {
 		}
 
 		// update the renderView with new annotation
-		if(renderView){
-			renderView.annotations = annotations
-		}
+		renderView.annotations = annotations
 
 
 	})
@@ -219,7 +217,12 @@ function init() {
 		// handle error
 	})
 
-	rebuildAnnotationElements()
+	localDB.info().then((result) => {
+		console.log('localDB info:', result)
+		rebuildAnnotationElements()
+	})
+
+
 
 }
 
