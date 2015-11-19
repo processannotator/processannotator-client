@@ -70,7 +70,6 @@ function addAnnotation({description='', position={x: 0 , y: 0, z: 0}, polygon=[]
 	}
 
 	console.log('put annotation into DB')
-	console.log(annotation)
 	return localDB.put(annotation)
 }
 
@@ -111,7 +110,6 @@ function addElementsForAnnotation(annotation){
 	// TODO: also create 3D Labels here??
 	let doc = annotation.doc
 	let {name, description, position, _id, _attachments} = doc
-	console.log(doc)
 	let annotationBox = document.createElement('annotation-box')
 	annotationBox.annotationText = description
 	annotationBox.timestamp = _id
@@ -152,11 +150,10 @@ function rebuildAnnotationElements() {
 		// then add new annotation elements to the list
 		// FIXME: outsource this to the annotationlist element
 		for (let annotation of annotations) {
-			console.log(annotation)
 			addElementsForAnnotation(annotation)
 		}
 
-		// update the renderView with new annotation
+		// then add annotations to renderview and let it render them in threedimensional space
 		renderView.annotations = annotations
 
 
@@ -181,6 +178,8 @@ window.addEventListener('resize', handleResize)
 
 
 function init() {
+
+	document.querySelector('#dialog').open()
 
 	imageContainer = document.querySelector('.object-view')
 	annotationList = document.querySelector('.annotation-list')
@@ -219,7 +218,13 @@ function init() {
 
 	localDB.info().then((result) => {
 		console.log('localDB info:', result)
-		rebuildAnnotationElements()
+
+		// update the renderView with new annotation
+		renderView.addEventListener('initialized', () => {
+			console.log('renderview attached custom event')
+			rebuildAnnotationElements()
+		})
+
 	})
 
 

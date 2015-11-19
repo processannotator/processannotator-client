@@ -52,7 +52,7 @@
 			model: Object,
 			annotations: {
 				type: Array,
-				observer: "updateAnnotations"
+				observer: "_annotationsChanged"
 			}
 		},
 		listeners: {
@@ -65,7 +65,8 @@
 		ready: function() {
 			// doesnt work with listeners on this very element
 			// so create start event listener
-			console.log('ready!!!')
+			console.log('renderview ready!!!')
+			this.ready = true
 			document.addEventListener('keydown', this.keydown.bind(this))
 		},
 		animate: function() {
@@ -73,13 +74,13 @@
 			controls.update()
 		},
 		render: function() {
+			console.log('render...');
 			glRenderer.render(glScene, camera)
 			cssRenderer.render(cssScene, camera)
 		},
 		attached: function() {
 
 			this.modus = {tool: '', modelGrabbing: false}
-
 			// the render-view is interested in the state of the tool-box selector
 			// lets add the event listener then
 			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
@@ -109,6 +110,11 @@
 
 			cssRenderer = new THREE.CSS3DRenderer()
 			cssRenderer.setSize(width, height)
+
+			glRenderer.domElement.id = 'glRenderer'
+			cssRenderer.domElement.id = 'cssRenderer'
+			Polymer.dom(this.root).appendChild(glRenderer.domElement)
+			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
 
 			// create group for text annotations in 3D
 			this.labelGroup = new THREE.Object3D()
@@ -150,18 +156,18 @@
 			// create Raycaster used for polygon editing tool
 			this.raycaster = new THREE.Raycaster()
 
-
-			glRenderer.domElement.id = 'glRenderer'
-			cssRenderer.domElement.id = 'cssRenderer'
-			Polymer.dom(this.root).appendChild(glRenderer.domElement)
-			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
 			controls.addEventListener('change', this.render.bind(this))
 			controls.addEventListener('change', this.updateAnnotationVisibility.bind(this))
 
 			controls.handleResize()
 
+			// init annotations to empty array
+			this.annotations = []
 			this.render()
 			this.animate()
+			// notify other elements that the renderview is ready initializing
+
+			this.fire('initialized')
 		},
 		resize: function(event) {
 			let width = this.parentNode.getBoundingClientRect().width
@@ -171,18 +177,27 @@
 			camera.aspect = width / height
 			camera.updateProjectionMatrix()
 			controls.handleResize()
+			console.log('render from resize');
 			this.render()
 		},
 
-		updateAnnotations: function() {
+		_annotationsChanged: function() {
+			console.log('annotation changed')
+			console.log(this.annotations)
 			// debug output of annotations
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
-			for (let child of this.labelGroup.children) {
-				this.labelGroup.remove(child)
+			if(this.labelGroup !== undefined){
+				for (let child of this.labelGroup.children) {
+					this.labelGroup.remove(child)
+				}
 			}
+			console.log('meh');
+			console.log(this.annotations);
 
 			for (let annotation of this.annotations) {
+				console.log('create labels for annos');
+				console.log(this.annotations);
 				doc = annotation.doc
 
 				let div = document.createElement('div')
@@ -217,13 +232,15 @@
 
 
 			}
-
+			console.log('annotation changed, now render')
 			this.render()
 
 		},
 		updateAnnotationVisibility: function () {
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster()
+
+			if(this.labelGroup.children === undefined) return
 
 			for(let label of this.labelGroup.children) {
 				let normalizedDirection = (label.position.clone().sub(camera.position)).normalize()
@@ -238,6 +255,7 @@
 
 
 			}
+			console.log('update annotation visibility');
 			this.render()
 
 		},
@@ -353,7 +371,6 @@
 			var material = new THREE.LineBasicMaterial({
 				color: 0xdd8822
 			})
-			console.log('point', point)
 
 			var geometry = new THREE.Geometry()
 			geometry.vertices.push(
