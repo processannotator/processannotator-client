@@ -2,7 +2,7 @@
 <html>
 
 <head>
-	<meta charset="utf-8">
+	<meta charset="utf-8" name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
 	<title>DokuClient</title>
 	<link href="ui.css" rel="stylesheet">
 	<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
@@ -15,46 +15,70 @@
 	<link rel="import" href="bower_components/iron-selector/iron-selector.html">
 
 	<link rel="import" href="bower_components/neon-animation/neon-animated-pages.html">
+	<link rel="import" href="bower_components/neon-animation/neon-animatable.html">
+	<link rel="import" href="bower_components/neon-animation/neon-animations.html">
 	<link rel="import" href="bower_components/paper-styles/paper-styles.html">
 	<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+	<link rel="import" href="bower_components/paper-button/paper-button.html">
 
-
+	<link rel="import" href="UIComponents/simple-overlay.html">
 	<link rel="import" href="UIComponents/tool-box.html">
 	<link rel="import" href="UIComponents/annotation-box.html">
 	<link rel="import" href="UIComponents/render-view.html">
 
 	<style is="custom-style">
-		iron-icon.iron-selected {
-			background-color: white;
+	iron-icon.iron-selected {
+		background-color: white;
 	}
 
 	iron-icon:not(.iron-selected):hover {
 		/*--iron-icon-fill-color: blue;*/
 		background-color: rgb(98, 98, 98)
 	}
-	neon-animatable {
-			 color: white;
-			 @apply(--layout-horizontal);
-			 @apply(--layout-center-center);
-			 @apply(--paper-font-display4);
-		 }
-		 neon-animatable:nth-child(1) {
-			 background: var(--paper-red-500);
-		 }
-		 neon-animatable:nth-child(2) {
-			 background: var(--paper-blue-500);
-		 }
-		 neon-animatable:nth-child(3) {
-			 background: var(--paper-orange-500);
-		 }
-		 neon-animatable:nth-child(4) {
-			 background: var(--paper-green-500);
-		 }
-		 neon-animatable:nth-child(5) {
-			 background: var(--paper-purple-500);
-		 }
 
-	</style>
+	#dialog {
+		display:flex;
+		flex-direction: column;
+		width: 50%;
+		height: 50%;
+		background-color: rgb(89, 88, 91);
+		padding: 0;
+	}
+
+	neon-animatable {
+		display:flex;
+		flex-direction: column;
+	}
+
+	/*neon-animatable:nth-child(1) {
+	color: red;
+}
+neon-animatable:nth-child(2) {
+color: blue;
+}
+neon-animatable:nth-child(3) {
+color: orange;
+}
+neon-animatable:nth-child(4) {
+color: green;
+}
+neon-animatable:nth-child(5) {
+color: purple;
+}*/
+
+.foobar {
+	background-color: rgb(102, 98, 98);
+
+}
+
+paper-button.dialogButton {
+	margin: 0;
+	width: 100%;
+	background: rgb(30, 132, 189);
+}
+
+
+</style>
 
 </head>
 
@@ -63,32 +87,34 @@
 
 
 
-
-	<paper-dialog id="dialog">
-
-
-		<neon-animated-pages id="pages" class="flex" selected="[[selected]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
-			<neon-animatable>
-
-				<h2>Header</h2>
-			  <paper-dialog-scrollable>
-			    Lorem ipsum...
-			  </paper-dialog-scrollable>
-			  <div class="buttons">
-			    <paper-button dialog-dismiss>Cancel</paper-button>
-			    <paper-button dialog-confirm>Accept</paper-button>
-			  </div>
-
-			</neon-animatable>
-			<neon-animatable>2</neon-animatable>
-			<neon-animatable>3</neon-animatable>
-			<neon-animatable>4</neon-animatable>
-			<neon-animatable>5</neon-animatable>
-		</neon-animated-pages>
+	<template is="dom-bind" id='dialogTemplate'>
 
 
-	</paper-dialog>
+		<simple-overlay id="dialog" class="fullbleed" with-backdrop>
+			<neon-animated-pages class="flex" id="pages" selected="[[pageNumber]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+				<neon-animatable class="foobar">
+					idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
+				</neon-animatable>
+				<neon-animatable class="foobar">
+					This is some more text for your consideration to.
+					<textarea name="name" rows="8" cols="40"></textarea>
+
+				</neon-animatable>
+				<neon-animatable class="foobar">3</neon-animatable>
+
+				<neon-animatable class="foobar">4</neon-animatable>
+				<neon-animatable class="foobar">5</neon-animatable>
+			</neon-animated-pages>
+			<paper-toolbar>
+				<paper-button class="dialogButton" on-tap="_onNextClick">continue</paper-button>
+			</paper-toolbar>
+
+
+		</simple-overlay>
+
+
+	</template>
 
 
 
@@ -122,6 +148,7 @@
 		</div>
 
 		<div class="side-container">
+			<!--  IDEA: use paper-drawer-panel-->
 
 			<div class="menu">
 				<div class="menu-item">Filter by</div>

@@ -179,7 +179,28 @@ window.addEventListener('resize', handleResize)
 
 function init() {
 
-	document.querySelector('#dialog').open()
+	var dialogScope = document.querySelector('#dialogTemplate');
+	console.log(dialogScope);
+	dialogScope.addEventListener('dom-change', function() {
+		dialogScope.$.dialog.open()
+
+
+		dialogScope.pageNumber = 0;
+		dialogScope._onPrevClick = function() {
+			console.log(this);
+			console.log(this.pageNumber)
+		  this.entryAnimation = 'fade-in-animation';
+		  this.exitAnimation = 'fade-out-animation';
+		  this.pageNumber = this.pageNumber === 0 ? 4 : (this.pageNumber - 1);
+		}
+		dialogScope._onNextClick = function() {
+			console.log(this);
+			console.log(this.pageNumber)
+		  this.entryAnimation = 'fade-in-animation';
+		  this.exitAnimation = 'fade-out-animation';
+		  this.pageNumber = this.pageNumber === 4 ? 0 : (this.pageNumber + 1);
+		}
+	});
 
 	imageContainer = document.querySelector('.object-view')
 	annotationList = document.querySelector('.annotation-list')
@@ -221,7 +242,6 @@ function init() {
 
 		// update the renderView with new annotation
 		renderView.addEventListener('initialized', () => {
-			console.log('renderview attached custom event')
 			rebuildAnnotationElements()
 		})
 

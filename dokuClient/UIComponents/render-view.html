@@ -74,7 +74,6 @@
 			controls.update()
 		},
 		render: function() {
-			console.log('render...');
 			glRenderer.render(glScene, camera)
 			cssRenderer.render(cssScene, camera)
 		},
@@ -118,9 +117,6 @@
 
 			// create group for text annotations in 3D
 			this.labelGroup = new THREE.Object3D()
-			console.log('the annotation group:')
-			console.log(this)
-			console.log(this.labelGroup)
 			cssScene.add(this.labelGroup)
 
 			// setup 3d-controls (rotating the camera with cursor)
@@ -177,12 +173,11 @@
 			camera.aspect = width / height
 			camera.updateProjectionMatrix()
 			controls.handleResize()
-			console.log('render from resize');
+
 			this.render()
 		},
 
 		_annotationsChanged: function() {
-			console.log('annotation changed')
 			console.log(this.annotations)
 			// debug output of annotations
 			// first remove all previous annotations
@@ -192,12 +187,10 @@
 					this.labelGroup.remove(child)
 				}
 			}
-			console.log('meh');
+
 			console.log(this.annotations);
 
 			for (let annotation of this.annotations) {
-				console.log('create labels for annos');
-				console.log(this.annotations);
 				doc = annotation.doc
 
 				let div = document.createElement('div')
@@ -229,10 +222,8 @@
 					let polygon = this.createPolygon(doc.polygon, 0x123456)
 					glScene.add(polygon)
 				}
-
-
 			}
-			console.log('annotation changed, now render')
+
 			this.render()
 
 		},
@@ -255,7 +246,6 @@
 
 
 			}
-			console.log('update annotation visibility');
 			this.render()
 
 		},
