@@ -112,16 +112,17 @@
 		<div id="container">
 
 			<div id="header">
-				<div id="letters_id">MM</div>
+				<div id="letters_id">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
 				<div id="profile_name">
-					Max Mustermann
+					<span>[[annotation.creatorProfile.prename]]</span>
+					<span>[[annotation.creatorProfile.surname]]</span>
 				</div>
 			</div>
 
 			<div id="main">
-				<span>[[timestamp]]</span>
+				<span>[[annotation.creationDate]]</span>
 				<br>
-				<div contenteditable="true" class="annotationText" on-blur="handleTextChange">{{annotationText}}</div>
+				<div contenteditable="true" class="annotationText" on-blur="handleTextChange">{{annotation.description}}</div>
 			</div>
 
 			<div id="tags_and_tasks">
@@ -131,7 +132,7 @@
 
 
 			<div id="footer">
-				<span>footerstuff</span>
+				<span>[[annotation.position.creatorProfile.prename]]</span>
 			</div>
 		</div>
 
@@ -142,16 +143,10 @@
 			is: "annotation-box",
 			properties: {
 				db: Object,
-				_id: String,
-				creationDate: String,
-				creator: String,
-				annotationText: {
-					type: String,
-					value: 'foo',
-					notify: true
-				}
+				annotation: Object
 			},
 			attached: function() {
+				console.log(this.annotation)
 
 			},
 			handleTextChange: function(event, detail, sender) {
@@ -160,13 +155,16 @@
 
 				// when text changed on element, update its element
 				// hmm, probably wait until typing stopped
-				console.log(this.annotationText)
+				console.log(this.annotation)
 				console.log(event)
-				localDB.get(this._id).then(doc => {
+				localDB.get(this.annotation._id).then(doc => {
 					doc.description = event.srcElement.innerHTML
 					localDB.put(doc)
 				})
 
+			},
+			computeNameLetters: function (prename, surname) {
+				return prename[0] + surname[0]
 			}
 
 		});

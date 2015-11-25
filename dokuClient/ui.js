@@ -152,19 +152,16 @@ function addElementsForAnnotation(annotation){
 	// only handle creation of DOM element, actual DB updates
 	// are done independently
 	// TODO: also create 3D Labels here??
-	let doc = annotation.doc
-	let {name, description, position, _id, _attachments} = doc
+	//
 	let annotationBox = document.createElement('annotation-box')
-	annotationBox.annotationText = description
-	annotationBox.timestamp = _id
-	annotationBox._id = _id
+	annotationBox.annotation = annotation
 
-	if (position.x === undefined) {
-		throw Error('position.x === undefined', doc)
+	if (annotation.position.x === undefined) {
+		throw Error('position.x === undefined', annotation)
 	}
 
 	annotationList.appendChild(annotationBox)
-	annotationElements.set(_id, [/*annotationPoint,*/ annotationBox])
+	annotationElements.set(annotation._id, [/*annotationPoint,*/ annotationBox])
 }
 
 
@@ -177,14 +174,21 @@ function fetchAnnotations() {
 		endkey: 'annotation\uffff' /* and keeps the cod more readable  */
 	})
 	.then(result => {
-		for (let annotation of result.rows) {
-			localDB.get(annotation.creator).then(creatorProfile => {
-				annotation.creatorProfile = creatorProfile
-			})
-		}
-		console.log(result.rows)
+		// now fetch the profile of the annotation creator
+		// and append it to the annotation object to be used by the app (color of annotation etc.)
 
-		return result.rows
+		let fetchedProfiles = []
+		for (let {doc} of result.rows) {
+
+			fetchedProfiles.push(
+				localDB.get(doc.creator).then(profile => {
+					doc.creatorProfile = profile
+					return doc
+				}).catch(err => console.error(err))
+			)
+
+		}
+		return Promise.all(fetchedProfiles)
 	})
 	.catch(err => console.error('error fetching annotations', err))
 }
