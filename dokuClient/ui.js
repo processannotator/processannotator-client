@@ -13,7 +13,7 @@ var annotationElements = new Map()
 var imageContainer
 var annotationList
 var renderView
-var activeProfile = {_id: 'profile_1'}
+var activeProfile = undefined
 var activeProject = {_id: 'project_1'}
 var activeTopic = {_id: 'topic_1'}
 
@@ -55,7 +55,7 @@ function addTopic() {
 	})
 }
 
-function addAnnotation({description='', position={x: 0 , y: 0, z: 0}, polygon=[]}) {
+function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}) {
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
@@ -73,24 +73,67 @@ function addAnnotation({description='', position={x: 0 , y: 0, z: 0}, polygon=[]
 	return localDB.put(annotation)
 }
 
-function savePreferences() {
-	db.put({
-	  _id: '_local/lastSession',
-	  activeProfile: activeProfile,
-		activeProject: activeProject,
-		activeTopic: activeTopic
+function loadPreferences() {
+
+	return localDB.get('_local/lastSession').then(preferences => {
+		// now get the actual profile via ID from database
+		console.log(preferences)
+		return localDB.get(preferences.activeProfile_id).then(profile => {
+			activeProfile = profile
+		}).catch((err) => {
+			console.error(err)
+			activeProfile = undefined
+		})
+
+		activeProject = preferences.activeProject !== undefined ? preferences.activeProject : undefined
+		activeTopic = preferences.activeTopic !== undefined ? preferences.activeTopic : undefined
+		return preferences
+
+	}).catch((err) => {
+		if(err.message === 'missing'){
+			return localDB.put({
+				_id: '_local/lastSession',
+				activeProfile: '',
+				activeProject: '',
+				activeTopic: ''
+			})
+		}
 	})
+
 }
 
-function setNewProfile({username, email, color}) {
+function savePreferences() {
+	// _local/lastSession should exist because loadPreferences creates the doc
+	localDB.get('_local/lastSession')
+	.then(doc => {
+		doc.activeProfile_id = activeProfile._id
+			doc.activeProject = activeProject
+			doc.activeTopic = activeTopic
+			return localDB.put(doc)
+		}
+	).then(localDB.get('_local/lastSession'))
 
-	db.put({
-		_id: 'profile_' + 1,
+}
+
+function setNewProfile({prename, surname, email, color}) {
+
+	let newProfile = {
+		_id: 'profile_' + Math.random(),
 		type: 'userProfile',
-		username: username,
+		surname: surname,
+		prename: prename,
 		email: email,
 		color: color,
 		creationDate: new Date().toISOString()
+	}
+	// put the new profile into the database
+	localDB.put(newProfile).then(() => {
+
+		// then update the active profile to the new profile
+		activeProfile = newProfile
+
+		// and save preferences
+		return savePreferences()
 	})
 }
 
@@ -178,29 +221,25 @@ window.addEventListener('resize', handleResize)
 
 
 function init() {
-
-	var dialogScope = document.querySelector('#dialogTemplate');
-	console.log(dialogScope);
-	dialogScope.addEventListener('dom-change', function() {
-		dialogScope.$.dialog.open()
-
-
-		dialogScope.pageNumber = 0;
-		dialogScope._onPrevClick = function() {
-			console.log(this);
-			console.log(this.pageNumber)
-		  this.entryAnimation = 'fade-in-animation';
-		  this.exitAnimation = 'fade-out-animation';
-		  this.pageNumber = this.pageNumber === 0 ? 4 : (this.pageNumber - 1);
+	let profileOverlay = document.querySelector('#profileSetupOverlay')
+	loadPreferences().then((preferences) => {
+		// if after loading the preferences, no profile was found
+		if(activeProfile === undefined){
+			console.log('NO ACTIVE PROFILE!!')
+			profileOverlay.addEventListener('iron-overlay-closed', (e) => {
+				setNewProfile({
+					prename: profileOverlay.prename,
+					surname: profileOverlay.surname,
+					color: profileOverlay.color,
+					email: profileOverlay.email
+				})
+			})
+			profileOverlay.open()
+		} else {
+			console.log('active profile:', activeProfile)
 		}
-		dialogScope._onNextClick = function() {
-			console.log(this);
-			console.log(this.pageNumber)
-		  this.entryAnimation = 'fade-in-animation';
-		  this.exitAnimation = 'fade-out-animation';
-		  this.pageNumber = this.pageNumber === 4 ? 0 : (this.pageNumber + 1);
-		}
-	});
+	})
+
 
 	imageContainer = document.querySelector('.object-view')
 	annotationList = document.querySelector('.annotation-list')

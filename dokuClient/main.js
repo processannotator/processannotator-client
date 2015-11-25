@@ -38,7 +38,7 @@ app.on('ready', function() {
 	mainWindow.loadUrl('file://' + __dirname + '/index.html')
 
 	// Open the devtools.
-	mainWindow.openDevTools()
+	// mainWindow.openDevTools()
 
 	socket.on('connect', function() {
 		console.log('Connected to socket server')

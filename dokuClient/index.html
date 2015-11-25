@@ -21,7 +21,7 @@
 	<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
 	<link rel="import" href="bower_components/paper-button/paper-button.html">
 
-	<link rel="import" href="UIComponents/simple-overlay.html">
+	<link rel="import" href="UIComponents/profile-setup-overlay.html">
 	<link rel="import" href="UIComponents/tool-box.html">
 	<link rel="import" href="UIComponents/annotation-box.html">
 	<link rel="import" href="UIComponents/render-view.html">
@@ -36,47 +36,6 @@
 		background-color: rgb(98, 98, 98)
 	}
 
-	#dialog {
-		display:flex;
-		flex-direction: column;
-		width: 50%;
-		height: 50%;
-		background-color: rgb(89, 88, 91);
-		padding: 0;
-	}
-
-	neon-animatable {
-		display:flex;
-		flex-direction: column;
-	}
-
-	/*neon-animatable:nth-child(1) {
-	color: red;
-}
-neon-animatable:nth-child(2) {
-color: blue;
-}
-neon-animatable:nth-child(3) {
-color: orange;
-}
-neon-animatable:nth-child(4) {
-color: green;
-}
-neon-animatable:nth-child(5) {
-color: purple;
-}*/
-
-.foobar {
-	background-color: rgb(102, 98, 98);
-
-}
-
-paper-button.dialogButton {
-	margin: 0;
-	width: 100%;
-	background: rgb(30, 132, 189);
-}
-
 
 </style>
 
@@ -86,35 +45,9 @@ paper-button.dialogButton {
 <body>
 
 
+		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach=true>
+		</profile-setup-overlay>
 
-	<template is="dom-bind" id='dialogTemplate'>
-
-
-		<simple-overlay id="dialog" class="fullbleed" with-backdrop>
-			<neon-animated-pages class="flex" id="pages" selected="[[pageNumber]]" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
-				<neon-animatable class="foobar">
-					idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-				</neon-animatable>
-				<neon-animatable class="foobar">
-					This is some more text for your consideration to.
-					<textarea name="name" rows="8" cols="40"></textarea>
-
-				</neon-animatable>
-				<neon-animatable class="foobar">3</neon-animatable>
-
-				<neon-animatable class="foobar">4</neon-animatable>
-				<neon-animatable class="foobar">5</neon-animatable>
-			</neon-animated-pages>
-			<paper-toolbar>
-				<paper-button class="dialogButton" on-tap="_onNextClick">continue</paper-button>
-			</paper-toolbar>
-
-
-		</simple-overlay>
-
-
-	</template>
 
 
 
