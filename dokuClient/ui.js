@@ -79,15 +79,15 @@ function loadPreferences() {
 		// now get the actual profile via ID from database
 		console.log(preferences)
 		return localDB.get(preferences.activeProfile_id).then(profile => {
-			activeProfile = profile
+			// activeProfile = profile
+
 		}).catch((err) => {
 			console.error(err)
 			activeProfile = undefined
 		})
 
-		activeProject = preferences.activeProject !== undefined ? preferences.activeProject : undefined
-		activeTopic = preferences.activeTopic !== undefined ? preferences.activeTopic : undefined
-		return preferences
+		// activeProject = preferences.activeProject !== undefined ? preferences.activeProject : undefined
+		// activeTopic = preferences.activeTopic !== undefined ? preferences.activeTopic : undefined
 
 	}).catch((err) => {
 		if(err.message === 'missing'){
@@ -107,11 +107,11 @@ function savePreferences() {
 	localDB.get('_local/lastSession')
 	.then(doc => {
 		doc.activeProfile_id = activeProfile._id
-			doc.activeProject = activeProject
-			doc.activeTopic = activeTopic
-			return localDB.put(doc)
-		}
-	).then(localDB.get('_local/lastSession'))
+		doc.activeProject = activeProject
+		doc.activeTopic = activeTopic
+		return localDB.put(doc)
+	}
+).then(localDB.get('_local/lastSession'))
 
 }
 
@@ -222,7 +222,7 @@ window.addEventListener('resize', handleResize)
 
 function init() {
 	let profileOverlay = document.querySelector('#profileSetupOverlay')
-	loadPreferences().then((preferences) => {
+	loadPreferences().then(preferences => {
 		// if after loading the preferences, no profile was found
 		if(activeProfile === undefined){
 			console.log('NO ACTIVE PROFILE!!')
@@ -237,53 +237,54 @@ function init() {
 			profileOverlay.open()
 		} else {
 			console.log('active profile:', activeProfile)
-		}
-	})
-
-
-	imageContainer = document.querySelector('.object-view')
-	annotationList = document.querySelector('.annotation-list')
-	renderView = document.querySelector('render-view')
-
-	// perhaps also on change localDB to rebuildAnnotation elements?
-	sync = PouchDB.sync(localDB, remoteDB, {
-		live: true,
-		retry: true
-	}).on('change', function(info) {
-		console.log('sync change!!')
-		console.log('TODO: now sync all DOM elements...')
-		rebuildAnnotationElements()
-
-
-	}).on('paused', () => {
-		console.log('sync pause')
-
-		// replication paused (e.g. user went offline)
-	}).on('active', () => {
-		console.log('sync active')
-
-		// replicate resumed (e.g. user went back online)
-	}).on('denied', info => {
-		console.log('sync denied')
-
-		// a document failed to replicate, e.g. due to permissions
-	}).on('complete', info => {
-		console.log('sync complete')
-		// handle complete
-	}).on('error', err => {
-		console.log('sync error')
-
-		// handle error
-	})
-
-	localDB.info().then((result) => {
-		console.log('localDB info:', result)
-
-		// update the renderView with new annotation
-		renderView.addEventListener('initialized', () => {
 			rebuildAnnotationElements()
+		}
+	}).then(() => {
+
+		imageContainer = document.querySelector('.object-view')
+		annotationList = document.querySelector('.annotation-list')
+		renderView = document.querySelector('render-view')
+
+		// perhaps also on change localDB to rebuildAnnotation elements?
+		sync = PouchDB.sync(localDB, remoteDB, {
+			live: true,
+			retry: true
+		}).on('change', function(info) {
+			console.log('sync change!!')
+			console.log('TODO: now sync all DOM elements...')
+			rebuildAnnotationElements()
+
+
+		}).on('paused', () => {
+			console.log('sync pause')
+
+			// replication paused (e.g. user went offline)
+		}).on('active', () => {
+			console.log('sync active')
+
+			// replicate resumed (e.g. user went back online)
+		}).on('denied', info => {
+			console.log('sync denied')
+
+			// a document failed to replicate, e.g. due to permissions
+		}).on('complete', info => {
+			console.log('sync complete')
+			// handle complete
+		}).on('error', err => {
+			console.log('sync error')
+
+			// handle error
 		})
 
+		localDB.info().then((result) => {
+			console.log('localDB info:', result)
+
+			// update the renderView with new annotation
+			renderView.addEventListener('initialized', () => {
+				rebuildAnnotationElements()
+			})
+
+		})
 	})
 
 
