@@ -147,7 +147,7 @@
 			},
 			attached: function() {
 				console.log(this.annotation)
-
+				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color
 			},
 			handleTextChange: function(event, detail, sender) {
 				console.log('timestamp', this.timestamp)
