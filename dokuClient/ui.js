@@ -78,8 +78,9 @@ function loadPreferences() {
 	return localDB.get('_local/lastSession').then(preferences => {
 		// now get the actual profile via ID from database
 		console.log(preferences)
+		console.log('preferences.activeProfile_id', preferences.activeProfile_id)
 		return localDB.get(preferences.activeProfile_id).then(profile => {
-			// activeProfile = profile
+			activeProfile = profile
 
 		}).catch((err) => {
 			console.error(err)
@@ -175,7 +176,16 @@ function fetchAnnotations() {
 		startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
 		endkey: 'annotation\uffff' /* and keeps the cod more readable  */
 	})
-	.then(result => result.rows)
+	.then(result => {
+		for (let annotation of result.rows) {
+			localDB.get(annotation.creator).then(creatorProfile => {
+				annotation.creatorProfile = creatorProfile
+			})
+		}
+		console.log(result.rows)
+
+		return result.rows
+	})
 	.catch(err => console.error('error fetching annotations', err))
 }
 
