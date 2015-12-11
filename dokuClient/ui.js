@@ -3,9 +3,60 @@
 
 var ipc = require('ipc')
 var PouchDB = require('pouchdb')
+PouchDB.plugin(require('pouchdb-authentication'))
 var localDB = new PouchDB('collabdb')
 var remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 var sync
+
+
+
+
+
+
+
+
+var db = new PouchDB('http://127.0.0.1:5984/db', {skipSetup: true})
+    var db_new
+    console.log('first trying to signup user, without login. This should fail with standar user')
+    db.login('tom', '***REMOVED***')
+    .then( (response, err) => {
+      if(response.ok) {
+        console.log(response.name, 'succesfully logged in.')
+        console.log('now trying to register new DB')
+        db_new = new PouchDB('http://127.0.0.1:5984/meganew')
+        return db_new
+      }
+    }).catch((err) => {
+			console.log(err)
+      if (err.name === 'unauthorized') {
+        console.error('login denied.')
+        return Promise.reject()
+      } else {
+        console.error('unknown problem with authentication.')
+      }
+      return err
+    })
+    .then((res) => {
+      var test_doc = {
+        _id: 'somerandomid' + Math.random(),
+        title: 'test'
+      }
+      return db_new.put(test_doc)
+    })
+    .then((res) => {
+      console.log(res)
+    }).catch((err) => {
+      console.error(err.message, err.reason)
+      console.info('the above error is normal and wanted for non-admin users.')
+    })
+
+
+
+
+
+
+
+
 
 var annotationElements = new Map()
 
