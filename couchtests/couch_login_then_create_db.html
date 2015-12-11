@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <script src="bower_components/pouchdb/dist/pouchdb.min.js" charset="utf-8"></script>
+    <script src="bower_components/pouchdb-authentication/dist/pouchdb.authentication.min.js" charset="utf-8"></script>
+
+    <script type="text/javascript">
+    // init pouchdb
+
+
+    var db = new PouchDB('http://localhost:5984/db', {skipSetup: true})
+    var db_new
+    console.log('first trying to signup user, without login. This should fail with standar user')
+    db.login('tom', 'T0gm4rc')
+    .then( (response, err) => {
+      if(response.ok) {
+        console.log(response.name, 'succesfully logged in.')
+        console.log('now trying to register new DB')
+        db_new = new PouchDB('http://localhost:5984/meganew')
+        return db_new
+      }
+    }).catch((err) => {
+      if (err.name === 'unauthorized') {
+        console.error('login denied.')
+        return Promise.reject()
+      } else {
+        console.error('unknown problem with authentication.')
+      }
+      return err
+    })
+    .then((res) => {
+      var test_doc = {
+        _id: 'somerandomid' + Math.random(),
+        title: 'test'
+      }
+      return db_new.put(test_doc)
+    })
+    .then((res) => {
+      console.log(res)
+    }).catch((err) => {
+      console.error(err.message, err.reason)
+      console.info('the above error is normal and wanted for non-admin users.')
+    })
+
+    </script>
+
+  </body>
+</html>
