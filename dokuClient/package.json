@@ -10,7 +10,7 @@
     "socket.io-client": "^1.3.7"
   },
   "scripts": {
-    "rebuild-leveldb": "cd node_modules/leveldown && HOME=~/.electron-gyp node-gyp rebuild --target=0.33.9 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
+    "install": "bower install && cd node_modules/leveldown && HOME=~/.electron-gyp node-gyp rebuild --target=0.35.4 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
     "start": "lessc ui.less ui.css; ./node_modules/.bin/electron .",
     "package": "./node_modules/.bin/electron-packager ./ DocumentDesktopClient --platform=darwin --arch=x64 --version 0.33.9"
   },
