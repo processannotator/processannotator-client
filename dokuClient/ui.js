@@ -16,47 +16,6 @@ var sync
 
 
 var db = new PouchDB('http://127.0.0.1:5984/db', {skipSetup: true})
-    var db_new
-    console.log('first trying to signup user, without login. This should fail with standar user')
-    db.login('tom', 'T0gm4rc')
-    .then( (response, err) => {
-      if(response.ok) {
-        console.log(response.name, 'succesfully logged in.')
-        console.log('now trying to register new DB')
-        db_new = new PouchDB('http://127.0.0.1:5984/meganew')
-        return db_new
-      }
-    }).catch((err) => {
-			console.log(err)
-      if (err.name === 'unauthorized') {
-        console.error('login denied.')
-        return Promise.reject()
-      } else {
-        console.error('unknown problem with authentication.')
-      }
-      return err
-    })
-    .then((res) => {
-      var test_doc = {
-        _id: 'somerandomid' + Math.random(),
-        title: 'test'
-      }
-      return db_new.put(test_doc)
-    })
-    .then((res) => {
-      console.log(res)
-    }).catch((err) => {
-      console.error(err.message, err.reason)
-      console.info('the above error is normal and wanted for non-admin users.')
-    })
-
-
-
-
-
-
-
-
 
 var annotationElements = new Map()
 
@@ -119,33 +78,59 @@ function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}
 		position: position,
 		polygon: polygon
 	}
+  console.log('double check, is this the annotation?:')
+  console.log(annotation)
+  console.log('creator', activeProfile)
 
 	console.log('put annotation into DB')
 	return localDB.put(annotation)
 }
 
+function login(user, password) {
+  // IDEA: maybe save cookie or do notifactions.
+  return remoteDB.login(user, password)
+}
+
 function loadPreferences() {
 
-	return localDB.get('_local/lastSession').then(preferences => {
+	return localDB.get('_local/lastSession').then((preferences) => {
 		// now get the actual profile via ID from database
 		console.log(preferences)
-		console.log('preferences.activeProfile_id', preferences.activeProfile_id)
-		return localDB.get(preferences.activeProfile_id).then(profile => {
-			activeProfile = profile
+		console.log('preferences.activeProfile', preferences.activeProfile)
+    console.log('trying to login now')
 
+    if(!preferences.activeProfile || !preferences.activeProfile._id || preferences.activeProfile._id === '') {
+      throw new Error({message: 'missing'})
+    }
+
+    // try to login to profile thats saved in preferences info from remote server
+		return login(preferences.activeProfile._id, preferences.activeProfile.password)
+    .then(response => {
+      console.log('after succesfull login, get new user info')
+      console.log(response)
+      return remoteDB.getUser(preferences.activeProfile._id)
+    })
+    .then((profile) => {
+      profile._id = activeProfile._id // don't use the verbose couchdb:etc username
+      console.log('got profile:', profile)
+      activeProfile = profile
+      console.log('login from preferences successful')
+      return preferences
 		}).catch((err) => {
-			console.error(err)
-			activeProfile = undefined
+			console.error('authentication problem. Using offline info for now.', err)
+			activeProfile = preferences.activeProfile
 		})
 
 		// activeProject = preferences.activeProject !== undefined ? preferences.activeProject : undefined
 		// activeTopic = preferences.activeTopic !== undefined ? preferences.activeTopic : undefined
 
 	}).catch((err) => {
+    console.log('some error loading the preferences...');
 		if(err.message === 'missing'){
+      console.log('no preferences yet, creating template.')
 			return localDB.put({
 				_id: '_local/lastSession',
-				activeProfile: '',
+				activeProfile: undefined,
 				activeProject: '',
 				activeTopic: ''
 			})
@@ -156,37 +141,48 @@ function loadPreferences() {
 
 function savePreferences() {
 	// _local/lastSession should exist because loadPreferences creates the doc
-	localDB.get('_local/lastSession')
-	.then(doc => {
-		doc.activeProfile_id = activeProfile._id
+	return localDB.get('_local/lastSession').then(doc => {
+		doc.activeProfile = activeProfile
 		doc.activeProject = activeProject
 		doc.activeTopic = activeTopic
 		return localDB.put(doc)
-	}
-).then(localDB.get('_local/lastSession'))
+	})
+  .then(localDB.get('_local/lastSession'))
 
 }
 
 function setNewProfile({prename, surname, email, color}) {
 
-	let newProfile = {
-		_id: 'profile_' + Math.random(),
-		type: 'userProfile',
+	let metadata = {
 		surname: surname,
 		prename: prename,
 		email: email,
 		color: color,
 		creationDate: new Date().toISOString()
 	}
+
+  let id = metadata.prename + metadata.surname + Math.random()
+  // TODO: this is only a testing password for all users
+  let password = 'thisisasupersecrettestingpassworduntilthebeta'
+
 	// put the new profile into the database
-	localDB.put(newProfile).then(() => {
+	return remoteDB.signup( id, password, {metadata} )
+  .then( () => remoteDB.login(id, password) )
+  .then( response => {
+    console.log('succesfully created user and logged in.')
+    console.log(response)
+    return remoteDB.getSession()
+  })
+  .then((response) => {
+    console.log(response)
 
-		// then update the active profile to the new profile
-		activeProfile = newProfile
+    // then update the active profile to the new profile
+    activeProfile = {_id: id, password, metadata: response}
 
-		// and save preferences
-		return savePreferences()
-	})
+    // and save preferences
+    return savePreferences()
+  })
+  .catch(err => console.log(err))
 }
 
 
@@ -230,12 +226,16 @@ function fetchAnnotations() {
 
 		let fetchedProfiles = []
 		for (let {doc} of result.rows) {
-
+      console.log(doc)
+      console.log('trying to get user', doc.creator)
 			fetchedProfiles.push(
-				localDB.get(doc.creator).then(profile => {
+				remoteDB.getUser(doc.creator).then(profile => {
+          console.log('noice, we got a profile:', profile)
 					doc.creatorProfile = profile
 					return doc
-				}).catch(err => console.error(err))
+				}).catch(err => {
+          console.error('couldnt read user info from DB. FIXME: save local copy of used user infos', err)
+        })
 			)
 
 		}
