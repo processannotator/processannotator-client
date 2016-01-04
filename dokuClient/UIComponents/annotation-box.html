@@ -104,7 +104,9 @@
 				background-color: #696565;
 			}
 
-			.annotationText {}
+			.annotationText:focus {
+				outline: none;
+			}
 
 
 		</style>
@@ -146,33 +148,24 @@
 				annotation: Object
 			},
 			attached: function() {
-				console.log(this.annotation)
+				// console.log(this.annotation)
 				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color
 			},
 			keydown: function (event) {
-				if (event.defaultPrevented) {
+				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
-				}
 
-				console.log(event)
 				if(event.keyIdentifier === 'Enter'){
 					event.preventDefault()
 					this.handleTextChange(event)
 				}
 			},
 			handleTextChange: function(event, detail, sender) {
-				console.log('timestamp', this.timestamp)
-				console.log('textchange!!');
-
 				// when text changed on element, update its element
-				// hmm, probably wait until typing stopped
-				console.log(this.annotation)
-				console.log(event)
 				localDB.get(this.annotation._id).then(doc => {
 					doc.description = event.srcElement.innerHTML
 					localDB.put(doc)
 				})
-
 			},
 			computeNameLetters: function (prename, surname) {
 				return prename[0] + surname[0]
