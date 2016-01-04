@@ -122,7 +122,7 @@
 			<div id="main">
 				<span>[[annotation.creationDate]]</span>
 				<br>
-				<div contenteditable="true" class="annotationText" on-blur="handleTextChange">{{annotation.description}}</div>
+				<div contenteditable="true" class="annotationText" on-blur="handleTextChange" on-keydown="keydown">{{annotation.description}}</div>
 			</div>
 
 			<div id="tags_and_tasks">
@@ -148,6 +148,17 @@
 			attached: function() {
 				console.log(this.annotation)
 				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color
+			},
+			keydown: function (event) {
+				if (event.defaultPrevented) {
+					return; // Should do nothing if the key event was already consumed.
+				}
+
+				console.log(event)
+				if(event.keyIdentifier === 'Enter'){
+					event.preventDefault()
+					this.handleTextChange(event)
+				}
 			},
 			handleTextChange: function(event, detail, sender) {
 				console.log('timestamp', this.timestamp)

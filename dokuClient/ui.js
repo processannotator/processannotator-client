@@ -226,11 +226,8 @@ function fetchAnnotations() {
 
 		let fetchedProfiles = []
 		for (let {doc} of result.rows) {
-      console.log(doc)
-      console.log('trying to get user', doc.creator)
 			fetchedProfiles.push(
 				remoteDB.getUser(doc.creator).then(profile => {
-          console.log('noice, we got a profile:', profile)
 					doc.creatorProfile = profile
 					return doc
 				}).catch(err => {
@@ -264,7 +261,6 @@ function rebuildAnnotationElements() {
 		// then add annotations to renderview and let it render them in threedimensional space
 		renderView.annotations = annotations
 
-
 	})
 }
 
@@ -288,7 +284,7 @@ window.addEventListener('resize', handleResize)
 function init() {
 	let profileOverlay = document.querySelector('#profileSetupOverlay')
 	loadPreferences().then(preferences => {
-		// if after loading the preferences, no profile was found
+		// after loading the preferences, if no profile was found:
 		if(activeProfile === undefined){
 			console.log('NO ACTIVE PROFILE!!')
 			profileOverlay.addEventListener('iron-overlay-closed', (e) => {
