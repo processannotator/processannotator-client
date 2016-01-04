@@ -281,10 +281,10 @@
 			if (event.defaultPrevented) {
 				return; // Should do nothing if the key event was already consumed.
 			}
+
 			switch (e.keyIdentifier) {
 				case 'Enter':
-					console.log('enter??')
-					if(this.modus.tool === 'polygon'){
+					if(this.modus.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						// TODO: finish shape and create annotation
 						console.log('pressed enter in polygon mode')
 						addAnnotation({

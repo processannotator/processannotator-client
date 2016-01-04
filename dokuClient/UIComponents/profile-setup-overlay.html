@@ -19,8 +19,7 @@
 
   <template>
     <style include="overlay-style"></style>
-    <style>
-    </style>
+
     <header>
       Welcome to Bl'al
     </header>
@@ -29,7 +28,7 @@
 
 
       <neon-animatable>
-        <span class="instruction">Hello <span id="namePreview">{{prename}}</span>! Set up your profile:</span>
+        <span class="instruction">Hello <span id="namePreview">[[prename]]</span>! Set up your profile:</span>
         <br>
         <input class="textInput" is="iron-input" placeholder="Max" type="text" autocomplete="family-name" bind-value="{{prename}}">
         <input class="textInput" is="iron-input" placeholder="Mustermann" type="text" autocomplete="given-name" bind-value="{{surname}}">
@@ -58,11 +57,6 @@
   Polymer({
     is: "profile-setup-overlay",
     properties: {
-      result: {
-        prename: String,
-        surname: String,
-        email:   String
-      },
       pageNumber: Number,
       buttonText: {
         value: 'Continue',
@@ -92,8 +86,6 @@
       this.$.colorInput.style.backgroundColor = this.color
     },
     onPrevClick: function() {
-      console.log(this);
-      console.log(this.pageNumber)
       this.pageEntryAnimation = 'fade-in-animation';
       this.pageExitAnimation = 'fade-out-animation';
 
@@ -101,17 +93,19 @@
       if(this.pageNumber === 3) this.buttonText = 'go'
     },
     onNextClick: function() {
-      console.log(this);
-      console.log(this.pageNumber)
-      this.pageEntryAnimation = 'fade-in-animation';
-      this.pageExitAnimation = 'fade-out-animation';
+      this.pageEntryAnimation = 'fade-in-animation'
+      this.pageExitAnimation = 'fade-out-animation'
+
       if(this.pageNumber === 2) {
+        // create finish animation
         this.animationConfig = {
           name: 'scale-down-animation',
           node: this
         }
+
         this.onAnimationFinish = this.close
         this.playAnimation()
+
       } else {
         this.pageNumber++
         this.buttonText = (this.pageNumber === 2) ? 'Go!' : 'Continue'
@@ -120,7 +114,6 @@
 
     },
     onOpen: function () {
-      console.log('foo');
       this.center()
       this.playAnimation()
     },
