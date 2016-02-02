@@ -11,8 +11,6 @@
   "scripts": {
     "install": "bower install",
     "start": "electron .",
-    "postinstall2": "cd node_modules/pouchdb/node_modules/leveldown && HOME=~/.electron-gyp node-gyp rebuild --target=0.35.6 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
-    "build": "lessc ui.less ui.css",
     "package": "./node_modules/.bin/electron-packager ./ DocumentDesktopClient --platform=darwin --arch=x64 --version 0.33.9"
   },
   "devDependencies": {
