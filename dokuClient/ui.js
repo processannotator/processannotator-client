@@ -7,6 +7,7 @@ var localDB = new PouchDB('collabdb')
 var remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 var sync
 var db = new PouchDB('http://127.0.0.1:5984/db', {skipSetup: true})
+var ws //websocket connection
 
 var annotationElements = new Map()
 
@@ -85,7 +86,8 @@ function login(user, password) {
 
 function loadPreferences() {
 
-	return localDB.get('_local/lastSession').then((preferences) => {
+	return localDB.get('_local/lastSession')
+	.then((preferences) => {
 		// now get the actual profile via ID from database
 		console.log(preferences)
 		console.log('preferences.activeProfile', preferences.activeProfile)
@@ -96,21 +98,22 @@ function loadPreferences() {
     }
 
     // try to login to profile thats saved in preferences info from remote server
+    // to get up-to-date profile info and save it later
 		return login(preferences.activeProfile._id, preferences.activeProfile.password)
     .then(response => {
+			console.log(response)
       console.log('after succesfull login, get new user info')
-      console.log(response)
       return remoteDB.getUser(preferences.activeProfile._id)
     })
-    .then((profile) => {
+    .then(profile => {
       profile._id = activeProfile._id // don't use the verbose couchdb:etc username
       console.log('got profile:', profile)
-      activeProfile = profile
-      console.log('login from preferences successful')
+			console.log('login via preferences successful')
+      preferences.activeProfile = profile
       return preferences
 		}).catch((err) => {
-			console.error('authentication problem. Using offline info for now.', err)
-			activeProfile = preferences.activeProfile
+			console.error('authentication (or perhaps network) problem. Using offline info for now.', err)
+			return preferences
 		})
 
 		// activeProject = preferences.activeProject !== undefined ? preferences.activeProject : undefined
@@ -118,6 +121,7 @@ function loadPreferences() {
 
 	}).catch((err) => {
     console.log('some error loading the preferences...');
+		console.log(err);
 		if(err.message === 'missing'){
       console.log('no preferences yet, creating template.')
 			return localDB.put({
@@ -274,8 +278,20 @@ window.addEventListener('resize', handleResize)
 
 
 function websockettest() {
-	var exampleSocket = new WebSocket("ws:/localhost:123456");
-	exampleSocket.send("Here's some text that the server is urgently awaiting!");
+
+}
+
+function initWebsockets() {
+	return new Promise((resolve, reject) => {
+
+		var exampleSocket = new WebSocket('ws:/localhost:7000', ['protocolbla'])
+
+		exampleSocket.onopen = function (event) {
+			exampleSocket.send("Here's some text that the server is urgently awaiting!")
+			resolve(exampleSocket)
+		}
+	})
+
 
 }
 
@@ -283,18 +299,17 @@ function websockettest() {
 function init() {
 
 
-	websockettest()
+	initWebsockets()
+	.then(() => console.log('websocket succesfully connected'))
+	.catch(err => console.error(err))
 
-
-
-
-
-	let profileOverlay = document.querySelector('#profileSetupOverlay')
-	loadPreferences().then(preferences => {
+	loadPreferences()
+	.then(preferences => {
 		// after loading the preferences, if no profile was found:
-		if(activeProfile === undefined){
+		if(preferences.activeProfile === undefined){
 			console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
 
+			let profileOverlay = document.querySelector('#profileSetupOverlay')
 			profileOverlay.addEventListener('iron-overlay-closed', (e) => {
 				setNewProfile({
 					prename: profileOverlay.prename,
@@ -305,11 +320,14 @@ function init() {
 			})
 
 			profileOverlay.open()
-		} else if(activeProfile !== undefined) {
+
+		} else if(preferences.activeProfile !== undefined) {
+			activeProfile = preferences.activeProfile
 			console.log('active profile:', activeProfile)
 			rebuildAnnotationElements()
 		}
 		return activeProfile
+
 	}).then(() => {
 
 		imageContainer = document.querySelector('.object-view')
@@ -357,8 +375,6 @@ function init() {
 
 		})
 	})
-
-
 
 }
 
