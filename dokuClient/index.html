@@ -45,14 +45,17 @@
 
 <body>
 
+<template is="dom-bind" id="app">
 
-		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach=true>
+
+		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
 		</profile-setup-overlay>
 
 
 
 
 
+		<!-- TODO: use paper-header-panel for toggling and shit -->
 	<div class="top-container">
 
 		<div class="main-container">
@@ -66,14 +69,15 @@
 			</div>
 
 			<div class="object-view">
+
 				<render-view> </render-view>
+
 				<iron-selector id="tool-box" attr-for-selected="name" selected="polygon">
 					<iron-icon class="tool-box-icon" name="polygon" src="images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
 					<iron-icon class="tool-box-icon" name="compare" src="images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
 					<iron-icon class="tool-box-icon" name="freehand" src="images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
 					<iron-icon class="tool-box-icon" name="text" src="images/IconTool_BLACK/IconTools_Text_black.svg"></iron-icon>
 				</iron-selector>
-
 			</div>
 
 
@@ -114,15 +118,11 @@
 		<!-- <timeline></timeline> -->
 	</div>
 
+</template>
 
 
-
-
-
-
-	<script src="node_modules/pouchdb/dist/pouchdb.min.js" charset="utf-8"></script>
-	<script src="ui.js" charset="utf-8"></script>
-
+<!-- Loading the main script in the end -->
+<script src="ui.js" charset="utf-8"></script>
 </body>
 
 </html>
