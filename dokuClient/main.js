@@ -3,7 +3,7 @@
 require('electron-compile').init() // to compile to ES6/harmony
 
 var app = require('app') // Module to control application life.
-var ipc = require('ipc') // module for interprocess communication (renderer <-> backend)
+var ipc = require('electron').ipcMain // module for interprocess communication (renderer <-> backend)
 var BrowserWindow = require('browser-window') // Module to create native browser window.
 // var socket = require('socket.io-client')('http://localhost:3000/DokuClients')
 
@@ -35,7 +35,7 @@ app.on('ready', function() {
 	})
 
 	// load the index.html of the app.
-	mainWindow.loadUrl('file://' + __dirname + '/index.html')
+	mainWindow.loadURL('file://' + __dirname + '/index.html')
 
 	// Open the devtools.
 	// mainWindow.openDevTools()

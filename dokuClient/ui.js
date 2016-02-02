@@ -6,8 +6,6 @@ PouchDB.plugin(require('pouchdb-authentication'))
 var localDB = new PouchDB('collabdb')
 var remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 var sync
-
-
 var db = new PouchDB('http://127.0.0.1:5984/db', {skipSetup: true})
 
 var annotationElements = new Map()
@@ -19,6 +17,7 @@ var renderView
 var activeProfile
 var activeProject = {_id: 'project_1'}
 var activeTopic = {_id: 'topic_1'}
+var app = document.querySelector('#app')
 
 function addProject(file) {
 	// FIXME: this ain't working, server has to ceate a DB first
@@ -259,7 +258,8 @@ function rebuildAnnotationElements() {
 
 
 var alertOnlineStatus = function() {
-	// window.alert(navigator.onLine ? 'online' : 'offline')
+	if(navigator.onLine === 'offline')
+		window.alert('You are not connected to the internet.')
 }
 
 function handleResize(event) {
@@ -273,13 +273,28 @@ window.addEventListener('offline', alertOnlineStatus)
 window.addEventListener('resize', handleResize)
 
 
+function websockettest() {
+	var exampleSocket = new WebSocket("ws:/localhost:123456");
+	exampleSocket.send("Here's some text that the server is urgently awaiting!");
+
+}
+
 
 function init() {
+
+
+	websockettest()
+
+
+
+
+
 	let profileOverlay = document.querySelector('#profileSetupOverlay')
 	loadPreferences().then(preferences => {
 		// after loading the preferences, if no profile was found:
 		if(activeProfile === undefined){
-			console.log('NO ACTIVE PROFILE!!')
+			console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
+
 			profileOverlay.addEventListener('iron-overlay-closed', (e) => {
 				setNewProfile({
 					prename: profileOverlay.prename,
@@ -288,11 +303,13 @@ function init() {
 					email: profileOverlay.email
 				})
 			})
+
 			profileOverlay.open()
-		} else {
+		} else if(activeProfile !== undefined) {
 			console.log('active profile:', activeProfile)
 			rebuildAnnotationElements()
 		}
+		return activeProfile
 	}).then(() => {
 
 		imageContainer = document.querySelector('.object-view')
@@ -345,8 +362,10 @@ function init() {
 
 }
 
-
-init()
+app.addEventListener('dom-change', () => {
+	console.log('app is ready.')
+	init()
+})
 
 
 
