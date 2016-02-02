@@ -2,17 +2,10 @@
 'use strict' /*eslint global-strict:0*/
 
 var ipc = require('ipc')
-var PouchDB = require('pouchdb')
 PouchDB.plugin(require('pouchdb-authentication'))
 var localDB = new PouchDB('collabdb')
 var remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 var sync
-
-
-
-
-
-
 
 
 var db = new PouchDB('http://127.0.0.1:5984/db', {skipSetup: true})
@@ -23,11 +16,12 @@ var annotationElements = new Map()
 var imageContainer
 var annotationList
 var renderView
-var activeProfile = undefined
+var activeProfile
 var activeProject = {_id: 'project_1'}
 var activeTopic = {_id: 'topic_1'}
 
 function addProject(file) {
+	// FIXME: this ain't working, server has to ceate a DB first
 	// first create DB entry for new project
 	// then create a new topic from file/.. which belongs to the newly created project
 	return localDB.put({
@@ -81,7 +75,6 @@ function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}
   console.log('double check, is this the annotation?:')
   console.log(annotation)
   console.log('creator', activeProfile)
-
 	console.log('put annotation into DB')
 	return localDB.put(annotation)
 }
