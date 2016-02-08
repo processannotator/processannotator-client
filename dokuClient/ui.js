@@ -3,10 +3,8 @@
 
 var ipc = require('ipc')
 PouchDB.plugin(require('pouchdb-authentication'))
-var localDB = new PouchDB('collabdb')
-var remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
+var localDB, localProjectDB, remoteDB, remoteProjectDB
 var sync
-var db = new PouchDB('http://127.0.0.1:5984/db', {skipSetup: true})
 var ws //websocket connection
 require('./test').test()
 
@@ -18,32 +16,47 @@ var imageContainer
 var annotationList
 var renderView
 var activeProfile
-app.activeProject = {_id: 'project_1'}
+app.activeProject = 'collabdb'
 app.activeTopic = {_id: 'topic_1'}
 
+function switchProjectDB(dbname) {
+	console.log('switch to projectDB with name', dbname)
+	// TODO: check if dname is a valid database name for a project
+	localProjectDB = new PouchDB(dbname)
+	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + dbname)
 
-function addProject(file) {
-	// FIXME: this ain't working, server has to ceate a DB first
-	// first create DB entry for new project
-	// then create a new topic from file/.. which belongs to the newly created project
-	return localDB.put({
-		_id: 'project_' + 1,
-		type: 'project',
-		creator: activeProfile._id,
-		creationDate: new Date().toISOString(),
-		title: 'a project title',
-		description: 'a description to a project'
+	// perhaps also on change localDB to rebuildAnnotation elements?
+	sync = PouchDB.sync(localDB, remoteDB, {
+		live: true,
+		retry: true
+	}).on('change', function(info) {
+		console.log('sync change!!')
+		console.log('TODO: now sync all DOM elements...')
+		rebuildAnnotationElements()
+
+
+	}).on('paused', () => {
+		console.log('sync pause')
+
+		// replication paused (e.g. user went offline)
+	}).on('active', () => {
+		console.log('sync active')
+
+		// replicate resumed (e.g. user went back online)
+	}).on('denied', info => {
+		console.log('sync denied')
+
+		// a document failed to replicate, e.g. due to permissions
+	}).on('complete', info => {
+		console.log('sync complete')
+		// handle complete
+	}).on('error', err => {
+		console.log('sync error')
+
+		// handle error
 	})
-	.then(localDB.get('project' + 1))
-	.then((newProject) => {
-		app.activeProject = newProject
-		return addNewTopic(file)
-	})
-	// finally return the new projects object
-	.then(() => app.activeProject)
-	.catch((err) => {
-		console.error('error creating new project in DB', err)
-	})
+
+	rebuildAnnotationElements()
 
 
 }
@@ -94,14 +107,14 @@ function loadPreferences() {
 		if(preferences !== undefined) {
 			console.log('setting preferences')
 			app.preferences = preferences
+			app.activeProfile = preferences.activeProfile
+			app.activeProject = preferences.activeProject
+			app.activeTopic = preferences.activeTopic
 			console.log(this.preferences)
 		}
 		if (preferences === undefined) {
 			throw	new Error('preferences missing, this error shouldnt happen at all!')
 			// because if preferences is undefined, it should have thrown an error before!
-		} else if (preferences.activeProfile === '') {
-			console.log('activeProfile missing, should open a dialog to create a new one!')
-			throw	new Error('activeProfile missing')
 		}
 
 		// try to login to profile thats saved in preferences info from remote server
@@ -205,6 +218,44 @@ function setNewProfile({prename, surname, email, color}) {
 	.catch(err => console.log(err))
 }
 
+function setNewProject({projectname, file, emails}) {
+
+	// FIXME: allow fallback for offline db creation etc.
+
+	return new Promise((resolve, reject) => {
+
+		console.log(projectname, file, emails)
+
+		// assumes current activeProfile as the creator
+		// we will create a new DB for the project
+		// however, as we can't just do that from here for the server, we are telling
+		// the server via websockets to create one
+
+		ws.send(JSON.stringify(
+			{
+				type: 'createDB',
+				details: {projectname, file, emails}
+			}
+		))
+
+		app.addEventListener(projectname + '-created', (e) => {
+			console.log(e)
+			if(e.details.successful) {
+				resolve(e.details)
+			} else {
+				reject(e.details)
+			}
+		})
+
+	})
+
+}
+
+function switchProject(projectname) {
+	// switch the active database
+	return switchProjectDB(projectname)
+}
+
 
 function removeAnnotationElements(id) {
 	// get DOM objects belonging to id
@@ -234,7 +285,7 @@ function addElementsForAnnotation(annotation){
 
 function fetchAnnotations() {
 
-	return localDB.allDocs({
+	return localProjectDB.allDocs({
 		include_docs: true,
 		attachments: true,
 		startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
@@ -246,7 +297,6 @@ function fetchAnnotations() {
 
 		let fetchedProfiles = []
 		for (let {doc} of result.rows) {
-			console.log('testesttest')
 			console.log(doc.creator)
 			fetchedProfiles.push(
 				remoteDB.getUser(doc.creator).then(profile => {
@@ -308,32 +358,76 @@ function websockettest() {
 }
 
 function initWebsockets() {
+
 	return new Promise((resolve, reject) => {
 
-		var exampleSocket = new WebSocket('ws:/localhost:7000', ['protocolbla'])
+		ws = new WebSocket('ws:/localhost:7000', ['protocolbla'])
 
-		exampleSocket.onopen = function (event) {
-			exampleSocket.send("Here's some text that the server is urgently awaiting!")
-			resolve(exampleSocket)
+		ws.onopen = function (event) {
+			resolve(ws)
 		}
+
+		ws.onmessage = function (event) {
+			let msg = JSON.parse(event.data)
+			switch (msg.type) {
+				case 'createDB':
+					console.log(msg)
+					let e = new Event(msg.dbname + '-created', {'detail': msg})
+					app.dispatch(e)
+					break;
+				default:
+				console.log('unknown websockets event:', msg)
+			}
+		}
+
+
+
 	})
 
 
 }
 
+function createFirstProject() {
+	console.log('click')
+	let projectOverlay = document.querySelector('#projectSetupOverlay')
+	projectOverlay.addEventListener('iron-overlay-closed', (e) => {
+		console.log('overlay closed')
+		console.log(projectOverlay.projectname, projectOverlay.file)
+
+		setNewProject({
+			projectname: projectOverlay.projectname,
+			topicname: projectOverlay.topicname,
+			file: projectOverlay.file,
+			emails: ['bla']
+		})
+		// .then((result) => {
+		// 	console.log('created project??')
+		// 	console.log(result)
+		// 	return switchProject(projectOverlay.topicname)
+		// })
+	})
+	projectOverlay.open()
+}
+
 
 function init() {
 
+	imageContainer = document.querySelector('.object-view')
+	annotationList = document.querySelector('.annotation-list')
+	renderView = document.querySelector('render-view')
+
+	localDB = new PouchDB('collabdb')
+	remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 
 	initWebsockets()
 	.then(() => console.log('websocket succesfully connected'))
 	.catch(err => console.error(err))
 
 	loadPreferences()
-	.then(preferences => {
+	.then(() => {
 
 		return new Promise((resolve, reject) => {
-			if(preferences.activeProfile === ''){
+			if(app.activeProfile === ''){
 				console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
 
 				let profileOverlay = document.querySelector('#profileSetupOverlay')
@@ -346,70 +440,31 @@ function init() {
 						email: profileOverlay.email
 					}).then((result) => resolve(activeProfile))
 				})
-
 				profileOverlay.open()
 
-
-			} else if(preferences.activeProfile !== undefined) {
-				// TODO: fixme: activeProfile assignment might be redundant here? check it!
-				app.activeProfile = preferences.activeProfile
-				console.log('active profile:', activeProfile)
+			} else if(app.activeProfile !== undefined) {
 				resolve(app.activeProfile)
-
 			}
 		})
 
-	}).then((activeProfile) => {
+	}).then(() => {
 		console.log('ok, loaded or created the active profile. Now check if there is an active project')
-		// if()
-		rebuildAnnotationElements()
+		console.log(app.activeProject)
+		if(app.activeProject === '') {
+			console.log('no active Project, yet!');
+			app.projectOpened = false
+		} else {
+			app.projectOpened = true
+			return switchProject(app.activeProject)
+		}
+
 
 	}).then(() => {
-
-		imageContainer = document.querySelector('.object-view')
-		annotationList = document.querySelector('.annotation-list')
-		renderView = document.querySelector('render-view')
-
-		// perhaps also on change localDB to rebuildAnnotation elements?
-		sync = PouchDB.sync(localDB, remoteDB, {
-			live: true,
-			retry: true
-		}).on('change', function(info) {
-			console.log('sync change!!')
-			console.log('TODO: now sync all DOM elements...')
-			rebuildAnnotationElements()
+		console.log('continue')
+		rebuildAnnotationElements()
 
 
-		}).on('paused', () => {
-			console.log('sync pause')
 
-			// replication paused (e.g. user went offline)
-		}).on('active', () => {
-			console.log('sync active')
-
-			// replicate resumed (e.g. user went back online)
-		}).on('denied', info => {
-			console.log('sync denied')
-
-			// a document failed to replicate, e.g. due to permissions
-		}).on('complete', info => {
-			console.log('sync complete')
-			// handle complete
-		}).on('error', err => {
-			console.log('sync error')
-
-			// handle error
-		})
-
-		localDB.info().then((result) => {
-			console.log('localDB info:', result)
-
-			// update the renderView with new annotation
-			renderView.addEventListener('initialized', () => {
-				rebuildAnnotationElements()
-			})
-
-		})
 	})
 
 }
