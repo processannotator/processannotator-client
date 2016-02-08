@@ -11,7 +11,7 @@
   "scripts": {
     "install": "bower install",
     "start": "electron .",
-    "package": "./node_modules/.bin/electron-packager ./ DocumentDesktopClient --platform=darwin --arch=x64 --version 0.33.9"
+    "package": "./node_modules/.bin/electron-packager ./ DocumentDesktopClient --platform=darwin --arch=x64 --version 0.35.6"
   },
   "devDependencies": {
     "node-gyp": "^3.2.1",
