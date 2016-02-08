@@ -21,7 +21,7 @@
     <style include="overlay-style"></style>
 
     <header>
-      Welcome to Bl'al
+      Welcome Process.Annotator
     </header>
 
     <neon-animated-pages class="flex" id="pages" selected="[[pageNumber]]" entry-animation="[[pageEntryAnimation]]" exit-animation="[[pageExitAnimation]]">
@@ -35,7 +35,7 @@
       </neon-animatable>
 
       <neon-animatable>
-        <span class="instruction">Bl'al needs your email to keep you in touch with your team:</span>
+        <span class="instruction">Process.Annotator needs your email to keep you in touch with your team:</span>
         <br>
         <input class="textInput" placeholder="foo@bar.com" is="iron-input" type="email" autocomplete="email" bind-value="{{email}}">
       </neon-animatable>
@@ -62,6 +62,10 @@
         value: 'Continue',
         type: String
       },
+      email: String,
+      prename: String,
+      surname: String,
+      color: String,
       noCancelOnEscKey: {value: true},
       noCancelOnOutsideClick: {value: true},
       animationConfig: {

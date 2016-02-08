@@ -13,13 +13,14 @@ require('./test').test()
 var annotationElements = new Map()
 
 // DOM elements
+var app = document.querySelector('#app')
 var imageContainer
 var annotationList
 var renderView
 var activeProfile
-var activeProject = {_id: 'project_1'}
-var activeTopic = {_id: 'topic_1'}
-var app = document.querySelector('#app')
+app.activeProject = {_id: 'project_1'}
+app.activeTopic = {_id: 'topic_1'}
+
 
 function addProject(file) {
 	// FIXME: this ain't working, server has to ceate a DB first
@@ -35,11 +36,11 @@ function addProject(file) {
 	})
 	.then(localDB.get('project' + 1))
 	.then((newProject) => {
-		activeProject = newProject
+		app.activeProject = newProject
 		return addNewTopic(file)
 	})
 	// finally return the new projects object
-	.then(() => activeProject)
+	.then(() => app.activeProject)
 	.catch((err) => {
 		console.error('error creating new project in DB', err)
 	})
@@ -64,9 +65,9 @@ function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
-		parentProject: activeProject._id,
-		parentTopic: activeTopic._id,
-		creator: activeProfile._id,
+		parentProject: app.activeProject._id,
+		parentTopic: app.activeTopic._id,
+		creator: app.activeProfile._id,
 		creationDate: new Date().toISOString(),
 		title: 'a topic title',
 		description: description,
@@ -161,12 +162,12 @@ function loadPreferences() {
 function savePreferences() {
 	// _local/lastSession should exist because loadPreferences creates the doc
 	return localDB.get('_local/lastSession').then(doc => {
-		doc.activeProfile = activeProfile
-		doc.activeProject = activeProject
-		doc.activeTopic = activeTopic
+		doc.activeProfile = app.activeProfile
+		doc.activeProject = app.activeProject
+		doc.activeTopic = app.activeTopic
 		return localDB.put(doc)
 	})
-	.then(localDB.get('_local/lastSession'))
+	.then(() => localDB.get('_local/lastSession'))
 
 }
 
@@ -196,7 +197,7 @@ function setNewProfile({prename, surname, email, color}) {
 		console.log(response)
 
 		// then update the active profile to the new profile
-		activeProfile = {_id: id, password, metadata: response}
+		app.activeProfile = {_id: id, password, metadata: response}
 
 		// and save preferences
 		return savePreferences()
@@ -331,28 +332,37 @@ function init() {
 	loadPreferences()
 	.then(preferences => {
 
-		// after loading the preferences, if no profile was found:
-		if(preferences.activeProfile === ''){
-			console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
+		return new Promise((resolve, reject) => {
+			if(preferences.activeProfile === ''){
+				console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
 
-			let profileOverlay = document.querySelector('#profileSetupOverlay')
-			profileOverlay.addEventListener('iron-overlay-closed', (e) => {
-				setNewProfile({
-					prename: profileOverlay.prename,
-					surname: profileOverlay.surname,
-					color: profileOverlay.color,
-					email: profileOverlay.email
+				let profileOverlay = document.querySelector('#profileSetupOverlay')
+
+				profileOverlay.addEventListener('iron-overlay-closed', (e) => {
+					setNewProfile({
+						prename: profileOverlay.prename,
+						surname: profileOverlay.surname,
+						color: profileOverlay.color,
+						email: profileOverlay.email
+					}).then((result) => resolve(activeProfile))
 				})
-			})
 
-			profileOverlay.open()
+				profileOverlay.open()
 
-		} else if(preferences.activeProfile !== undefined) {
-			activeProfile = preferences.activeProfile
-			console.log('active profile:', activeProfile)
-			rebuildAnnotationElements()
-		}
-		return activeProfile
+
+			} else if(preferences.activeProfile !== undefined) {
+				// TODO: fixme: activeProfile assignment might be redundant here? check it!
+				app.activeProfile = preferences.activeProfile
+				console.log('active profile:', activeProfile)
+				resolve(app.activeProfile)
+
+			}
+		})
+
+	}).then((activeProfile) => {
+		console.log('ok, loaded or created the active profile. Now check if there is an active project')
+		// if()
+		rebuildAnnotationElements()
 
 	}).then(() => {
 
