@@ -88,9 +88,26 @@ function login(user, password) {
 function loadPreferences() {
 
 	return localDB.get('_local/lastSession')
+	.catch((err) => {
+    console.log('some error loading the preferences...', err);
+		if(err.message === 'missing'){
+      console.log('-> no preferences yet, creating template.')
+			return localDB.put({
+				_id: '_local/lastSession',
+				activeProfile: undefined,
+				activeProject: '',
+				activeTopic: ''
+			})
+			// .then((result) => {
+			// 	console.log(result)
+			// 	console.log('trying to reload preferences after setting initial one')
+			// 	return loadPreferences()
+			// })
+		}
+	})
 	.then((preferences) => {
 		// now get the actual profile via ID from database
-		console.log(preferences)
+		console.log('prefs:', preferences)
 		console.log('preferences.activeProfile', preferences.activeProfile)
     console.log('trying to login now')
 
@@ -100,38 +117,47 @@ function loadPreferences() {
 
     // try to login to profile thats saved in preferences info from remote server
     // to get up-to-date profile info and save it later
+    console.log('LOGIN TEST')
+		console.log(preferences.activeProfile._id)
+		console.log(preferences.activeProfile.password)
 		return login(preferences.activeProfile._id, preferences.activeProfile.password)
+		.catch((err) => {
+			log.error('couldnt login.', err)
+		})
     .then(response => {
-			console.log(response)
+			console.log('successfully logged in: ', response)
       console.log('after succesfull login, get new user info')
-      return remoteDB.getUser(preferences.activeProfile._id)
+			return remoteDB.getSession()
     })
+		.catch((err) => {
+			console.error('couldnt getSession', err)
+			return preferences
+		})
+		.then((session) => {
+			console.log('got session:', session)
+			console.log('now. trying to get user info for session', preferences.activeProfile._id)
+			return remoteDB.getUser(preferences.activeProfile._id)
+		})
+		.catch((err) => {
+			console.error('authentication (or perhaps network) problem. Using offline info for now.', err)
+			return preferences.activeProfile
+		})
     .then(profile => {
-      profile._id = activeProfile._id // don't use the verbose couchdb:etc username
+			console.log('profile', profile)
+			console.log('activeProfile', activeProfile)
+			if(activeProfile)
+      	profile._id = activeProfile._id // don't use the verbose couchdb:etc username
       console.log('got profile:', profile)
 			console.log('login via preferences successful')
       preferences.activeProfile = profile
+			console.log('prefs:', preferences)
       return preferences
-		}).catch((err) => {
-			console.error('authentication (or perhaps network) problem. Using offline info for now.', err)
-			return preferences
 		})
 
 		// activeProject = preferences.activeProject !== undefined ? preferences.activeProject : undefined
 		// activeTopic = preferences.activeTopic !== undefined ? preferences.activeTopic : undefined
 
-	}).catch((err) => {
-    console.log('some error loading the preferences...');
-		console.log(err);
-		if(err.message === 'missing'){
-      console.log('no preferences yet, creating template.')
-			return localDB.put({
-				_id: '_local/lastSession',
-				activeProfile: undefined,
-				activeProject: '',
-				activeTopic: ''
-			})
-		}
+
 	})
 
 }
@@ -223,6 +249,8 @@ function fetchAnnotations() {
 
 		let fetchedProfiles = []
 		for (let {doc} of result.rows) {
+			console.log('testesttest')
+			console.log(doc.creator)
 			fetchedProfiles.push(
 				remoteDB.getUser(doc.creator).then(profile => {
 					doc.creatorProfile = profile
