@@ -73,90 +73,86 @@ function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}
 		position: position,
 		polygon: polygon
 	}
-  console.log('double check, is this the annotation?:')
-  console.log(annotation)
-  console.log('creator', activeProfile)
+	console.log('double check, is this the annotation?:')
+	console.log(annotation)
+	console.log('creator', activeProfile)
 	console.log('put annotation into DB')
 	return localDB.put(annotation)
 }
 
 function login(user, password) {
-  // IDEA: maybe save cookie or do notifactions.
-  return remoteDB.login(user, password)
+	// IDEA: maybe save cookie or do notifactions.
+	return remoteDB.login(user, password)
 }
 
 function loadPreferences() {
 
 	return localDB.get('_local/lastSession')
-	.catch((err) => {
-    console.log('some error loading the preferences...', err);
-		if(err.message === 'missing'){
-      console.log('-> no preferences yet, creating template.')
-			return localDB.put({
-				_id: '_local/lastSession',
-				activeProfile: undefined,
-				activeProject: '',
-				activeTopic: ''
-			})
-			// .then((result) => {
-			// 	console.log(result)
-			// 	console.log('trying to reload preferences after setting initial one')
-			// 	return loadPreferences()
-			// })
-		}
-	})
 	.then((preferences) => {
-		// now get the actual profile via ID from database
-		console.log('prefs:', preferences)
-		console.log('preferences.activeProfile', preferences.activeProfile)
-    console.log('trying to login now')
+		console.log('preferences loaded?')
+		if(preferences !== undefined) {
+			console.log('setting preferences')
+			app.preferences = preferences
+			console.log(this.preferences)
+		}
+		if (preferences === undefined) {
+			throw	new Error('preferences missing, this error shouldnt happen at all!')
+			// because if preferences is undefined, it should have thrown an error before!
+		} else if (preferences.activeProfile === '') {
+			console.log('activeProfile missing, should open a dialog to create a new one!')
+			throw	new Error('activeProfile missing')
+		}
 
-    if(!preferences.activeProfile || !preferences.activeProfile._id || preferences.activeProfile._id === '') {
-      throw new Error({message: 'missing'})
-    }
-
-    // try to login to profile thats saved in preferences info from remote server
-    // to get up-to-date profile info and save it later
-    console.log('LOGIN TEST')
+		// try to login to profile thats saved in preferences info from remote server
+		// to get up-to-date profile info and save it later
+		console.log('LOGIN TEST')
 		console.log(preferences.activeProfile._id)
 		console.log(preferences.activeProfile.password)
 		return login(preferences.activeProfile._id, preferences.activeProfile.password)
-		.catch((err) => {
-			log.error('couldnt login.', err)
-		})
-    .then(response => {
-			console.log('successfully logged in: ', response)
-      console.log('after succesfull login, get new user info')
-			return remoteDB.getSession()
-    })
-		.catch((err) => {
-			console.error('couldnt getSession', err)
-			return preferences
-		})
-		.then((session) => {
-			console.log('got session:', session)
-			console.log('now. trying to get user info for session', preferences.activeProfile._id)
-			return remoteDB.getUser(preferences.activeProfile._id)
-		})
-		.catch((err) => {
-			console.error('authentication (or perhaps network) problem. Using offline info for now.', err)
-			return preferences.activeProfile
-		})
-    .then(profile => {
-			console.log('profile', profile)
-			console.log('activeProfile', activeProfile)
-			if(activeProfile)
-      	profile._id = activeProfile._id // don't use the verbose couchdb:etc username
-      console.log('got profile:', profile)
-			console.log('login via preferences successful')
-      preferences.activeProfile = profile
-			console.log('prefs:', preferences)
-      return preferences
-		})
+	})
+	.then(response => {
+		console.log('successfully logged in: ', response)
+		console.log('after succesfull login, get new user info')
+		return remoteDB.getSession()
+	})
+	.then(session => {
+		console.log('got session:', session)
+		console.log('now. trying to get user info for session', preferences.activeProfile._id)
+		return remoteDB.getUser(preferences.activeProfile._id)
+	})
+	.then(profile => {
+		console.log('profile', profile)
+		console.log('activeProfile', activeProfile)
+		if(activeProfile)
+		profile._id = activeProfile._id // don't use the verbose couchdb:etc username
+		console.log('got profile:', profile)
+		console.log('login via preferences successful')
+		preferences.activeProfile = profile
+		console.log('prefs:', preferences)
+		return app.preferences
+	})
+	.catch((err) => {
+		console.log('some error loading the preferences...')
+		console.log(err)
 
-		// activeProject = preferences.activeProject !== undefined ? preferences.activeProject : undefined
-		// activeTopic = preferences.activeTopic !== undefined ? preferences.activeTopic : undefined
-
+		if(err.message === 'missing'){
+			console.log('no preferences yet, creating template.')
+			return localDB.put({
+				_id: '_local/lastSession',
+				activeProfile: '',
+				activeProject: '',
+				activeTopic: ''
+			})
+			.then((result) => {
+				console.log('trying to reload preferences after setting fresh initial one.')
+				return loadPreferences()
+			})
+			.catch((error) => {
+				console.log(error)
+			})
+		} else {
+			return app.preferences
+		}
 
 	})
 
@@ -170,7 +166,7 @@ function savePreferences() {
 		doc.activeTopic = activeTopic
 		return localDB.put(doc)
 	})
-  .then(localDB.get('_local/lastSession'))
+	.then(localDB.get('_local/lastSession'))
 
 }
 
@@ -184,28 +180,28 @@ function setNewProfile({prename, surname, email, color}) {
 		creationDate: new Date().toISOString()
 	}
 
-  let id = metadata.prename + metadata.surname + Math.random()
-  // TODO: this is only a testing password for all users
-  let password = 'thisisasupersecrettestingpassworduntilthebeta'
+	let id = metadata.prename + metadata.surname + Math.random()
+	// TODO: this is only a testing password for all users
+	let password = 'thisisasupersecrettestingpassworduntilthebeta'
 
 	// put the new profile into the database
 	return remoteDB.signup( id, password, {metadata} )
-  .then( () => remoteDB.login(id, password) )
-  .then( response => {
-    console.log('succesfully created user and logged in.')
-    console.log(response)
-    return remoteDB.getSession()
-  })
-  .then((response) => {
-    console.log(response)
+	.then( () => remoteDB.login(id, password) )
+	.then( response => {
+		console.log('succesfully created user and logged in.')
+		console.log(response)
+		return remoteDB.getSession()
+	})
+	.then((response) => {
+		console.log(response)
 
-    // then update the active profile to the new profile
-    activeProfile = {_id: id, password, metadata: response}
+		// then update the active profile to the new profile
+		activeProfile = {_id: id, password, metadata: response}
 
-    // and save preferences
-    return savePreferences()
-  })
-  .catch(err => console.log(err))
+		// and save preferences
+		return savePreferences()
+	})
+	.catch(err => console.log(err))
 }
 
 
@@ -256,8 +252,8 @@ function fetchAnnotations() {
 					doc.creatorProfile = profile
 					return doc
 				}).catch(err => {
-          console.error('couldnt read user info from DB. FIXME: save local copy of used user infos', err)
-        })
+					console.error('couldnt read user info from DB. FIXME: save local copy of used user infos', err)
+				})
 			)
 
 		}
@@ -292,7 +288,7 @@ function rebuildAnnotationElements() {
 
 var alertOnlineStatus = function() {
 	if(navigator.onLine === 'offline')
-		window.alert('You are not connected to the internet.')
+	window.alert('You are not connected to the internet.')
 }
 
 function handleResize(event) {
@@ -334,8 +330,9 @@ function init() {
 
 	loadPreferences()
 	.then(preferences => {
+
 		// after loading the preferences, if no profile was found:
-		if(preferences.activeProfile === undefined){
+		if(preferences.activeProfile === ''){
 			console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
 
 			let profileOverlay = document.querySelector('#profileSetupOverlay')
