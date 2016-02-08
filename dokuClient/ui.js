@@ -8,6 +8,7 @@ var remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 var sync
 var db = new PouchDB('http://127.0.0.1:5984/db', {skipSetup: true})
 var ws //websocket connection
+require('./test').test()
 
 var annotationElements = new Map()
 

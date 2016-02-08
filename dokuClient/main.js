@@ -1,11 +1,10 @@
 'use strict' /*eslint global-strict:0*/
 
 require('electron-compile').init() // to compile to ES6/harmony
-
-var app = require('app') // Module to control application life.
-var ipc = require('electron').ipcMain // module for interprocess communication (renderer <-> backend)
-var BrowserWindow = require('browser-window') // Module to create native browser window.
-// var socket = require('socket.io-client')('http://localhost:3000/DokuClients')
+const electron = require('electron')
+const app = electron.app // Module to control application life.
+const ipc = electron.ipcMain // module for interprocess communication (renderer <-> backend)
+const BrowserWindow = electron.BrowserWindow // Module to create native browser window.
 
 
 // Report crashes to our server.
@@ -39,15 +38,6 @@ app.on('ready', function() {
 
 	// Open the devtools.
 	// mainWindow.openDevTools()
-
-	// socket.on('connect', function() {
-	// 	console.log('Connected to socket server')
-	//
-	// 	socket.on('disconnect', function() {
-	// 		console.log('Disconnected from server')
-	// 	})
-	//
-	// })
 
 	mainWindow.on('closed', function() {
 		// Dereference the window object, usually you would store windows
