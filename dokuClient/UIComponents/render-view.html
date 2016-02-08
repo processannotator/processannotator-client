@@ -66,6 +66,7 @@
 			// doesnt work with listeners on this very element
 			// so create start event listener
 			console.log('renderview ready!!!')
+			this.hidden = true
 			this.ready = true
 			document.addEventListener('keydown', this.keydown.bind(this))
 		},

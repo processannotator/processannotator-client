@@ -21,8 +21,10 @@
 	<link rel="import" href="bower_components/paper-styles/paper-styles.html">
 	<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
 	<link rel="import" href="bower_components/paper-button/paper-button.html">
+		<link rel="import" href="bower_components/paper-fab/paper-fab.html">
 
 	<link rel="import" href="UIComponents/profile-setup-overlay.html">
+	<link rel="import" href="UIComponents/project-setup-overlay.html">
 	<link rel="import" href="UIComponents/tool-box.html">
 	<link rel="import" href="UIComponents/annotation-box.html">
 	<link rel="import" href="UIComponents/render-view.html">
@@ -50,6 +52,8 @@
 
 		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
 		</profile-setup-overlay>
+		<project-setup-overlay id="projectSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
+		</project-setup-overlay>
 
 
 
@@ -70,9 +74,13 @@
 
 			<div class="object-view">
 
-				<render-view> </render-view>
+				<div class="tutorial">
+					<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" onclick="createFirstProject()"></paper-fab>
+				</div>
 
-				<iron-selector id="tool-box" attr-for-selected="name" selected="polygon">
+				<render-view hidden$="{{!projectOpened}}"> </render-view>
+
+				<iron-selector hidden$="{{!projectOpened}}" id="tool-box" attr-for-selected="name" selected="polygon">
 					<iron-icon class="tool-box-icon" name="polygon" src="images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
 					<iron-icon class="tool-box-icon" name="compare" src="images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
 					<iron-icon class="tool-box-icon" name="freehand" src="images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
