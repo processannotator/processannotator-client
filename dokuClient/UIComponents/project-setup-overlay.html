@@ -40,7 +40,7 @@
       <neon-animatable>
         <span class="instruction">Upload your first topic you want to work on and discuss with your team:</span>
         <input class="textInput" placeholder="main structure" is="iron-input" type="text" bind-value="{{topicname}}">
-        <input is="iron-input" type="file" accept=".stl,.obj,.jpg,.jpeg,.png,.pdf" bind-value="{{file}}">
+        <input id="fileinput" type="file" accept=".stl,.obj,.jpg,.jpeg,.png,.pdf" on-change="fileSelected">
 
       </neon-animatable>
 
@@ -84,6 +84,11 @@
     listeners: {
       'iron-overlay-opened': 'onOpen',
       'neon-animation-finish': 'onAnimationFinish'
+    },
+    fileSelected: function () {
+      console.log('file selected')
+      console.log(this.$.fileinput.files)
+      this.file = this.$.fileinput.files[0]
     },
     onPrevClick: function() {
       this.pageEntryAnimation = 'fade-in-animation';

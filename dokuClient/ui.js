@@ -15,24 +15,26 @@ var app = document.querySelector('#app')
 var imageContainer
 var annotationList
 var renderView
-var activeProfile
+app.activeProfile = ''
 app.activeProject = 'collabdb'
 app.activeTopic = {_id: 'topic_1'}
 
 function switchProjectDB(dbname) {
 	console.log('switch to projectDB with name', dbname)
 	// TODO: check if dname is a valid database name for a project
-	localProjectDB = new PouchDB(dbname)
-	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + dbname)
+	app.activeProject = dbname
+	localProjectDB = new PouchDB(app.activeProject)
+	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + app.activeProject)
 
 	// perhaps also on change localDB to rebuildAnnotation elements?
-	sync = PouchDB.sync(localDB, remoteDB, {
+	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 		live: true,
 		retry: true
 	}).on('change', function(info) {
 		console.log('sync change!!')
+		console.log(info)
 		console.log('TODO: now sync all DOM elements...')
-		rebuildAnnotationElements()
+		rebuildRenderingElements()
 
 
 	}).on('paused', () => {
@@ -49,6 +51,10 @@ function switchProjectDB(dbname) {
 		// a document failed to replicate, e.g. due to permissions
 	}).on('complete', info => {
 		console.log('sync complete')
+		console.log(info)
+		//renderView.
+		rebuildRenderingElements()
+
 		// handle complete
 	}).on('error', err => {
 		console.log('sync error')
@@ -56,7 +62,8 @@ function switchProjectDB(dbname) {
 		// handle error
 	})
 
-	rebuildAnnotationElements()
+
+	return sync
 
 
 }
@@ -66,8 +73,8 @@ function addTopic() {
 	return localDB.put({
 		_id: 'topic_' + 1,
 		type: 'topic',
-		parentProject: activeProject._id,
-		creator: activeProfile._id,
+		parentProject: app.activeProject._id,
+		creator: app.activeProfile._id,
 		creationDate: new Date().toISOString(),
 		title: 'a topic title',
 		description: 'a description to a topic'
@@ -89,7 +96,7 @@ function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}
 	}
 	console.log('double check, is this the annotation?:')
 	console.log(annotation)
-	console.log('creator', activeProfile)
+	console.log('creator', app.activeProfile)
 	console.log('put annotation into DB')
 	return localDB.put(annotation)
 }
@@ -110,7 +117,6 @@ function loadPreferences() {
 			app.activeProfile = preferences.activeProfile
 			app.activeProject = preferences.activeProject
 			app.activeTopic = preferences.activeTopic
-			console.log(this.preferences)
 		}
 		if (preferences === undefined) {
 			throw	new Error('preferences missing, this error shouldnt happen at all!')
@@ -129,8 +135,12 @@ function loadPreferences() {
 		console.log('after succesfull login, get new user info')
 		return remoteDB.getSession()
 	})
-	.then(session => {
-		console.log('got session:', session)
+	.then(response => {
+		console.log('got session:', response)
+
+		if(!response.userCtx.name){
+			console.error('Couldnt get user session: hmm, nobody logged on.');
+		}
 		console.log('now. trying to get user info for session', preferences.activeProfile._id)
 		return remoteDB.getUser(preferences.activeProfile._id)
 	})
@@ -194,20 +204,27 @@ function setNewProfile({prename, surname, email, color}) {
 		creationDate: new Date().toISOString()
 	}
 
-	let id = metadata.prename + metadata.surname + Math.random()
+	let id = metadata.prename + metadata.surname
 	// TODO: this is only a testing password for all users
 	let password = 'thisisasupersecrettestingpassworduntilthebeta'
 
 	// put the new profile into the database
 	return remoteDB.signup( id, password, {metadata} )
-	.then( () => remoteDB.login(id, password) )
+	.then( (response) => {
+		console.log(response)
+		return remoteDB.login(id, password)
+	} )
 	.then( response => {
 		console.log('succesfully created user and logged in.')
 		console.log(response)
 		return remoteDB.getSession()
 	})
 	.then((response) => {
-		console.log(response)
+		if(!response.userCtx.name){
+			console.error('Couldnt get user session: hmm, nobody logged on.');
+		} else {
+			console.log(response)
+		}
 
 		// then update the active profile to the new profile
 		app.activeProfile = {_id: id, password, metadata: response}
@@ -218,42 +235,61 @@ function setNewProfile({prename, surname, email, color}) {
 	.catch(err => console.log(err))
 }
 
-function setNewProject({projectname, file, emails}) {
+function setNewProject({projectname, topicname, file, emails}) {
+	// assumes current activeProfile as the creator
+	// we will create a new DB for the project
+	// however, as we can't just do that from here for the server, we are telling
+	// the server via websockets to create one
 
-	// FIXME: allow fallback for offline db creation etc.
-
-	return new Promise((resolve, reject) => {
-
-		console.log(projectname, file, emails)
-
-		// assumes current activeProfile as the creator
-		// we will create a new DB for the project
-		// however, as we can't just do that from here for the server, we are telling
-		// the server via websockets to create one
-
-		ws.send(JSON.stringify(
-			{
-				type: 'createDB',
-				details: {projectname, file, emails}
-			}
-		))
-
-		app.addEventListener(projectname + '-created', (e) => {
-			console.log(e)
-			if(e.details.successful) {
-				resolve(e.details)
-			} else {
-				reject(e.details)
-			}
-		})
-
+	console.log('listening for', ('db-' + projectname + '-created'));
+	app.addEventListener('db-' + projectname + '-created', (e) => {
+		console.log('we received an event via websockets!')
+		console.log(e.detail)
+		if(e.detail.successful) {
+			console.log('database creation was successful')
+		} else {
+			console.log('database creation was _not_ successful')
+		}
 	})
 
-}
+	// FIXME: create some kind of queue in the preferences to send out the request
+	// at a later time when the server is offline
+	ws.send(JSON.stringify(
+		{
+			type: 'createDB',
+			projectname,
+			emails
+		}
+	))
 
-function switchProject(projectname) {
-	// switch the active database
-	return switchProjectDB(projectname)
+	console.log('not waiting for response from server, just hoping it works')
+	console.log('if not, we\'ll have to retry once they are online')
+
+
+
+	// now add our first topic to the local DB
+
+	new PouchDB(projectname).put({
+		_id: 'topic_' + topicname,
+		_attachments: {
+			'file': {
+				type: file.type,
+				data: file,
+				something: 'else'
+			}
+		}
+	}).then(() => {
+		console.log('created project', projectname, 'with first topic', topicname, 'locally.')
+		console.log('now set a timeout of 1 second to try a live sync.')
+		setTimeout(() => {
+			switchProjectDB(projectname)
+		}, 1000)
+
+	}).catch(function (err) {
+    console.log(err);
+  })
+
+
 }
 
 
@@ -313,11 +349,15 @@ function fetchAnnotations() {
 	.catch(err => console.error('error fetching annotations', err))
 }
 
-function rebuildAnnotationElements() {
+function rebuildRenderingElements() {
+
 	// this function removes all created representations for annotations
 	// and re-creates and appends them to the view
 
-	return fetchAnnotations().then( function(annotations) {
+	return localProjectDB.getAttachment('desc')
+
+
+	fetchAnnotations().then( function(annotations) {
 
 		// first clean old annotation elements
 		for (let id of annotationElements.keys()) {
@@ -371,9 +411,10 @@ function initWebsockets() {
 			let msg = JSON.parse(event.data)
 			switch (msg.type) {
 				case 'createDB':
-					console.log(msg)
-					let e = new Event(msg.dbname + '-created', {'detail': msg})
-					app.dispatch(e)
+					let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg})
+
+					console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!')
+					app.dispatchEvent(e)
 					break;
 				default:
 				console.log('unknown websockets event:', msg)
@@ -393,6 +434,7 @@ function createFirstProject() {
 	projectOverlay.addEventListener('iron-overlay-closed', (e) => {
 		console.log('overlay closed')
 		console.log(projectOverlay.projectname, projectOverlay.file)
+		console.log(projectOverlay);
 
 		setNewProject({
 			projectname: projectOverlay.projectname,
@@ -400,11 +442,7 @@ function createFirstProject() {
 			file: projectOverlay.file,
 			emails: ['bla']
 		})
-		// .then((result) => {
-		// 	console.log('created project??')
-		// 	console.log(result)
-		// 	return switchProject(projectOverlay.topicname)
-		// })
+
 	})
 	projectOverlay.open()
 }
@@ -455,13 +493,13 @@ function init() {
 			app.projectOpened = false
 		} else {
 			app.projectOpened = true
-			return switchProject(app.activeProject)
+			return switchProjectDB(app.activeProject)
 		}
 
 
 	}).then(() => {
 		console.log('continue')
-		rebuildAnnotationElements()
+		rebuildRenderingElements()
 
 
 

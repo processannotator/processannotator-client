@@ -41,7 +41,6 @@
 	var controls
 	var cssObject
 	var glRenderer
-	var cube
 	var cssRenderer
 	var render
 	var animate
@@ -49,7 +48,11 @@
 	Polymer({
 		is: "render-view",
 		properties: {
-			model: Object,
+			fileRepresentation: Object,
+			file: {
+				type: Object,
+				observer: '_fileChanged'
+			},
 			annotations: {
 				type: Array,
 				observer: "_annotationsChanged"
@@ -141,13 +144,13 @@
 				side: THREE.DoubleSide
 			})
 
-			cube = new THREE.Mesh(geometry, material)
+			fileRepresentation = new THREE.Mesh(geometry, material)
 
 			var sphereGeometry = new THREE.SphereGeometry( 20, 16, 16 )
 			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
 
-			glScene.add(cube)
+			glScene.add(this.fileRepresentation)
 			glScene.add(this.pointerSphere)
 
 			// create Raycaster used for polygon editing tool
@@ -178,6 +181,23 @@
 			this.render()
 		},
 
+		_fileChanged: function () {
+			console.log(this.file)
+			// load the fucking file and use it for display
+			// instantiate a loader
+			var loader = new THREE.OBJLoader();
+
+			// load a resource
+			loader.load(
+				// resource URL
+				URL.createObjectURL(this.file),
+				// Function when resource is loaded
+				function ( object ) {
+					this.fileRepresentation = object
+				}
+			);
+
+		},
 		_annotationsChanged: function() {
 			console.log(this.annotations)
 			// debug output of annotations
@@ -237,7 +257,7 @@
 				let normalizedDirection = (label.position.clone().sub(camera.position)).normalize()
 				raycaster.set(camera.position.clone(), normalizedDirection)
 				raycaster.far = camera.position.distanceTo(label.position)
-				let intersections = raycaster.intersectObject(cube)
+				let intersections = raycaster.intersectObject(this.fileRepresentation)
 				if(intersections.length !== 0) {
 					label.element.style.opacity = 0.0
 				} else {
@@ -266,7 +286,7 @@
 
 				this.updateMouse(e)
 				this.raycaster.setFromCamera(this.mouse, camera)
-				let intersections = this.raycaster.intersectObject(cube)
+				let intersections = this.raycaster.intersectObject(this.fileRepresentation)
 
 				if(intersections.length !== 0){
 					if(this.modus.modelGrabbing === false)
@@ -317,7 +337,7 @@
 
 					// calculate objects intersecting the picking ray
 					// only use the frontmost intersection  -> [0]
-					var intersections = this.raycaster.intersectObject(cube)
+					var intersections = this.raycaster.intersectObject(this.fileRepresentation)
 					var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null
 					this.verticesPolygonTool.push(intersection.point)
 

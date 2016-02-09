@@ -7,6 +7,8 @@ const ipc = electron.ipcMain // module for interprocess communication (renderer 
 const BrowserWindow = electron.BrowserWindow // Module to create native browser window.
 
 
+app.commandLine.appendSwitch('--enable-file-cookies')
+
 // Report crashes to our server.
 require('crash-reporter').start()
 
@@ -35,6 +37,16 @@ app.on('ready', function() {
 
 	// load the index.html of the app.
 	mainWindow.loadURL('file://' + __dirname + '/index.html')
+	var webContents = mainWindow.webContents
+
+	webContents.on('login', function (event, request, authInfo, callback) {
+		console.log('login?');
+		console.log(event);
+		console.log(request);
+		console.log(authInfo);
+		console.log(callback);
+		// event.preventDefault();
+	})
 
 	// Open the devtools.
 	// mainWindow.openDevTools()
