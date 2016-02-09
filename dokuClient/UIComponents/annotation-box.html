@@ -162,9 +162,13 @@
 			},
 			handleTextChange: function(event, detail, sender) {
 				// when text changed on element, update its element
-				localDB.get(this.annotation._id).then(doc => {
+				// FIXME: no got style to put the DB in here. better create a listener on the app
+				// and send a custom event here to let the main app handle the changes
+				// eg: let textChangeEvent = new CustomEvent('annotation-change', {detail: {
+				// id: this.annotation._id, newTExt: etc}})
+				localProjectDB.get(this.annotation._id).then(doc => {
 					doc.description = event.srcElement.innerHTML
-					localDB.put(doc)
+					localProjectDB.put(doc)
 				})
 			},
 			computeNameLetters: function (prename, surname) {

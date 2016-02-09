@@ -25,6 +25,7 @@ function switchProjectDB(dbname) {
 	app.activeProject = dbname
 	localProjectDB = new PouchDB(app.activeProject)
 	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + app.activeProject)
+	savePreferences()
 
 	// perhaps also on change localDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
@@ -38,6 +39,7 @@ function switchProjectDB(dbname) {
 
 
 	}).on('paused', () => {
+		rebuildRenderingElements()
 		console.log('sync pause')
 
 		// replication paused (e.g. user went offline)
@@ -98,7 +100,7 @@ function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}
 	console.log(annotation)
 	console.log('creator', app.activeProfile)
 	console.log('put annotation into DB')
-	return localDB.put(annotation)
+	return localProjectDB.put(annotation)
 }
 
 function login(user, password) {
@@ -254,20 +256,10 @@ function setNewProject({projectname, topicname, file, emails}) {
 
 	// FIXME: create some kind of queue in the preferences to send out the request
 	// at a later time when the server is offline
-	ws.send(JSON.stringify(
-		{
-			type: 'createDB',
-			projectname,
-			emails
-		}
-	))
+	ws.send(JSON.stringify({type: 'createDB', projectname, emails}))
 
 	console.log('not waiting for response from server, just hoping it works')
 	console.log('if not, we\'ll have to retry once they are online')
-
-
-
-	// now add our first topic to the local DB
 
 	new PouchDB(projectname).put({
 		_id: 'topic_' + topicname,
@@ -279,6 +271,7 @@ function setNewProject({projectname, topicname, file, emails}) {
 			}
 		}
 	}).then(() => {
+		app.activeTopic = 'topic_' + topicname
 		console.log('created project', projectname, 'with first topic', topicname, 'locally.')
 		console.log('now set a timeout of 1 second to try a live sync.')
 		setTimeout(() => {
@@ -354,10 +347,13 @@ function rebuildRenderingElements() {
 	// this function removes all created representations for annotations
 	// and re-creates and appends them to the view
 
-	return localProjectDB.getAttachment('desc')
-
-
-	fetchAnnotations().then( function(annotations) {
+	localProjectDB.getAttachment(app.activeTopic, 'file')
+	.then(blob => {
+		renderView.file = blob
+		return
+	})
+	.then(fetchAnnotations)
+	.then( annotations => {
 
 		// first clean old annotation elements
 		for (let id of annotationElements.keys()) {
@@ -492,6 +488,7 @@ function init() {
 			console.log('no active Project, yet!');
 			app.projectOpened = false
 		} else {
+			console.log('loaded a project, show the renderview')
 			app.projectOpened = true
 			return switchProjectDB(app.activeProject)
 		}
@@ -500,9 +497,6 @@ function init() {
 	}).then(() => {
 		console.log('continue')
 		rebuildRenderingElements()
-
-
-
 	})
 
 }

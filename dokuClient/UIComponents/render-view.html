@@ -137,20 +137,10 @@
 			controls.dynamicDampingFactor = 0.3
 			controls.keys = [65, 83, 68]
 
-			var geometry = new THREE.BoxGeometry(700, 700, 700)
-			var material = new THREE.MeshNormalMaterial({
-				transparent: false,
-				opacity: 1.0,
-				side: THREE.DoubleSide
-			})
-
-			fileRepresentation = new THREE.Mesh(geometry, material)
-
 			var sphereGeometry = new THREE.SphereGeometry( 20, 16, 16 )
 			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
 
-			glScene.add(this.fileRepresentation)
 			glScene.add(this.pointerSphere)
 
 			// create Raycaster used for polygon editing tool
@@ -185,20 +175,35 @@
 			console.log(this.file)
 			// load the fucking file and use it for display
 			// instantiate a loader
-			var loader = new THREE.OBJLoader();
+			// var loader = new THREE.OBJLoader();
+			// var filepath = URL.createObjectURL(this.file)
+			// console.log(filepath)
+			// // load a resource
+			// loader.load(
+			// 	// resource URL
+			// 	filepath
+			// 	,
+			// 	// Function when resource is loaded
+			// 	function ( object ) {
+			// 		console.log('loaded object??');
+			// 		this.fileRepresentation = object
+			// 	}
+			// );
 
-			// load a resource
-			loader.load(
-				// resource URL
-				URL.createObjectURL(this.file),
-				// Function when resource is loaded
-				function ( object ) {
-					this.fileRepresentation = object
-				}
-			);
+			// for now do something different
+			var geometry = new THREE.BoxGeometry(700, 700, 700)
+			var material = new THREE.MeshNormalMaterial({
+				transparent: false,
+				opacity: 1.0,
+				side: THREE.DoubleSide
+			})
+
+			this.fileRepresentation = new THREE.Mesh(geometry, material)
+			glScene.add(this.fileRepresentation)
 
 		},
 		_annotationsChanged: function() {
+			console.log('_annotationsChanged')
 			console.log(this.annotations)
 			// debug output of annotations
 			// first remove all previous annotations
