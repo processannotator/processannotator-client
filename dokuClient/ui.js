@@ -249,6 +249,7 @@ function setNewProject({projectname, topicname, file, emails}) {
 		console.log(e.detail)
 		if(e.detail.successful) {
 			console.log('database creation was successful')
+			this.projectOpened = true
 		} else {
 			console.log('database creation was _not_ successful')
 		}
