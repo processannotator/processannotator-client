@@ -2,7 +2,7 @@
 'use strict' /*eslint global-strict:0*/
 
 var ipc = require('ipc')
-PouchDB.plugin(require('pouchdb-authentication'))
+
 var localDB, localProjectDB, remoteDB, remoteProjectDB
 var sync
 var ws //websocket connection
