@@ -1,4 +1,8 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<script src="../libs/three/three.min.js"></script>
+<script src="../libs/three/controls/TrackballControls.js"></script>
+<script src="../libs/three/renderers/CSS3DRenderer.js"></script>
+<script src="../libs/three/loaders/STLLoader.js"></script>
 
 <dom-module id="render-view">
 
@@ -69,7 +73,6 @@
 			// doesnt work with listeners on this very element
 			// so create start event listener
 			console.log('renderview ready!!!')
-			this.hidden = true
 			this.ready = true
 			document.addEventListener('keydown', this.keydown.bind(this))
 		},
@@ -111,6 +114,7 @@
 			glRenderer.domElement.style.position = 'absolute';
 			glRenderer.domElement.style.top = 0;
 
+
 			cssRenderer = new THREE.CSS3DRenderer()
 			cssRenderer.setSize(width, height)
 
@@ -137,7 +141,7 @@
 			controls.dynamicDampingFactor = 0.3
 			controls.keys = [65, 83, 68]
 
-			var sphereGeometry = new THREE.SphereGeometry( 20, 16, 16 )
+			var sphereGeometry = new THREE.SphereGeometry( 15, 16, 16 )
 			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
 
@@ -153,8 +157,7 @@
 
 			// init annotations to empty array
 			this.annotations = []
-			this.render()
-			this.animate()
+
 			// notify other elements that the renderview is ready initializing
 
 			this.fire('initialized')
@@ -172,34 +175,45 @@
 		},
 
 		_fileChanged: function () {
+			console.log('fileChanged')
 			console.log(this.file)
 			// load the fucking file and use it for display
 			// instantiate a loader
-			// var loader = new THREE.OBJLoader();
-			// var filepath = URL.createObjectURL(this.file)
-			// console.log(filepath)
-			// // load a resource
-			// loader.load(
-			// 	// resource URL
-			// 	filepath
-			// 	,
-			// 	// Function when resource is loaded
-			// 	function ( object ) {
-			// 		console.log('loaded object??');
-			// 		this.fileRepresentation = object
-			// 	}
-			// );
+			var loader = new THREE.STLLoader()
+			var filepath = URL.createObjectURL(this.file)
+			console.log(filepath)
+			// load a resource
+			loader.load(
+				// resource URL
+				'images/slotted_disk.stl'
+				,
+				// Function when resource is loaded
+				 ( geometry ) => {
+					var material = new THREE.MeshNormalMaterial({
+						side: THREE.DoubleSide
+					})
+					var foobar = new THREE.Mesh(geometry, material)
+					foobar.scale.set(2000, 2000, 2000)
+					glScene.add(foobar)
+					glScene.remove(this.fileRepresentation)
+					this.fileRepresentation = foobar
+					console.log('only now initialized the file rep!!!!!')
+					this.render()
+					this.animate()
+				}
+			);
 
 			// for now do something different
-			var geometry = new THREE.BoxGeometry(700, 700, 700)
-			var material = new THREE.MeshNormalMaterial({
-				transparent: false,
-				opacity: 1.0,
-				side: THREE.DoubleSide
-			})
+			// var geometry = new THREE.BoxGeometry(700, 700, 700)
+			// var material = new THREE.MeshNormalMaterial({
+			// 	transparent: false,
+			// 	opacity: 1.0,
+			// 	side: THREE.DoubleSide
+			// })
+			//
+			// this.fileRepresentation = new THREE.Mesh(geometry, material)
+			// glScene.add(this.fileRepresentation)
 
-			this.fileRepresentation = new THREE.Mesh(geometry, material)
-			glScene.add(this.fileRepresentation)
 
 		},
 		_annotationsChanged: function() {
