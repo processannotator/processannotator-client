@@ -114,7 +114,7 @@ function loadPreferences() {
 	.then((preferences) => {
 		console.log('preferences loaded?')
 		if(preferences !== undefined) {
-			console.log('setting preferences')
+			console.log('setting active profile, project and topic from local preferences')
 			app.preferences = preferences
 			app.activeProfile = preferences.activeProfile
 			app.activeProject = preferences.activeProject
@@ -127,34 +127,34 @@ function loadPreferences() {
 
 		// try to login to profile thats saved in preferences info from remote server
 		// to get up-to-date profile info and save it later
-		console.log('LOGIN TEST')
+		console.log('got prefs: ' + preferences)
+		console.log('Use the profile info from preferences to login and possibly update activeProject')
 		console.log(preferences.activeProfile._id)
 		console.log(preferences.activeProfile.password)
 		return login(preferences.activeProfile._id, preferences.activeProfile.password)
 	})
 	.then(response => {
 		console.log('successfully logged in: ', response)
-		console.log('after succesfull login, get new user info')
 		return remoteDB.getSession()
 	})
 	.then(response => {
-		console.log('got session:', response)
-
 		if(!response.userCtx.name){
-			console.error('Couldnt get user session: hmm, nobody logged on.');
+			console.error('Couldnt get user session: hmm, nobody logged on.')
 		}
-		console.log('now. trying to get user info for session', preferences.activeProfile._id)
-		return remoteDB.getUser(preferences.activeProfile._id)
+		// got session, that means login works and user remains logged in, get more userInfo now.
+		return remoteDB.getUser(app.activeProfile._id)
 	})
-	.then(profile => {
-		console.log('profile', profile)
-		console.log('activeProfile', activeProfile)
-		if(activeProfile)
-		profile._id = activeProfile._id // don't use the verbose couchdb:etc username
-		console.log('got profile:', profile)
-		console.log('login via preferences successful')
-		preferences.activeProfile = profile
-		console.log('prefs:', preferences)
+	.then(updatedProfile => {
+		console.log('loaded user info from server', updatedProfile)
+		console.log('current activeProfile', app.activeProfile)
+		if(app.activeProfile) {
+			// don't use the verbose couchdb:etc username, but keep the simple one
+			updatedProfile._id = app.activeProfile._id
+		}
+
+		console.log('got profile from server:', updatedProfile)
+		// use fresh profile info to set local profile (eg. when user logged in from other device and changed colors etc.)
+		app.activeProfile = updatedProfile
 		return app.preferences
 	})
 	.catch((err) => {
@@ -177,6 +177,7 @@ function loadPreferences() {
 				console.log(error)
 			})
 		} else {
+			console.log('possible no internet connection, just use offline data for now')
 			return app.preferences
 		}
 
@@ -185,6 +186,7 @@ function loadPreferences() {
 }
 
 function savePreferences() {
+	console.log('saving preferences...')
 	// _local/lastSession should exist because loadPreferences creates the doc
 	return localDB.get('_local/lastSession').then(doc => {
 		doc.activeProfile = app.activeProfile
@@ -210,9 +212,20 @@ function setNewProfile({prename, surname, email, color}) {
 	// TODO: this is only a testing password for all users
 	let password = 'thisisasupersecrettestingpassworduntilthebeta'
 
+	// then update the active profile to the new profile
+	app.activeProfile = {_id: id, password, metadata}
+	console.log(app.activeProfile)
+	// FIXME: will be problematic when doing an offline "signup"
+	// will need to redo the signup once possible
+
+	// before trying any network stuff, save preferences with locally created profile
+	return savePreferences()
+	.then(() => {
+		return remoteDB.signup( id, password, {metadata} )
+	})
 	// put the new profile into the database
-	return remoteDB.signup( id, password, {metadata} )
 	.then( (response) => {
+		console.log('tryed to signup')
 		console.log(response)
 		return remoteDB.login(id, password)
 	} )
@@ -227,12 +240,6 @@ function setNewProfile({prename, surname, email, color}) {
 		} else {
 			console.log(response)
 		}
-
-		// then update the active profile to the new profile
-		app.activeProfile = {_id: id, password, metadata: response}
-
-		// and save preferences
-		return savePreferences()
 	})
 	.catch(err => console.log(err))
 }
@@ -243,18 +250,6 @@ function setNewProject({projectname, topicname, file, emails}) {
 	// however, as we can't just do that from here for the server, we are telling
 	// the server via websockets to create one
 
-	console.log('listening for', ('db-' + projectname + '-created'));
-	app.addEventListener('db-' + projectname + '-created', (e) => {
-		console.log('we received an event via websockets!')
-		console.log(e.detail)
-		if(e.detail.successful) {
-			console.log('database creation was successful')
-			this.projectOpened = true
-		} else {
-			console.log('database creation was _not_ successful')
-		}
-	})
-
 	// FIXME: create some kind of queue in the preferences to send out the request
 	// at a later time when the server is offline
 	ws.send(JSON.stringify({type: 'createDB', projectname, emails}))
@@ -262,6 +257,19 @@ function setNewProject({projectname, topicname, file, emails}) {
 	console.log('not waiting for response from server, just hoping it works')
 	console.log('if not, we\'ll have to retry once they are online')
 
+	console.log('listening for', ('db-' + projectname + '-created'))
+	app.addEventListener('db-' + projectname + '-created', (e) => {
+		console.log('we received an event via websockets!')
+		console.log(e.detail)
+		if(e.detail.successful) {
+			console.log('database creation was successful')
+			app.projectOpened = true
+		} else {
+			console.log('database creation was _not_ successful')
+		}
+	})
+
+	// independently of internet connection and remote DB already create local DB
 	new PouchDB(projectname).put({
 		_id: 'topic_' + topicname,
 		_attachments: {
@@ -460,7 +468,8 @@ function init() {
 
 	loadPreferences()
 	.then(() => {
-
+		console.log('active profile:')
+		console.log(app.activeProfile)
 		return new Promise((resolve, reject) => {
 			if(app.activeProfile === ''){
 				console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
@@ -468,12 +477,13 @@ function init() {
 				let profileOverlay = document.querySelector('#profileSetupOverlay')
 
 				profileOverlay.addEventListener('iron-overlay-closed', (e) => {
+					console.log('profile setup overlay closed')
 					setNewProfile({
 						prename: profileOverlay.prename,
 						surname: profileOverlay.surname,
 						color: profileOverlay.color,
 						email: profileOverlay.email
-					}).then((result) => resolve(activeProfile))
+					}).then((result) => resolve(app.activeProfile))
 				})
 				profileOverlay.open()
 
