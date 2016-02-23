@@ -185,19 +185,21 @@
 			// load a resource
 			loader.load(
 				// resource URL
-				'images/slotted_disk.stl'
+				//'images/slotted_disk.stl'
+				filepath
 				,
 				// Function when resource is loaded
 				 ( geometry ) => {
 					var material = new THREE.MeshNormalMaterial({
 						side: THREE.DoubleSide
 					})
-					var foobar = new THREE.Mesh(geometry, material)
-					foobar.scale.set(2000, 2000, 2000)
-					glScene.add(foobar)
+					var meshFromFile = new THREE.Mesh(geometry, material)
+					meshFromFile.scale.set(0.025, 0.025, 0.025)
+
+					// swap existing mesh with new mesh
+					glScene.add(meshFromFile)
 					glScene.remove(this.fileRepresentation)
-					this.fileRepresentation = foobar
-					console.log('only now initialized the file rep!!!!!')
+					this.fileRepresentation = meshFromFile
 					this.render()
 					this.animate()
 				}
