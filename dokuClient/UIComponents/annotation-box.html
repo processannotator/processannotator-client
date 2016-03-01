@@ -9,7 +9,7 @@
 				display: block;
 				box-sizing: border-box;
 				perspective: 600px;
-				transition: all 5s ease-out;
+				transition: all 0.25s ease-in;
 				width: auto;
 				height: auto;
 
@@ -25,6 +25,7 @@
 				height: 15em;
 				min-height: 15em;
 				max-height: 15em;
+				margin-bottom: 1em;
 			}
 
 			#container:hover {
@@ -124,7 +125,7 @@
 			<div id="main">
 				<span>[[annotation.creationDate]]</span>
 				<br>
-				<div contenteditable="true" class="annotationText" on-blur="handleTextChange" on-keydown="keydown">{{annotation.description}}</div>
+				<div contenteditable="true" class="annotationText" on-keydown="keydown">{{annotation.description}}</div>
 			</div>
 
 			<div id="tags_and_tasks">
@@ -155,14 +156,14 @@
 					return; // Should do nothing if the key event was already consumed.
 
 				if(event.keyIdentifier === 'Enter'){
+					console.log('enterkey')
 					event.preventDefault()
 					this.handleTextChange(event)
 				}
 			},
 			handleTextChange: function(event, detail, sender) {
 				this.annotation.description = event.srcElement.innerHTML;
-				var annotationEditEvent = new CustomEvent('annotation-edited-by-user', {detail: {newAnnotation: this.annotation, elem: this}})
-				this.dispatchEvent(annotationEditEvent)
+				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this})
 			},
 			computeNameLetters: function (prename, surname) {
 				return prename[0] + surname[0]
