@@ -303,14 +303,11 @@ function removeAnnotationElements(id) {
 }
 
 
-function addElementsForAnnotation(annotation){
-	// add both, annotation box and annotation point to DOM
-	// only handle creation of DOM element, actual DB updates
-	// are done independently
-	// TODO: also create 3D Labels here??
-	//
+function addAnnotationBox(annotation) {
+	// IDEA: can be maybe completely done in a custom list element?
 	let annotationBox = document.createElement('annotation-box')
 	annotationBox.annotation = annotation
+	annotationBox.addEventListener('annotation-edited-by-user', onAnnotationEdit)
 
 	if (annotation.position.x === undefined) {
 		throw Error('position.x === undefined', annotation)
@@ -351,6 +348,14 @@ function fetchAnnotations() {
 	.catch(err => console.error('error fetching annotations', err))
 }
 
+function onAnnotationEdit(evt) {
+	// emitted when user edits text in annotationbox and hits enter
+	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
+		doc.description = evt.detail.newAnnotation.description
+		localProjectDB.put(doc)
+	})
+}
+
 function rebuildRenderingElements() {
 
 	// this function removes all created representations for annotations
@@ -372,7 +377,7 @@ function rebuildRenderingElements() {
 		// then add new annotation elements to the list
 		// FIXME: outsource this to the annotationlist element
 		for (let annotation of annotations) {
-			addElementsForAnnotation(annotation)
+			addAnnotationBox(annotation)
 		}
 
 		// then add annotations to renderview and let it render them in threedimensional space
