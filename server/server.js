@@ -1,106 +1,80 @@
-// google speech api key: AIzaSyB6Wgr15OViZNoFwAe3NNwCjBjM0kR-iGQ
+'use strict'
 
-var fs = require('fs')
-var express = require('express')
-var app = express()
-app.use(express.static('public'))
-var PouchDB = require('pouchdb')
-var http = require('http').Server(app)
-var io = require('socket.io')(http)
-var speech = require('google-speech-api')
+var WebSocketServer = require('ws').Server
+, wss = new WebSocketServer({ port: 7000 });
 
-var db = new PouchDB('http://127.0.0.1:5984/collabDB')
-db.changes().then(function(a) {
-	console.log('change local')
-}).catch(function(err) {
-	console.log(err)
-})
-
-// socket.io inits
-var DokuClients = io.of('/DokuClients')
-var CameraClients = io.of('/CameraClients')
-
-function handleConnection(socket) {
-	console.log('a user connected')
-
-	socket.on('disconnect', () => console.log('user disconnected'))
-
-
-	socket.on('annotation_with_image', function(name, x, y, imageBuffer, audioBuffer) {
-		// TODO: put annotation in DB even if image or audio not valid or nonexistend
-
-		if (Buffer.isBuffer(imageBuffer)) {
-
-			fs.writeFile('test.jpg', imageBuffer, 'binary', function(err) {
-				if (err) {
-					console.log(err)
-				} else {
-					console.log('The file was saved!')
-				}
-			})
-
-		} else {
-			console.log('received image is not valid (not a Buffer). discard.')
-		}
-
-		if (Buffer.isBuffer(audioBuffer)) {
-			fs.writeFile('testaudio.ogg', audioBuffer, 'binary', function(err) {
-				if (err) {
-					console.log(err)
-				} else {
-					console.log('The audio file was saved!')
-					var opts = {
-						file: 'testaudio.ogg',
-						key: 'AIzaSyB6Wgr15OViZNoFwAe3NNwCjBjM0kR-iGQ'
-					}
-
-					speech(opts, (error, results) => {
-						// put annotation into DB
-
-						var annotation = {
-							'_id': new Date().toISOString(),
-							'name': name,
-							'description': (error === undefined && results !== undefined && results[0].result.length > 0) ? results[0].result[0].alternative[0].transcript : JSON.stringify(results),
-							'position': [parseInt(x), parseInt(y)],
-							'_attachments': {
-								'image.jpg': {
-									'content_type': 'image/jpg',
-									'data': imageBuffer.toString('base64')
-								},
-								'speech.ogg': {
-									'content_type': 'audio/ogg',
-									'data': audioBuffer.toString('base64')
-								}
-							}
-						}
-
-						console.log('put annotation into DB')
-						db.put(annotation)
-					})
-				}
-			})
-
-		} else {
-			console.log('received audio is not valid (not a Buffer). discard.')
-		}
-
-	})
+let nano = require('nano')('http://localhost:5984')
+let auth
 
 
 
 
+var createDB = function (message) {
+  console.log('now create the db')
+  return new Promise((resolve, reject) => {
+    nano.auth('couchadmin', 'thisisacouchdbpassword', function (err, body, headers) {
+      if (headers && headers['set-cookie']) {
+        auth = headers['set-cookie']
+      }
 
+      if (err) {
+        console.log(err)
+        reject(err)
+      }
 
+      let nano2 = require('nano')({url: 'http://localhost:5984', cookie: auth, jar: true})
+
+      nano2.session(function(err_, session) {
+        if (err_) {
+          console.log(err_)
+          reject(err_)
+        } else {
+          nano2.db.create(message.projectname, function (err__, body__) {
+            console.log('ok, got some response…')
+            if(!err__) {
+              console.log('database created!')
+              resolve(body__)
+            } else {
+              console.log(err__)
+              reject(err__)
+            }
+          })
+        }
+        console.log('user is %s and has these roles: %j', session.userCtx.name, session.userCtx.roles)
+      })
+
+    })
+
+  })
 
 }
 
+  wss.on('connection', function connection(ws) {
+    console.log('new connection')
+
+    ws.on('message', function incoming(rawmessage) {
+      console.log('received: %s', rawmessage)
+      let message = JSON.parse(rawmessage)
+
+      // handle different messages
+      switch (message.type) {
+        case 'createDB':
+        let response = {type: 'createDB', projectname: message.projectname}
+
+        createDB(message).then(result => {
+          response.successful = true
+          ws.send(JSON.stringify(response))
+        }).catch(err => {
+          response.successful = false
+          ws.send(JSON.stringify(response))
+        })
+        break;
+        default:
+
+      }
 
 
-
-http.listen(3000, function() {
-	console.log('listening on *:3000')
-})
+    });
 
 
-// only listen for Camera clients
-io.on('connection', handleConnection)
+  });

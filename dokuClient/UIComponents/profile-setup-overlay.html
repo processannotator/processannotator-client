@@ -48,7 +48,7 @@
 
     </neon-animated-pages>
 
-    <paper-button class="dialogButton" on-tap="onNextClick">[[buttonText]]</paper-button>
+    <paper-button id="proceedButton" class="dialogButton" on-tap="onNextClick">[[buttonText]]</paper-button>
 
 
   </template>
@@ -88,6 +88,7 @@
     },
     colorChanged: function () {
       this.$.colorInput.style.backgroundColor = this.color
+      this.$.proceedButton.style.backgroundColor = this.color
     },
     onPrevClick: function() {
       this.pageEntryAnimation = 'fade-in-animation';
@@ -125,8 +126,8 @@
       // do nothing, until last page overwrites this with this.close to close panel after animation
     },
     attached: function() {
+      this.$.colorInput.style.backgroundColor = this.color
       this.pageNumber = 0;
-      this.colorChanged()
       this.fire('attached')
     }
 
