@@ -37,17 +37,7 @@ body {
 .side-container .menu-item {
   min-width: 2.5em;
 }
-.annotation-list {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  min-height: 0px;
-  max-height: auto;
-  height: 100%;
-  padding: 1em 1em 0em;
-}
-.annotation-list > annotation-box {
-  margin-bottom: 1em;
-}
+
 .menu {
   display: flex;
   flex-direction: row;

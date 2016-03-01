@@ -38,7 +38,6 @@ function switchProjectDB(dbname) {
 
 
 	}).on('paused', () => {
-		// rebuildRenderingElements()
 		console.log('sync pause')
 
 		// replication paused (e.g. user went offline)
@@ -61,7 +60,7 @@ function switchProjectDB(dbname) {
 		// handle error
 	})
 
-	rebuildRenderingElements()
+	updateElements()
 	return sync
 }
 
@@ -354,45 +353,26 @@ function getAnnotations() {
 	.catch(err => console.error('error fetching annotations', err))
 }
 
-function onAnnotationEdit(evt) {
+app.onAnnotationEdit = function(evt) {
+	console.log(evt)
 	// emitted when user edits text in annotationbox and hits enter
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description
-		localProjectDB.put(doc)
+		return localProjectDB.put(doc)
 		// after put into DB, DB change event should be triggered automatically to update
-	})
+	})//.then(() => {updateElements()})
 }
 
 
-function updateElements(changedAnnotations) {
-	rebuildRenderingElements()
-}
-
-function rebuildRenderingElements() {
-
-	// this function removes all created representations for annotations
-	// and re-creates and appends them to the view
-
+function updateElements() {
 	localProjectDB.getAttachment(app.activeTopic, 'file')
 	.then(blob => {
 		renderView.file = blob
 		return
 	})
-	.then(getAnnotations)
-	.then( annotations => {
 
-		// first clean old annotation elements
-		for (let id of annotationElements.keys()) {
-			removeAnnotationElements(id)
-		}
-
-		// then add new annotation elements to the list
-		// FIXME: outsource this to the annotationlist element
-		for (let annotation of annotations) {
-			addAnnotationBox(annotation)
-		}
-
-		// then add annotations to renderview and let it render them in threedimensional space
+	getAnnotations().then(annotations => {
+		app.$.annotationList.items = annotations
 		renderView.annotations = annotations
 	})
 }
@@ -531,7 +511,7 @@ function init() {
 
 	}).then(() => {
 		console.log('continue')
-		rebuildRenderingElements()
+		updateElements()
 	})
 
 }
