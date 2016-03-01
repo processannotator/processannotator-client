@@ -33,13 +33,12 @@ function switchProjectDB(dbname) {
 		retry: true
 	}).on('change', function(info) {
 		console.log('sync change!!')
-		console.log(info)
-		console.log('TODO: now sync all DOM elements...')
-		rebuildRenderingElements()
+		// TODO: implement function that only updates elements that changed
+		updateElements(info.change.docs)
 
 
 	}).on('paused', () => {
-		rebuildRenderingElements()
+		// rebuildRenderingElements()
 		console.log('sync pause')
 
 		// replication paused (e.g. user went offline)
@@ -54,8 +53,6 @@ function switchProjectDB(dbname) {
 	}).on('complete', info => {
 		console.log('sync complete')
 		console.log(info)
-		//renderView.
-		rebuildRenderingElements()
 
 		// handle complete
 	}).on('error', err => {
@@ -64,10 +61,20 @@ function switchProjectDB(dbname) {
 		// handle error
 	})
 
-
+	rebuildRenderingElements()
 	return sync
+}
 
-
+function completeReset() {
+	alert('pressed "-", doing a complete reset.')
+	return localDB.get('_local/lastSession').then(doc => {
+		doc.activeProfile = {}
+		doc.activeProject = {}
+		doc.activeTopic = {}
+		return localDB.put(doc)
+	})
+	.then(() => localDB.destroy())
+	.then(() => renderview.annotations = [])
 }
 
 function addTopic() {
@@ -318,8 +325,7 @@ function addAnnotationBox(annotation) {
 }
 
 
-function fetchAnnotations() {
-
+function getAnnotations() {
 	return localProjectDB.allDocs({
 		include_docs: true,
 		attachments: true,
@@ -353,7 +359,13 @@ function onAnnotationEdit(evt) {
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description
 		localProjectDB.put(doc)
+		// after put into DB, DB change event should be triggered automatically to update
 	})
+}
+
+
+function updateElements(changedAnnotations) {
+	rebuildRenderingElements()
 }
 
 function rebuildRenderingElements() {
@@ -366,7 +378,7 @@ function rebuildRenderingElements() {
 		renderView.file = blob
 		return
 	})
-	.then(fetchAnnotations)
+	.then(getAnnotations)
 	.then( annotations => {
 
 		// first clean old annotation elements
@@ -382,7 +394,6 @@ function rebuildRenderingElements() {
 
 		// then add annotations to renderview and let it render them in threedimensional space
 		renderView.annotations = annotations
-
 	})
 }
 
@@ -398,9 +409,17 @@ function handleResize(event) {
 	}
 }
 
+
+function keyUp(evt) {
+	if(evt.keyCode === 189){
+		completeReset()
+	}
+}
+
 window.addEventListener('online', alertOnlineStatus)
 window.addEventListener('offline', alertOnlineStatus)
 window.addEventListener('resize', handleResize)
+window.addEventListener('keyup', keyUp)
 
 
 function websockettest() {
