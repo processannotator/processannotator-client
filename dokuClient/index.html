@@ -12,6 +12,7 @@
 	<link rel="import" href="bower_components/iron-icons/iron-icons.html">
 	<link rel="import" href="bower_components/iron-icons/image-icons.html">
 	<link rel="import" href="bower_components/iron-selector/iron-selector.html">
+	<link rel="import" href="bower_components/iron-list/iron-list.html">
 
 	<link rel="import" href="bower_components/neon-animation/neon-animated-pages.html">
 	<link rel="import" href="bower_components/neon-animation/neon-animatable.html">
@@ -37,8 +38,16 @@
 		background-color: rgb(98, 98, 98)
 	}
 
+	iron-list {
+	  flex: 1 1 auto;
+	  overflow-y: auto;
+	  min-height: 0px;
+	  max-height: auto;
+	  height: 100%;
+	  padding: 1em;
+	}
 
-</style>
+	</style>
 
 </head>
 
@@ -86,9 +95,6 @@
 				</iron-selector>
 			</div>
 
-
-
-
 		</div>
 
 		<div class="side-container">
@@ -99,12 +105,11 @@
 				<div class="menu-item"><i>search for</i></div>
 			</div>
 
-
-
-			<div class="annotation-list">
-				<!-- IDEA: We could experiment with https://elements.polymer-project.org/elements/iron-list -->
-
-			</div>
+			<iron-list id="annotationList" items="[[annotations]]" as="item">
+	      <template>
+					<annotation-box class="listItem" annotation="[[item]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
+	      </template>
+	    </iron-list>
 
 		</div>
 
