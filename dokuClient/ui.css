@@ -14,9 +14,7 @@ body {
   font-family: "SourceSansPro-Light";
   background: #646464;
   overflow: hidden;
-
-
-
+  -webkit-user-select: none;
 }
 .top-container {
   display: flex;

@@ -224,7 +224,7 @@
 				let annotation3DObject = {}
 				let annotationGlGroup = new THREE.Object3D()
 				let multFactor = 2
-
+				console.log(annotation)
 				let label = this.createLabel(annotation.description, annotation.position, multFactor, annotation.creatorProfile.color)
 				this.labelGroup.add(label)
 				annotation3DObject.label = label
