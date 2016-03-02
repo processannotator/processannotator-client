@@ -72,7 +72,7 @@
 		ready: function() {
 			// doesnt work with listeners on this very element
 			// so create start event listener
-			console.log('renderview ready!!!')
+			console.log('renderview ready')
 			this.ready = true
 			document.addEventListener('keydown', this.keydown.bind(this))
 		},
@@ -84,6 +84,7 @@
 			glRenderer.render(glScene, camera)
 			cssRenderer.render(cssScene, camera)
 		},
+
 		attached: function() {
 
 			this.modus = {tool: '', modelGrabbing: false}
@@ -114,7 +115,7 @@
 			glRenderer.domElement.style.position = 'absolute';
 			glRenderer.domElement.style.top = 0;
 
-
+			// cssRenderer is used for font rendering
 			cssRenderer = new THREE.CSS3DRenderer()
 			cssRenderer.setSize(width, height)
 
@@ -129,22 +130,19 @@
 
 			// setup 3d-controls (rotating the camera with cursor)
 			controls = new THREE.TrackballControls(camera, this)
-
 			controls.rotateSpeed = 1.0
 			controls.zoomSpeed = 1.2
 			controls.panSpeed = 0.8
-
 			controls.noZoom = false
 			controls.noPan = false
-
 			controls.staticMoving = true;
 			controls.dynamicDampingFactor = 0.3
 			controls.keys = [65, 83, 68]
 
+			// add cursor pointer to 3D scene
 			var sphereGeometry = new THREE.SphereGeometry( 15, 16, 16 )
 			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
-
 			glScene.add(this.pointerSphere)
 
 			// create Raycaster used for polygon editing tool
@@ -152,16 +150,14 @@
 
 			controls.addEventListener('change', this.render.bind(this))
 			controls.addEventListener('change', this.updateAnnotationVisibility.bind(this))
-
 			controls.handleResize()
 
 			// init annotations to empty array
 			this.annotations = []
 
-			// notify other elements that the renderview is ready initializing
-
 			this.fire('initialized')
 		},
+
 		resize: function(event) {
 			let width = this.parentNode.getBoundingClientRect().width
 			let height = this.parentNode.getBoundingClientRect().height
@@ -204,20 +200,8 @@
 					this.animate()
 				}
 			);
-
-			// for now do something different
-			// var geometry = new THREE.BoxGeometry(700, 700, 700)
-			// var material = new THREE.MeshNormalMaterial({
-			// 	transparent: false,
-			// 	opacity: 1.0,
-			// 	side: THREE.DoubleSide
-			// })
-			//
-			// this.fileRepresentation = new THREE.Mesh(geometry, material)
-			// glScene.add(this.fileRepresentation)
-
-
 		},
+
 		_annotationsChanged: function() {
 			console.log('_annotationsChanged')
 			console.log(this.annotations)
@@ -230,10 +214,7 @@
 				}
 			}
 
-			console.log(this.annotations);
-
 			for (let annotation of this.annotations) {
-
 				let div = document.createElement('div')
 				let textElement = document.createElement('span')
 				div.style.opacity = '0.85'
@@ -252,11 +233,9 @@
 				label.position.multiplyScalar(multFactor)
 				this.labelGroup.add(label)
 
-
-					// TODO: add arrow, label to a group/structure to be selectable
+				// TODO: add arrow, label to a group/structure to be selectable
 				let arrow = this.createArrow(annotation.position, multFactor, annotation.creatorProfile.color)
 				glScene.add(arrow)
-
 
 				// if annotation has polygon info, create it and add it to the scene
 				if(annotation.polygon !== undefined) {
@@ -264,11 +243,11 @@
 					glScene.add(polygon)
 				}
 			}
-
 			this.render()
-
 		},
+
 		updateAnnotationVisibility: function () {
+			// TODO: there is a PR on threejs for raycasting in css renderer, use it once ready
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster()
 
@@ -284,16 +263,16 @@
 				} else {
 					label.element.style.opacity = 0.8
 				}
-
-
 			}
 			this.render()
 
 		},
+
 		toggleTrack: function(e) {
 			this.modus.modelGrabbing = !this.modus.modelGrabbing
 			Polymer.dom(this).classList.toggle('track')
 		},
+
 		updateMouse: function (mouseEvent) {
 			let canvas = this.$$('canvas')
 			this.mouse = new THREE.Vector2(
@@ -301,10 +280,9 @@
 				-((mouseEvent.layerY / canvas.height) * 2 - 1)
 			)
 		},
+
 		mouseMoved: function (e) {
-
 			if(this.modus.tool === 'polygon') {
-
 				this.updateMouse(e)
 				this.raycaster.setFromCamera(this.mouse, camera)
 				let intersections = this.raycaster.intersectObject(this.fileRepresentation)
@@ -319,6 +297,7 @@
 				}
 			}
 		},
+
 		keydown: function (e) {
 			if (event.defaultPrevented) {
 				return; // Should do nothing if the key event was already consumed.
@@ -406,8 +385,7 @@
 			var geometry = new THREE.Geometry()
 			geometry.vertices.push(
 				point,
-				new THREE.Vector3().copy(point).multiplyScalar(multFactor),
-				new THREE.Vector3( 10, 0, 0 )
+				new THREE.Vector3().copy(point).multiplyScalar(multFactor)
 			)
 
 			return new THREE.Line( geometry, material )
