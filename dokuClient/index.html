@@ -85,7 +85,7 @@
 					<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-click="createFirstProject"></paper-fab>
 				</div>
 
-				<render-view id="renderView" hidden$="{{!projectOpened}}"> </render-view>
+				<render-view id="renderView" hidden$="{{!projectOpened}}" on-create-annotation="onCreateAnnotation"> </render-view>
 
 				<iron-selector hidden$="{{!projectOpened}}" id="tool-box" attr-for-selected="name" selected="polygon">
 					<iron-icon class="tool-box-icon" name="polygon" src="images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
