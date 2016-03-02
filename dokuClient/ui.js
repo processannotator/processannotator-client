@@ -73,7 +73,7 @@ function completeReset() {
 		return localDB.put(doc)
 	})
 	.then(() => localDB.destroy())
-	.then(() => renderview.annotations = [])
+	.then(() => renderView.annotations = [])
 }
 
 function addTopic() {
@@ -367,13 +367,13 @@ app.onAnnotationEdit = function(evt) {
 function updateElements() {
 	localProjectDB.getAttachment(app.activeTopic, 'file')
 	.then(blob => {
-		renderView.file = blob
+		app.$.renderView.file = blob
 		return
 	})
 
 	getAnnotations().then(annotations => {
 		app.$.annotationList.items = annotations
-		renderView.annotations = annotations
+		app.$.renderView.annotations = annotations
 	})
 }
 
@@ -383,14 +383,14 @@ var alertOnlineStatus = function() {
 	window.alert('You are not connected to the internet.')
 }
 
-function handleResize(event) {
-	if(renderView) {
-		renderView.resize()
+app.handleResize = function(event) {
+	if(app.$.renderView) {
+		app.$.renderView.resize()
 	}
 }
 
 
-function keyUp(evt) {
+app.keyUp = function(evt) {
 	if(evt.keyCode === 189){
 		completeReset()
 	}
@@ -398,16 +398,15 @@ function keyUp(evt) {
 
 window.addEventListener('online', alertOnlineStatus)
 window.addEventListener('offline', alertOnlineStatus)
-window.addEventListener('resize', handleResize)
-window.addEventListener('keyup', keyUp)
+window.addEventListener('resize', app.handleResize)
+window.addEventListener('keyup', app.keyUp)
 
 
 function websockettest() {
 
 }
 
-function initWebsockets() {
-
+app.initWebsockets = function() {
 	return new Promise((resolve, reject) => {
 
 		ws = new WebSocket('ws:/localhost:7000', ['protocolbla'])
@@ -429,15 +428,12 @@ function initWebsockets() {
 				console.log('unknown websockets event:', msg)
 			}
 		}
-
-
-
 	})
 
 
 }
 
-function createFirstProject() {
+app.createFirstProject = function() {
 	console.log('click')
 	let projectOverlay = document.querySelector('#projectSetupOverlay')
 	projectOverlay.addEventListener('iron-overlay-closed', (e) => {
@@ -466,7 +462,7 @@ app.init = function() {
 	localDB = new PouchDB('collabdb')
 	remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 
-	initWebsockets()
+	this.initWebsockets()
 	.then(() => console.log('websocket succesfully connected'))
 	.catch(err => console.error(err))
 
@@ -500,7 +496,7 @@ app.init = function() {
 		console.log('ok, loaded or created the active profile. Now check if there is an active project')
 		console.log(this.activeProject)
 		if(this.activeProject === '') {
-			console.log('no active Project, yet!');
+			console.log('no active Project, yet!')
 			this.projectOpened = false
 		} else {
 			console.log('loaded a project, show the renderview')
