@@ -457,7 +457,7 @@ function createFirstProject() {
 }
 
 
-function init() {
+app.init = function() {
 
 	imageContainer = document.querySelector('.object-view')
 	annotationList = document.querySelector('.annotation-list')
@@ -473,9 +473,9 @@ function init() {
 	loadPreferences()
 	.then(() => {
 		console.log('active profile:')
-		console.log(app.activeProfile)
+		console.log(this.activeProfile)
 		return new Promise((resolve, reject) => {
-			if(app.activeProfile === ''){
+			if(this.activeProfile === ''){
 				console.log('NO ACTIVE PROFIL found in the preferences! creating one now.')
 
 				let profileOverlay = document.querySelector('#profileSetupOverlay')
@@ -487,25 +487,25 @@ function init() {
 						surname: profileOverlay.surname,
 						color: profileOverlay.color,
 						email: profileOverlay.email
-					}).then((result) => resolve(app.activeProfile))
+					}).then((result) => resolve(this.activeProfile))
 				})
 				profileOverlay.open()
 
-			} else if(app.activeProfile !== undefined) {
-				resolve(app.activeProfile)
+			} else if(this.activeProfile !== undefined) {
+				resolve(this.activeProfile)
 			}
 		})
 
 	}).then(() => {
 		console.log('ok, loaded or created the active profile. Now check if there is an active project')
-		console.log(app.activeProject)
-		if(app.activeProject === '') {
+		console.log(this.activeProject)
+		if(this.activeProject === '') {
 			console.log('no active Project, yet!');
-			app.projectOpened = false
+			this.projectOpened = false
 		} else {
 			console.log('loaded a project, show the renderview')
-			app.projectOpened = true
-			return switchProjectDB(app.activeProject)
+			this.projectOpened = true
+			return switchProjectDB(this.activeProject)
 		}
 
 
@@ -518,7 +518,7 @@ function init() {
 
 app.addEventListener('dom-change', () => {
 	console.log('app is ready.')
-	init()
+	app.init()
 })
 
 

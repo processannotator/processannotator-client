@@ -11,6 +11,8 @@
 	:host {
 		margin: 0;
 		cursor: -webkit-grab;
+		min-height: 100%;
+		min-width: 100%;
 	}
 
 	:host.track {
@@ -74,9 +76,18 @@
 			// so create start event listener
 			console.log('renderview ready')
 			this.ready = true
+			this.rendering = false
 			document.addEventListener('keydown', this.keydown.bind(this))
 		},
-		animate: function() {
+		startRendering: function() {
+			if(this.rendering === false) {
+				console.log('started rendering');
+				this.rendering = true
+				animate()
+				controls.update()
+			}
+		},
+		animate: function () {
 			requestAnimationFrame(this.animate.bind(this))
 			controls.update()
 		},
@@ -126,7 +137,9 @@
 
 			// create group for text annotations in 3D
 			this.labelGroup = new THREE.Object3D()
+			this.annotationGlGroups = new THREE.Object3D()
 			cssScene.add(this.labelGroup)
+			glScene.add(this.annotationGlGroups)
 
 			// setup 3d-controls (rotating the camera with cursor)
 			controls = new THREE.TrackballControls(camera, this)
@@ -154,6 +167,7 @@
 
 			// init annotations to empty array
 			this.annotations = []
+			this.annotation3DObjects = []
 
 			this.fire('initialized')
 		},
@@ -166,26 +180,18 @@
 			camera.aspect = width / height
 			camera.updateProjectionMatrix()
 			controls.handleResize()
-
 			this.render()
 		},
 
 		_fileChanged: function () {
 			console.log('fileChanged')
 			console.log(this.file)
-			// load the fucking file and use it for display
-			// instantiate a loader
+
+			// load the file and use it for display
 			var loader = new THREE.STLLoader()
 			var filepath = URL.createObjectURL(this.file)
-			console.log(filepath)
-			// load a resource
-			loader.load(
-				// resource URL
-				//'images/slotted_disk.stl'
-				filepath
-				,
-				// Function when resource is loaded
-				 ( geometry ) => {
+			loader.load(filepath,
+				geometry  => {
 					var material = new THREE.MeshNormalMaterial({
 						side: THREE.DoubleSide
 					})
@@ -215,33 +221,27 @@
 			}
 
 			for (let annotation of this.annotations) {
-				let div = document.createElement('div')
-				let textElement = document.createElement('span')
-				div.style.opacity = '0.85'
-				div.style.fontSize = '40px'
-				div.style.padding = "0.35em"
-				div.style.background = "rgb(255, 255, 255)"
-				div.style.border = annotation.creatorProfile.color + " solid 0.125em"
-				div.style.transition = "opacity 0.5s"
-				div.innerHTML = annotation.description
-				div.addEventListener('mouseover', () => console.log('over'))
-
+				let annotation3DObject = {}
+				let annotationGlGroup = new THREE.Object3D()
 				let multFactor = 2
-				let label = new THREE.CSS3DSprite(div)
 
-				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z)
-				label.position.multiplyScalar(multFactor)
+				let label = this.createLabel(annotation.description, annotation.position, multFactor, annotation.creatorProfile.color)
 				this.labelGroup.add(label)
+				annotation3DObject.label = label
 
 				// TODO: add arrow, label to a group/structure to be selectable
 				let arrow = this.createArrow(annotation.position, multFactor, annotation.creatorProfile.color)
-				glScene.add(arrow)
+				annotationGlGroup.add(arrow)
+				annotation3DObject.arrow = arrow
 
 				// if annotation has polygon info, create it and add it to the scene
 				if(annotation.polygon !== undefined) {
 					let polygon = this.createPolygon(annotation.polygon, annotation.creatorProfile.color)
-					glScene.add(polygon)
+					annotationGlGroup.add(polygon)
+					annotation3DObject.polygon = polygon
 				}
+				this.annotationGlGroups.add(annotationGlGroup)
+				this.annotation3DObjects.push(annotation3DObject)
 			}
 			this.render()
 		},
@@ -291,7 +291,6 @@
 					if(this.modus.modelGrabbing === false)
 						Polymer.dom(this).classList.add('polygonCursor')
 					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z)
-					this.render()
 				} else {
 					Polymer.dom(this).classList.remove('polygonCursor')
 				}
@@ -377,6 +376,24 @@
 					} )
 				)
 		},
+
+		createLabel: function (text, point, multFactor, color) {
+			let div = document.createElement('div')
+			let textElement = document.createElement('span')
+			div.style.opacity = '0.85'
+			div.style.fontSize = '40px'
+			div.style.padding = "0.35em"
+			div.style.background = "rgb(255, 255, 255)"
+			div.style.border = color + " solid 0.125em"
+			div.style.transition = "opacity 0.5s"
+			div.innerHTML = text
+			div.addEventListener('mouseover', () => console.log('over'))
+			let label = new THREE.CSS3DSprite(div)
+			label.position.set(point.x, point.y, point.z)
+			label.position.multiplyScalar(multFactor)
+			return label
+		},
+
 		createArrow: function (point, multFactor, color) {
 			var material = new THREE.LineBasicMaterial({
 				color: color
