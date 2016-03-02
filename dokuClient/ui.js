@@ -19,13 +19,13 @@ app.activeProfile = ''
 app.activeProject = 'collabdb'
 app.activeTopic = {_id: 'topic_1'}
 
-function switchProjectDB(dbname) {
+app.switchProjectDB = function(dbname) {
 	console.log('switch to projectDB with name', dbname)
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = dbname
 	localProjectDB = new PouchDB(app.activeProject)
 	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + app.activeProject)
-	savePreferences()
+	app.savePreferences()
 
 	// perhaps also on change localDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
@@ -34,7 +34,7 @@ function switchProjectDB(dbname) {
 	}).on('change', function(info) {
 		console.log('sync change!!')
 		// TODO: implement function that only updates elements that changed
-		updateElements(info.change.docs)
+		app.updateElements(info.change.docs)
 
 
 	}).on('paused', () => {
@@ -60,7 +60,7 @@ function switchProjectDB(dbname) {
 		// handle error
 	})
 
-	updateElements()
+	app.updateElements()
 	return sync
 }
 
@@ -76,7 +76,7 @@ function completeReset() {
 	.then(() => renderView.annotations = [])
 }
 
-function addTopic() {
+app.addTopic = function() {
 	// add new topic to active project
 	return localDB.put({
 		_id: 'topic_' + 1,
@@ -89,7 +89,8 @@ function addTopic() {
 	})
 }
 
-function addAnnotation({description='', position={x: 0, y: 0, z: 0}, polygon=[]}) {
+// this is an event handler, triggering on enter-key event in renderview
+app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 0}, polygon=[]}}) {
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
@@ -191,7 +192,7 @@ function loadPreferences() {
 
 }
 
-function savePreferences() {
+app.savePreferences = function() {
 	console.log('saving preferences...')
 	// _local/lastSession should exist because loadPreferences creates the doc
 	return localDB.get('_local/lastSession').then(doc => {
@@ -204,7 +205,7 @@ function savePreferences() {
 
 }
 
-function setNewProfile({prename, surname, email, color}) {
+app.setNewProfile = function({prename, surname, email, color}) {
 
 	let metadata = {
 		surname: surname,
@@ -225,7 +226,7 @@ function setNewProfile({prename, surname, email, color}) {
 	// will need to redo the signup once possible
 
 	// before trying any network stuff, save preferences with locally created profile
-	return savePreferences()
+	return app.savePreferences()
 	.then(() => {
 		return remoteDB.signup( id, password, {metadata} )
 	})
@@ -250,7 +251,7 @@ function setNewProfile({prename, surname, email, color}) {
 	.catch(err => console.log(err))
 }
 
-function setNewProject({projectname, topicname, file, emails}) {
+app.setNewProject = function({projectname, topicname, file, emails}) {
 	// assumes current activeProfile as the creator
 	// we will create a new DB for the project
 	// however, as we can't just do that from here for the server, we are telling
@@ -290,7 +291,7 @@ function setNewProject({projectname, topicname, file, emails}) {
 		console.log('created project', projectname, 'with first topic', topicname, 'locally.')
 		console.log('now set a timeout of 1 second to try a live sync.')
 		setTimeout(() => {
-			switchProjectDB(projectname)
+			app.switchProjectDB(projectname)
 		}, 1000)
 
 	}).catch(function (err) {
@@ -300,31 +301,7 @@ function setNewProject({projectname, topicname, file, emails}) {
 
 }
 
-
-function removeAnnotationElements(id) {
-	// get DOM objects belonging to id
-	let [annotationBox] = annotationElements.get(id)
-	// annotationPoint.parentNode.removeChild(annotationPoint)
-	annotationBox.parentNode.removeChild(annotationBox)
-}
-
-
-function addAnnotationBox(annotation) {
-	// IDEA: can be maybe completely done in a custom list element?
-	let annotationBox = document.createElement('annotation-box')
-	annotationBox.annotation = annotation
-	annotationBox.addEventListener('annotation-edited-by-user', onAnnotationEdit)
-
-	if (annotation.position.x === undefined) {
-		throw Error('position.x === undefined', annotation)
-	}
-
-	annotationList.appendChild(annotationBox)
-	annotationElements.set(annotation._id, [/*annotationPoint,*/ annotationBox])
-}
-
-
-function getAnnotations() {
+app.getAnnotations = function() {
 	return localProjectDB.allDocs({
 		include_docs: true,
 		attachments: true,
@@ -364,14 +341,14 @@ app.onAnnotationEdit = function(evt) {
 }
 
 
-function updateElements() {
+app.updateElements = function() {
 	localProjectDB.getAttachment(app.activeTopic, 'file')
 	.then(blob => {
 		app.$.renderView.file = blob
 		return
 	})
 
-	getAnnotations().then(annotations => {
+	app.getAnnotations().then(annotations => {
 		app.$.annotationList.items = annotations
 		app.$.renderView.annotations = annotations
 	})
@@ -434,14 +411,13 @@ app.initWebsockets = function() {
 }
 
 app.createFirstProject = function() {
-	console.log('click')
 	let projectOverlay = document.querySelector('#projectSetupOverlay')
 	projectOverlay.addEventListener('iron-overlay-closed', (e) => {
 		console.log('overlay closed')
 		console.log(projectOverlay.projectname, projectOverlay.file)
-		console.log(projectOverlay);
+		console.log(projectOverlay)
 
-		setNewProject({
+		app.setNewProject({
 			projectname: projectOverlay.projectname,
 			topicname: projectOverlay.topicname,
 			file: projectOverlay.file,
@@ -478,7 +454,7 @@ app.init = function() {
 
 				profileOverlay.addEventListener('iron-overlay-closed', (e) => {
 					console.log('profile setup overlay closed')
-					setNewProfile({
+					app.setNewProfile({
 						prename: profileOverlay.prename,
 						surname: profileOverlay.surname,
 						color: profileOverlay.color,
@@ -501,13 +477,13 @@ app.init = function() {
 		} else {
 			console.log('loaded a project, show the renderview')
 			this.projectOpened = true
-			return switchProjectDB(this.activeProject)
+			return app.switchProjectDB(this.activeProject)
 		}
 
 
 	}).then(() => {
 		console.log('continue')
-		updateElements()
+		app.updateElements()
 	})
 
 }

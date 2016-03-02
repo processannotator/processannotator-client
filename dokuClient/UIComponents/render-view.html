@@ -84,7 +84,6 @@
 				console.log('started rendering');
 				this.rendering = true
 				animate()
-				controls.update()
 			}
 		},
 		animate: function () {
@@ -153,7 +152,7 @@
 			controls.keys = [65, 83, 68]
 
 			// add cursor pointer to 3D scene
-			var sphereGeometry = new THREE.SphereGeometry( 15, 16, 16 )
+			var sphereGeometry = new THREE.SphereGeometry( 5, 6, 6 )
 			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
 			glScene.add(this.pointerSphere)
@@ -291,6 +290,7 @@
 					if(this.modus.modelGrabbing === false)
 						Polymer.dom(this).classList.add('polygonCursor')
 					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z)
+					this.render()
 				} else {
 					Polymer.dom(this).classList.remove('polygonCursor')
 				}
@@ -306,17 +306,17 @@
 				case 'Enter':
 					if(this.modus.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						// TODO: finish shape and create annotation
-						console.log('pressed enter in polygon mode')
-						addAnnotation({
+
+						this.fire('create-annotation', {
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
 							position: this.verticesPolygonTool[0]
-						}).then(() => {
-							glScene.remove(this.previewPolygon)
-							this.previewPolygon = undefined
-							this.verticesPolygonTool = []
-							console.log('added polygon annotation')
 						})
+
+						glScene.remove(this.previewPolygon)
+						this.previewPolygon = undefined
+						this.verticesPolygonTool = []
+						console.log('added polygon annotation')
 					}
 					break;
 				default:
