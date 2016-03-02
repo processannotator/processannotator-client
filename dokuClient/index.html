@@ -105,9 +105,9 @@
 				<div class="menu-item"><i>search for</i></div>
 			</div>
 
-			<iron-list id="annotationList" items="[[annotations]]" as="item">
+			<iron-list id="annotationList" as="item">
 	      <template>
-					<annotation-box class="listItem" annotation="[[item]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
+					<annotation-box class="listItem" annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
 	      </template>
 	    </iron-list>
 
