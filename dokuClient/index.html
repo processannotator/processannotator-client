@@ -27,6 +27,7 @@
 	<link rel="import" href="UIComponents/tool-box.html">
 	<link rel="import" href="UIComponents/annotation-box.html">
 	<link rel="import" href="UIComponents/render-view.html">
+	<link rel="import" href="UIComponents/dashboard.html">
 
 	<style is="custom-style">
 	iron-icon.iron-selected {
@@ -49,10 +50,7 @@
 
 
 	#dashboard {
-		min-height:50vh;
-		flex: 1 1 auto;
-		position: relative;
-		background-color: #f5f5f5;
+		min-height:1vh;
 	}
 
 
@@ -84,19 +82,18 @@
 		<div class="main-container">
 
 			<div class="menu">
+
 				<div class="menu-item" on-tap="toggleDashboard">Project</div>
+
 				<div class="menu-item">Start Recording</div>
 				<div class="menu-item">Change View</div>
 				<date></date>
 				<div class="menu-item"> </div>
 			</div>
 
-			<div id="dashboard" class="hidden">
-				Dashboard test
-			</div>
 
+			<dash-board id="dashboard" class="hidden"></dash-board>
 			<div id="objectview">
-
 				<div class="tutorial">
 					<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-click="createFirstProject"></paper-fab>
 				</div>
