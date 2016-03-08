@@ -115,7 +115,7 @@ function login(user, password) {
 	return remoteDB.login(user, password)
 }
 
-function loadPreferences() {
+app.loadPreferences = function() {
 
 	return localDB.get('_local/lastSession')
 	.then((preferences) => {
@@ -178,7 +178,7 @@ function loadPreferences() {
 			})
 			.then((result) => {
 				console.log('trying to reload preferences after setting fresh initial one.')
-				return loadPreferences()
+				return app.loadPreferences()
 			})
 			.catch((error) => {
 				console.log(error)
@@ -435,6 +435,7 @@ app.init = function() {
 	annotationList = document.querySelector('.annotation-list')
 	renderView = document.querySelector('render-view')
 
+
 	localDB = new PouchDB('collabdb')
 	remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb')
 
@@ -442,8 +443,7 @@ app.init = function() {
 	.then(() => console.log('websocket succesfully connected'))
 	.catch(err => console.error(err))
 
-	loadPreferences()
-	.then(() => {
+	app.loadPreferences().then(() => {
 		console.log('active profile:')
 		console.log(this.activeProfile)
 		return new Promise((resolve, reject) => {
@@ -486,6 +486,13 @@ app.init = function() {
 		app.updateElements()
 	})
 
+}
+
+app.toggleDashboard = function (e) {
+	console.log('toggle dashboard')
+
+	app.$.dashboard.classList.toggle('hidden')
+	app.$.objectview.classList.toggle('hidden')
 }
 
 app.addEventListener('dom-change', () => {
