@@ -453,7 +453,6 @@ app.init = function() {
 				let profileOverlay = document.querySelector('#profileSetupOverlay')
 
 				profileOverlay.addEventListener('iron-overlay-closed', (e) => {
-					console.log('profile setup overlay closed')
 					app.setNewProfile({
 						prename: profileOverlay.prename,
 						surname: profileOverlay.surname,
@@ -490,9 +489,13 @@ app.init = function() {
 
 app.toggleDashboard = function (e) {
 	console.log('toggle dashboard')
-
-	app.$.dashboard.classList.toggle('hidden')
 	app.$.objectview.classList.toggle('hidden')
+	app.$.dashboard.classList.toggle('hidden')
+	app.$.dashboard.animate()
+
+
+	console.log(app.$.dashboard)
+
 }
 
 app.addEventListener('dom-change', () => {
