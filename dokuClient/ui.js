@@ -410,7 +410,8 @@ app.initWebsockets = function() {
 
 }
 
-app.createFirstProject = function() {
+app.createProject = function() {
+	console.log('create Project');
 	let projectOverlay = document.querySelector('#projectSetupOverlay')
 	projectOverlay.addEventListener('iron-overlay-closed', (e) => {
 		console.log('overlay closed')
@@ -489,11 +490,9 @@ app.init = function() {
 
 app.toggleDashboard = function (e) {
 	console.log('toggle dashboard')
-	app.$.objectview.classList.toggle('hidden')
-	app.$.dashboard.classList.toggle('hidden')
-	app.$.dashboard.animate()
 
-
+	app.$.dashboard.toggle()
+	// app.$.objectview.classList.toggle('hidden')
 	console.log(app.$.dashboard)
 
 }

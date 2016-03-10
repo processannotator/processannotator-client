@@ -20,11 +20,10 @@
 	<link rel="import" href="bower_components/paper-styles/paper-styles.html">
 	<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
 	<link rel="import" href="bower_components/paper-button/paper-button.html">
-		<link rel="import" href="bower_components/paper-fab/paper-fab.html">
+	<link rel="import" href="bower_components/paper-fab/paper-fab.html">
 
 	<link rel="import" href="UIComponents/profile-setup-overlay.html">
 	<link rel="import" href="UIComponents/project-setup-overlay.html">
-	<link rel="import" href="UIComponents/tool-box.html">
 	<link rel="import" href="UIComponents/annotation-box.html">
 	<link rel="import" href="UIComponents/render-view.html">
 	<link rel="import" href="UIComponents/dashboard.html">
@@ -83,7 +82,7 @@
 
 			<div class="menu">
 
-				<div class="menu-item" on-tap="toggleDashboard">Project</div>
+				<div class="menu-item" on-tap="toggleDashboard">Dashboard <span>{{test2}}</span></div>
 
 				<div class="menu-item">Start Recording</div>
 				<div class="menu-item">Change View</div>
@@ -91,11 +90,13 @@
 				<div class="menu-item"> </div>
 			</div>
 
+		<div id="workspace">
 
-			<dash-board id="dashboard" class="hidden"></dash-board>
+
+			<dash-board id="dashboard" on-boom="createProject" test="{{test2}}"></dash-board>
 			<div id="objectview">
 				<div class="tutorial">
-					<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-click="createFirstProject"></paper-fab>
+					<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
 				</div>
 
 				<render-view id="renderView" on-create-annotation="addAnnotation"> </render-view>
@@ -106,8 +107,8 @@
 					<iron-icon class="tool-box-icon" name="freehand" src="images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
 					<iron-icon class="tool-box-icon" name="text" src="images/IconTool_BLACK/IconTools_Text_black.svg"></iron-icon>
 				</iron-selector>
-
 			</div>
+</div>
 
 
 

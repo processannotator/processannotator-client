@@ -6,6 +6,7 @@
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-in-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-down-animation.html">
+<link rel="import" href="../bower_components/paper-material/paper-material.html">
 <!-- this element handles the selection of tools in the object view
 it's not supposed to actually handle the editing itself, just:
 (is a tool selected)?, (which tool is selected)? and corresponding events.
@@ -15,16 +16,26 @@ it's not supposed to actually handle the editing itself, just:
 
 	<template>
 	<style>
+
 	:host {
-	  background-color: #c2baba;
+	  background-color: #a6a6a6;
+	}
+
+	paper-button {
+		background-color: white;
 	}
 	</style>
+	<!-- <paper-material id="base" elevation="3"> -->
+		<paper-button raised on-tap="createProjectClick"><iron-icon icon="add"></iron-icon>Create New Project</paper-button>
+		<content></content>
+		bla?
+		<span>{{test}}</span>
 
-asdasd
-asd
-asdas
-das
-dasdasdasdasdasdasd
+		<iron-list id="projectList" as="item">
+			<template>
+			</template>
+		</iron-list>
+	<!-- </paper-material> -->
 </template>
 
 <script>
@@ -34,12 +45,19 @@ Polymer({
 		Polymer.NeonAnimationRunnerBehavior
 	],
 	properties: {
+		isVisible: Boolean,
+		test: String,
 		animationConfig: {
 			value: function() {
 				return {
-					// provided by neon-animation/animations/scale-down-animation.html
-					name: 'slide-from-top-animation',
-					node: this
+					'entry': [
+						{name: 'slide-from-top-animation', node: this},
+						{name: 'fade-in-animation', node: this}
+					],
+					'exit': [
+						{name: 'slide-up-animation', node: this},
+						{name: 'fade-out-animation', node: this}
+					]
 				}
 			}
 		}
@@ -48,12 +66,26 @@ Polymer({
 		// this event is fired when the animation finishes
 		'neon-animation-finish': '_onNeonAnimationFinish'
 	},
-	animate: function() {
-		// run scale-down-animation
-		this.playAnimation();
+	ready: function () {
+		this.isVisible = false;
+	},
+	toggle: function() {
+		this.isVisible = !this.isVisible;
+		if(this.isVisible) {
+			this.style.display = "block";
+			this.playAnimation('entry');
+		} else {
+			this.playAnimation('exit');
+		}
 	},
 	_onNeonAnimationFinish: function() {
-		console.log('animation done!');
+		if(this.isVisible === false) {
+			this.style.display = "none";
+		}
+	},
+	createProjectClick: function () {
+		console.log('click');
+		this.fire('boom');
 	}
 });
 
