@@ -7,6 +7,10 @@
 <link rel="import" href="../bower_components/neon-animation/animations/fade-in-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-down-animation.html">
 <link rel="import" href="../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+<!-- <link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html"> -->
+<link rel="import" href="../bower_components/paper-datatable/paper-datatable.html">
+
 <!-- this element handles the selection of tools in the object view
 it's not supposed to actually handle the editing itself, just:
 (is a tool selected)?, (which tool is selected)? and corresponding events.
@@ -19,24 +23,33 @@ it's not supposed to actually handle the editing itself, just:
 
 	:host {
 	  background-color: #a6a6a6;
+		padding: 0;
 	}
 
-	paper-button {
+	#createProjectBtn {
 		background-color: white;
+		width: 100%;
 	}
+
 	</style>
 	<!-- <paper-material id="base" elevation="3"> -->
-		<paper-button raised on-tap="createProjectClick"><iron-icon icon="add"></iron-icon>Create New Project</paper-button>
-		<content></content>
-		bla?
-		<span>{{test}}</span>
+		<paper-button id="createProjectBtn" raised on-tap="createProjectClick"><iron-icon icon="add"></iron-icon>Create New Project</paper-button>
 
-		<iron-list id="projectList" as="item">
-			<template>
-			</template>
-		</iron-list>
-	<!-- </paper-material> -->
-</template>
+		<paper-datatable data="{{projects}}" on-row-tap="rowTap">
+			<paper-datatable-column header="ID" property="_id" sortable>
+				<template>
+					<span>{{value}}</span>
+				</template>
+			</paper-datatable-column>
+			<paper-datatable-column header="Activity" property="activity" sortable>
+				<template>
+					<span>{{value}}</span>
+				</template>
+			</paper-datatable-column>
+		</paper-datatable>
+
+
+		</template>
 
 <script>
 Polymer({
@@ -46,7 +59,7 @@ Polymer({
 	],
 	properties: {
 		isVisible: Boolean,
-		test: String,
+		projects: Array,
 		animationConfig: {
 			value: function() {
 				return {
@@ -86,6 +99,10 @@ Polymer({
 	createProjectClick: function () {
 		console.log('click');
 		this.fire('boom');
+	},
+	rowTap: function (e) {
+		console.log('clicked project', e.detail);
+		this.fire('switch-project-click', e.detail.item);
 	}
 });
 

@@ -15,16 +15,16 @@ var app = document.querySelector('#app')
 var imageContainer
 var annotationList
 var renderView
+app.projects = []
 app.activeProfile = ''
-app.activeProject = 'collabdb'
-app.activeTopic = {_id: 'topic_1'}
+app.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'}
 
-app.switchProjectDB = function(dbname) {
-	console.log('switch to projectDB with name', dbname)
+app.switchProjectDB = function(newProject) {
+	console.log('switch to projectDB with name', newProject._id)
 	// TODO: check if dname is a valid database name for a project
-	app.activeProject = dbname
-	localProjectDB = new PouchDB(app.activeProject)
-	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + app.activeProject)
+	app.activeProject = newProject
+	localProjectDB = new PouchDB(app.activeProject._id)
+	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + app.activeProject._id)
 	app.savePreferences()
 
 	// perhaps also on change localDB to rebuildAnnotation elements?
@@ -35,7 +35,6 @@ app.switchProjectDB = function(dbname) {
 		console.log('sync change!!')
 		// TODO: implement function that only updates elements that changed
 		app.updateElements(info.change.docs)
-
 
 	}).on('paused', () => {
 		console.log('sync pause')
@@ -56,9 +55,16 @@ app.switchProjectDB = function(dbname) {
 		// handle complete
 	}).on('error', err => {
 		console.log('sync error')
-
 		// handle error
 	})
+
+	localProjectDB.get('info').then(info => {
+		app.activeProject.activeTopic = info.activeTopic
+	})
+
+	// TODO: app.switchTopic().then(() => {
+	//  app.updateElements
+	// })
 
 	app.updateElements()
 	return sync
@@ -69,7 +75,6 @@ function completeReset() {
 	return localDB.get('_local/lastSession').then(doc => {
 		doc.activeProfile = {}
 		doc.activeProject = {}
-		doc.activeTopic = {}
 		return localDB.put(doc)
 	})
 	.then(() => localDB.destroy())
@@ -91,11 +96,13 @@ app.addTopic = function() {
 
 // this is an event handler, triggering on enter-key event in renderview
 app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 0}, polygon=[]}}) {
+	console.log('about to add annotation to', app.activeProject);
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
 		parentProject: app.activeProject._id,
-		parentTopic: app.activeTopic._id,
+		parentTopic: app.activeProject.activeTopic._id,
+		parentObject: app.activeObject_id,
 		creator: app.activeProfile._id,
 		creationDate: new Date().toISOString(),
 		title: 'a topic title',
@@ -122,10 +129,11 @@ app.loadPreferences = function() {
 		console.log('preferences loaded?')
 		if(preferences !== undefined) {
 			console.log('setting active profile, project and topic from local preferences')
+			console.log(preferences)
 			app.preferences = preferences
+			app.projects = 	preferences.projects
 			app.activeProfile = preferences.activeProfile
 			app.activeProject = preferences.activeProject
-			app.activeTopic = preferences.activeTopic
 		}
 		if (preferences === undefined) {
 			throw	new Error('preferences missing, this error shouldnt happen at all!')
@@ -172,9 +180,9 @@ app.loadPreferences = function() {
 			console.log('no preferences yet, creating template.')
 			return localDB.put({
 				_id: '_local/lastSession',
+				projects: [],
 				activeProfile: '',
-				activeProject: '',
-				activeTopic: ''
+				activeProject: {}
 			})
 			.then((result) => {
 				console.log('trying to reload preferences after setting fresh initial one.')
@@ -198,7 +206,7 @@ app.savePreferences = function() {
 	return localDB.get('_local/lastSession').then(doc => {
 		doc.activeProfile = app.activeProfile
 		doc.activeProject = app.activeProject
-		doc.activeTopic = app.activeTopic
+		doc.projects = app.projects
 		return localDB.put(doc)
 	})
 	.then(() => localDB.get('_local/lastSession'))
@@ -263,11 +271,9 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 
 	console.log('not waiting for response from server, just hoping it works')
 	console.log('if not, we\'ll have to retry once they are online')
-
 	console.log('listening for', ('db-' + projectname + '-created'))
+
 	app.addEventListener('db-' + projectname + '-created', (e) => {
-		console.log('we received an event via websockets!')
-		console.log(e.detail)
 		if(e.detail.successful) {
 			console.log('database creation was successful')
 			app.projectOpened = true
@@ -277,35 +283,45 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	})
 
 	// independently of internet connection and remote DB already create local DB
-	new PouchDB(projectname).put({
-		_id: 'topic_' + topicname,
-		_attachments: {
-			'file': {
-				type: file.type,
-				data: file,
-				something: 'else'
+	// and add first topic with object/file
+	// TODO: test with switching first
+		app.projects.push({_id: projectname, activeTopic: ('topic_' + topicname)})
+		console.log('pushing new file');
+		console.log(projectname);
+
+		new PouchDB(projectname).put({
+			_id: 'info',
+			activeTopic: 'topic_' + topicname
+		})
+
+		new PouchDB(projectname).put({
+			_id: 'topic_' + topicname,
+			_attachments: {
+				'file': {
+					type: file.type,
+					data: file,
+					something: 'else'
+				}
 			}
-		}
-	}).then(() => {
-		app.activeTopic = 'topic_' + topicname
-		console.log('created project', projectname, 'with first topic', topicname, 'locally.')
-		console.log('now set a timeout of 1 second to try a live sync.')
-		setTimeout(() => {
-			app.switchProjectDB(projectname)
-		}, 1000)
+		}).then(() => {
+			console.log('created project', projectname, 'with first topic', topicname, 'locally.')
+			console.log('now set a timeout of 1 second to try a live sync.')
+			setTimeout(() => {
+				app.switchProjectDB({_id: projectname})
+			}, 1000)
 
-	}).catch(function (err) {
-    console.log(err);
-  })
+		}).catch(function (err) {
+			console.log(err)
+		})
 
 
-}
+	}
 
-app.getAnnotations = function() {
-	return localProjectDB.allDocs({
-		include_docs: true,
-		attachments: true,
-		startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
+	app.getAnnotations = function() {
+		return localProjectDB.allDocs({
+			include_docs: true,
+			attachments: true,
+			startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
 		endkey: 'annotation\uffff' /* and keeps the cod more readable  */
 	})
 	.then(result => {
@@ -335,6 +351,7 @@ app.onAnnotationEdit = function(evt) {
 	// emitted when user edits text in annotationbox and hits enter
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description
+		console.log('changing annotation')
 		return localProjectDB.put(doc)
 		// after put into DB, DB change event should be triggered automatically to update
 	})//.then(() => {updateElements()})
@@ -342,11 +359,28 @@ app.onAnnotationEdit = function(evt) {
 
 
 app.updateElements = function() {
-	localProjectDB.getAttachment(app.activeTopic, 'file')
-	.then(blob => {
-		app.$.renderView.file = blob
-		return
-	})
+	console.log('update elements, getting attachment?')
+	console.log(app.activeProject)
+
+	localProjectDB.get('info')
+		.then((doc) => {
+			console.log('got info!');
+			console.log(doc);
+			return doc.activeTopic
+		})
+		.then((activeTopic) => {
+			console.log('get attachments for', activeTopic);
+			return localProjectDB.getAttachment(activeTopic, 'file')
+		})
+		.then(blob => {
+			console.log('got a file');
+			console.log(blob);
+			app.$.renderView.file = blob
+			return
+		})
+		.catch((err) => {
+			console.log(err);
+		})
 
 	app.getAnnotations().then(annotations => {
 		app.$.annotationList.items = annotations
@@ -369,6 +403,7 @@ app.handleResize = function(event) {
 
 app.keyUp = function(evt) {
 	if(evt.keyCode === 189){
+		console.log('complete reset')
 		completeReset()
 	}
 }
@@ -471,7 +506,7 @@ app.init = function() {
 	}).then(() => {
 		console.log('ok, loaded or created the active profile. Now check if there is an active project')
 		console.log(this.activeProject)
-		if(this.activeProject === '') {
+		if(this.activeProject === {}) {
 			console.log('no active Project, yet!')
 			this.projectOpened = false
 		} else {
@@ -501,6 +536,11 @@ app.addEventListener('dom-change', () => {
 	console.log('app is ready.')
 	app.init()
 })
+
+app.switchProject = function (e) {
+	app.switchProjectDB(e.detail)
+	console.log(e)
+}
 
 
 
