@@ -5,7 +5,7 @@
 	},
 	"rules": {
 		"eqeqeq": [1, "smart"],
-		"semi": [1, "never"],
+		"semi": [1, "always"],
 		"quotes": [1, "single"],
 		"no-unused-vars": [0],
 		"no-console": [0],
