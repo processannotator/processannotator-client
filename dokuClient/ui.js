@@ -3,7 +3,7 @@
 
 var ipc = require('ipc');
 
-var localDB, localProjectDB, remoteDB, remoteProjectDB;
+var localDB, localProjectDB, remoteDB, remoteProjectDB, localCachedUserDB;
 var sync;
 var ws; //websocket connection
 require('./test').test();
@@ -285,66 +285,111 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	// independently of internet connection and remote DB already create local DB
 	// and add first topic with object/file
 	// TODO: test with switching first
-		app.projects.push({_id: projectname, activeTopic: ('topic_' + topicname)});
-		console.log('pushing new file');
-		console.log(projectname);
+	app.projects.push({_id: projectname, activeTopic: ('topic_' + topicname)});
+	console.log('pushing new file');
+	console.log(projectname);
 
-		new PouchDB(projectname).put({
-			_id: 'info',
-			activeTopic: 'topic_' + topicname
-		});
+	new PouchDB(projectname).put({
+		_id: 'info',
+		activeTopic: 'topic_' + topicname
+	});
 
-		new PouchDB(projectname).put({
-			_id: 'topic_' + topicname,
-			_attachments: {
-				'file': {
-					type: file.type,
-					data: file,
-					something: 'else'
-				}
+	new PouchDB(projectname).put({
+		_id: 'topic_' + topicname,
+		_attachments: {
+			'file': {
+				type: file.type,
+				data: file,
+				something: 'else'
 			}
-		}).then(() => {
-			console.log('created project', projectname, 'with first topic', topicname, 'locally.');
-			console.log('now set a timeout of 1 second to try a live sync.');
-			setTimeout(() => {
-				app.switchProjectDB({_id: projectname});
-			}, 1000);
+		}
+	}).then(() => {
+		console.log('created project', projectname, 'with first topic', topicname, 'locally.');
+		console.log('now set a timeout of 1 second to try a live sync.');
+		setTimeout(() => {
+			app.switchProjectDB({_id: projectname});
+		}, 1000);
 
-		}).catch(function (err) {
+	}).catch(function (err) {
+		console.log(err);
+	});
+
+
+};
+
+// Get all annotation of current project.
+// 1. Update localCachedUserDB based in annotation creators (if remoteDB is available)
+// 2. Use localCachedUserDB to add profile info (color, name) to annotation.
+// 3. return updated annotations.
+app.getAnnotations = function() {
+	let creators = new Set();
+	let updatedCreators = new Set();
+	let annotations;
+
+	function annotationWithCreatorProfile(doc) {
+		return localCachedUserDB.get(doc.creator)
+		.then(profile => {
+			doc.creatorProfile = profile;
+			return doc;
+		}).catch(err => {
 			console.log(err);
+			doc.creatorProfile = {};
+			return doc;
 		});
+	}
 
-
-	};
-
-	app.getAnnotations = function() {
-		return localProjectDB.allDocs({
-			include_docs: true,
-			attachments: true,
-			startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
+	return localProjectDB.allDocs({
+		include_docs: true,
+		attachments: true,
+		startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
 		endkey: 'annotation\uffff' /* and keeps the cod more readable  */
 	})
+	// now fetch the profile of the annotation creator and try to get it from remoteDB
+	// to update the localCachedUserDB.
 	.then(result => {
-		// now fetch the profile of the annotation creator
-		// and append it to the annotation object to be used by the app (color of annotation etc.)
+		annotations = result.rows;
+		let promiseUserUpdates = [];
+		let updatedAnnotations = [];
 
-		let fetchedProfiles = [];
-		for (let {doc} of result.rows) {
-			console.log(doc.creator);
-			fetchedProfiles.push(
-				remoteDB.getUser(doc.creator).then(profile => {
-					doc.creatorProfile = profile;
+		// Collect all creator names and fetch them from localCachedUserDB
+		// for (let {doc: {creator}} of annotations) {
+		// 	creators.add(creator);
+		// }
+		// TODO:
+		// HACK! This is inefficient. In future update localCachedUserDB periodically (try every 10 mins?)
+		// And update annotations only from local cache
+		for (let {doc} of annotations) {
+			let updatedAnnotation = remoteDB.getUser(doc.creator).then((creatorProfile) => {
+				let {color, name, prename} = creatorProfile;
+				doc.creatorProfile = {color, name, prename};
+
+				// also update localCachedUserDB if not done yet.
+				if(updatedCreators.has(doc.creator) === false) {
+					updatedCreators.add(doc.creator);
+					localCachedUserDB.get(doc.creator).then((cachedProfile) => {
+						cachedProfile.color = color;
+						cachedProfile.name = name;
+						cachedProfile.prename = prename;
+						return localCachedUserDB.put(cachedProfile);
+					});
+				}
+				return doc;
+			})
+			.catch((err) => {
+				console.log(err);
+				console.log('try to get from localCache');
+				// Try to get creatorProfile from cache instead.
+				return localCachedUserDB.get(doc.creator).then((creatorProfile) => {
+					doc.creatorProfile = creatorProfile;
 					return doc;
-				}).catch(err => {
-					console.error('couldnt read user info from DB. FIXME: save local copy of used user infos', err);
-				})
-			);
-
+				});
+			});
+			updatedAnnotations.push(updatedAnnotation);
 		}
-		return Promise.all(fetchedProfiles);
-	})
-	.catch(err => console.error('error fetching annotations', err));
+		return Promise.all(updatedAnnotations);
+	});
 };
+
 
 app.onAnnotationEdit = function(evt) {
 	console.log(evt);
@@ -363,26 +408,27 @@ app.updateElements = function() {
 	console.log(app.activeProject);
 
 	localProjectDB.get('info')
-		.then((doc) => {
-			console.log('got info!');
-			console.log(doc);
-			return doc.activeTopic;
-		})
-		.then((activeTopic) => {
-			console.log('get attachments for', activeTopic);
-			return localProjectDB.getAttachment(activeTopic, 'file');
-		})
-		.then(blob => {
-			console.log('got a file');
-			console.log(blob);
-			app.$.renderView.file = blob;
-			return;
-		})
-		.catch((err) => {
-			console.log(err);
-		});
+	.then((doc) => {
+		console.log('got info!');
+		console.log(doc);
+		return doc.activeTopic;
+	})
+	.then((activeTopic) => {
+		console.log('get attachments for', activeTopic);
+		return localProjectDB.getAttachment(activeTopic, 'file');
+	})
+	.then(blob => {
+		console.log('got a file');
+		console.log(blob);
+		app.$.renderView.file = blob;
+		return;
+	})
+	.catch((err) => {
+		console.log(err);
+	});
 
 	app.getAnnotations().then(annotations => {
+		console.log(annotations);
 		app.$.annotationList.items = annotations;
 		app.$.renderView.annotations = annotations;
 	});
@@ -431,11 +477,11 @@ app.initWebsockets = function() {
 			let msg = JSON.parse(event.data);
 			switch (msg.type) {
 				case 'createDB':
-					let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg});
+				let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg});
 
-					console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!');
-					app.dispatchEvent(e);
-					break;
+				console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!');
+				app.dispatchEvent(e);
+				break;
 				default:
 				console.log('unknown websockets event:', msg);
 			}
@@ -470,8 +516,11 @@ app.init = function() {
 	annotationList = document.querySelector('.annotation-list');
 	renderView = document.querySelector('render-view');
 
-
+	// This is only a temporary DB, will be replaced once switchDB(dbname) is called soon.
 	localDB = new PouchDB('collabdb');
+	// Contains public user info (color, name) and is used for offline situations
+	// and to reduce traffic.
+	localCachedUserDB = new PouchDB('localCachedUserDB');
 	remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb');
 
 	this.initWebsockets()
