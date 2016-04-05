@@ -1,7 +1,7 @@
 {
   "name": "ProjectAnnotationd",
   "version": "0.0.1",
-  "description": "Server application for ProjectAnnotator",
+  "description": "Server application for ProjectAnnotator. Uses websockets to communicate",
   "dependencies": {
     "follow": "^0.12.1",
     "nano": "^6.2.0",
