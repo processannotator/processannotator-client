@@ -96,7 +96,7 @@ app.addTopic = function() {
 
 // this is an event handler, triggering on enter-key event in renderview
 app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 0}, polygon=[]}}) {
-	console.log('about to add annotation to', app.activeProject);
+	console.log('about to add annotation to', app.activeProject._id);
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
@@ -529,10 +529,10 @@ app.init = function() {
 
 	app.loadPreferences().then(() => {
 		console.log('active profile:');
-		console.log(this.activeProfile);
+		console.log(app.activeProfile);
 
 		return new Promise((resolve, reject) => {
-			if(this.activeProfile === ''){
+			if(app.activeProfile === ''){
 				console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
 
 				let profileOverlay = document.querySelector('#profileSetupOverlay');
@@ -543,25 +543,25 @@ app.init = function() {
 						surname: profileOverlay.surname,
 						color: profileOverlay.color,
 						email: profileOverlay.email
-					}).then((result) => resolve(this.activeProfile));
+					}).then((result) => resolve(app.activeProfile));
 				});
 				profileOverlay.open();
 
-			} else if(this.activeProfile !== undefined) {
-				resolve(this.activeProfile);
+			} else if(app.activeProfile !== undefined) {
+				resolve(app.activeProfile);
 			}
 		});
 
 	}).then(() => {
 		console.log('ok, loaded or created the active profile. Now check if there is an active project');
-		console.log(this.activeProject);
-		if(this.activeProject === {}) {
-			console.log('no active Project, yet!');
-			this.projectOpened = false;
+		console.log(app.activeProject);
+		if(app.activeProject === undefined || Object.keys(app.activeProject).length === 0) {
+			app.projectOpened = false;
+			throw new Error('no active Project, yet!');
 		} else {
 			console.log('loaded a project, show the renderview');
-			this.projectOpened = true;
-			return app.switchProjectDB(this.activeProject);
+			app.projectOpened = true;
+			return app.switchProjectDB(app.activeProject);
 		}
 
 
