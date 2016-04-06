@@ -172,9 +172,6 @@ app.loadPreferences = function() {
 		return app.preferences;
 	})
 	.catch((err) => {
-		console.log('some error loading the preferences...');
-		console.log(err);
-
 		if(err.message === 'missing'){
 			console.log('no preferences yet, creating template.');
 			return localDB.put({
@@ -184,14 +181,14 @@ app.loadPreferences = function() {
 				activeProject: {}
 			})
 			.then((result) => {
-				console.log('trying to reload preferences after setting fresh initial one.');
+				//trying to reload preferences after setting fresh initial one.
 				return app.loadPreferences();
 			})
 			.catch((error) => {
 				console.log(error);
 			});
 		} else {
-			console.log('possible no internet connection, just use offline data for now');
+			console.error('possible no internet connection, just use offline data for now', err);
 			return app.preferences;
 		}
 
@@ -201,14 +198,15 @@ app.loadPreferences = function() {
 
 app.savePreferences = function() {
 	console.log('saving preferences...');
-	// _local/lastSession should exist because loadPreferences creates the doc
+	// _local/lastSession should exist because loadPreferences creates it.
 	return localDB.get('_local/lastSession').then(doc => {
 		doc.activeProfile = app.activeProfile;
 		doc.activeProject = app.activeProject;
 		doc.projects = app.projects;
 		return localDB.put(doc);
 	})
-	.then(() => localDB.get('_local/lastSession'));
+	.then(() => localDB.get('_local/lastSession'))
+	.catch((err) => {throw err});
 
 };
 
@@ -226,33 +224,26 @@ app.setNewProfile = function({prename, surname, email, color}) {
 	// TODO: this is only a testing password for all users
 	let password = 'thisisasupersecrettestingpassworduntilthebeta';
 
-	// then update the active profile to the new profile
+	// Then set the current active profile to the new profile.
 	app.activeProfile = {_id: id, password, metadata};
-	console.log(app.activeProfile);
 	// FIXME: will be problematic when doing an offline "signup"
 	// will need to redo the signup once possible
 
-	// before trying any network stuff, save preferences with locally created profile
+	// Before trying any network stuff, save preferences with locally created profile.
 	return app.savePreferences()
 	.then(() => {
-		// Signup with testuser key:
+		// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
 		metadata.testkey = 'testuserkey';
 		return remoteDB.signup( id, password, {metadata} );
 	})
-	// put the new profile into the database
-	.then( (response) => {
-		console.log('tryed to signup');
-		console.log(response);
-		return remoteDB.login(id, password);
-	} )
-	.then( response => {
-		console.log('succesfully created user and logged in.');
-		console.log(response);
+	.then((response) => remoteDB.login(id, password))
+	.then((response) => {
+		console.log('succesfully created user and logged in.', response);
 		return remoteDB.getSession();
 	})
 	.then((response) => {
 		if(!response.userCtx.name){
-			console.error('Couldnt get user session: hmm, nobody logged on.');
+			console.error('Couldnt get user session, although just logged in, shouldnt happen!');
 		} else {
 			console.log(response);
 		}
@@ -261,13 +252,12 @@ app.setNewProfile = function({prename, surname, email, color}) {
 };
 
 app.setNewProject = function({projectname, topicname, file, emails}) {
-	// assumes current activeProfile as the creator
-	// we will create a new DB for the project
-	// however, as we can't just do that from here for the server, we are telling
-	// the server via websockets to create one
-
+	// Assumes current activeProfile as the creator.
+	// We will create a new db for the project.
+	// However, only server admins are allowed to create db's in couchdb,
+	// so we are sending a message via websockets to let the server create the DB.
 	// FIXME: create some kind of queue in the preferences to send out the request
-	// at a later time when the server is offline
+	// at a later time when the server is offline.
 	ws.send(JSON.stringify({type: 'createDB', projectname, emails}));
 
 	console.log('not waiting for response from server, just hoping it works');
@@ -544,8 +534,8 @@ app.init = function() {
 	.catch(err => console.error(err));
 
 	app.loadPreferences().then(() => {
-		console.log('active profile:');
-		console.log(app.activeProfile);
+		console.log('Loaded preferences.');
+		console.log('active profile:', app.activeProfile);
 
 		return new Promise((resolve, reject) => {
 			if(app.activeProfile === ''){
