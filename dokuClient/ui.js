@@ -16,7 +16,6 @@ var imageContainer;
 var annotationList;
 var renderView;
 app.projects = [];
-app.activeProfile = '';
 app.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 
 app.switchProjectDB = function(newProject) {
@@ -236,6 +235,8 @@ app.setNewProfile = function({prename, surname, email, color}) {
 	// before trying any network stuff, save preferences with locally created profile
 	return app.savePreferences()
 	.then(() => {
+		// Signup with testuser key:
+		metadata.testkey = 'testuserkey';
 		return remoteDB.signup( id, password, {metadata} );
 	})
 	// put the new profile into the database
@@ -370,7 +371,17 @@ app.getAnnotations = function() {
 						cachedProfile.color = color;
 						cachedProfile.name = name;
 						cachedProfile.prename = prename;
+						console.log('put user info into pouchdb cache');
 						return localCachedUserDB.put(cachedProfile);
+					})
+					.catch((err) => {
+						// No local cache of user info yet, cache it now!
+						if(err.status === 404) {
+							console.log('No local cache of user info yet, cache it now!');
+							return localCachedUserDB.put({_id: doc.creator, color, name, prename});
+						} else {
+							console.error(err);
+						}
 					});
 				}
 				return doc;
@@ -379,9 +390,14 @@ app.getAnnotations = function() {
 				console.log(err);
 				console.log('try to get from localCache');
 				// Try to get creatorProfile from cache instead.
+				console.log(doc.creator);
 				return localCachedUserDB.get(doc.creator).then((creatorProfile) => {
+					console.log(creatorProfile);
 					doc.creatorProfile = creatorProfile;
 					return doc;
+				})
+				.catch((err_) => {
+					console.error(err_);
 				});
 			});
 			updatedAnnotations.push(updatedAnnotation);
@@ -397,7 +413,7 @@ app.onAnnotationEdit = function(evt) {
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description;
 		console.log('changing annotation');
-		return localProjectDB.put(doc);
+		return localProjectDB.put(doc).then((value) => {app.updateElements(); });
 		// after put into DB, DB change event should be triggered automatically to update
 	});//.then(() => {updateElements()})
 };

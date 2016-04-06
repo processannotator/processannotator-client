@@ -113,7 +113,7 @@
 		<div id="container">
 
 			<div id="header">
-				<div id="letters_id">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
+				<div style.backgroundColor="" id="letters_id">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
 				<div id="profile_name">
 					<span>[[annotation.creatorProfile.prename]]</span>
 					<span>[[annotation.creatorProfile.surname]]</span>
@@ -143,10 +143,12 @@
 		Polymer({
 			is: "annotation-box",
 			properties: {
-				annotation: Object
+				annotation: {
+					type: Object,
+					observer: "_annotationChanged"
+				}
 			},
-			attached: function() {
-				// console.log(this.annotation)
+			_annotationChanged: function() {
 				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color
 			},
 			keydown: function (event) {
@@ -164,6 +166,7 @@
 				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this})
 			},
 			computeNameLetters: function (prename, surname) {
+				console.log('computeNameLetters:', prename, surname);
 				return prename[0] + surname[0]
 			}
 
