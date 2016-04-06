@@ -13,14 +13,16 @@ var listenForNewUsers = function () {
 
   var feed = users.follow({since: 'now', include_docs: true, filter: isNewUser});
   feed.on('change', function (change) {
+    console.log('new user.');
 
     // Immediately remove invalid users.
     if(isValidTestUser(change.doc) === false) {
-      console.log('Invalid new user: ' + change.doc._id + 'deleting user...');
+      console.log('Invalid new user: ' + change.doc._id + ' .Deleting user...');
       change.doc._deleted = true;
       users.insert(change.doc);
       return;
     } else if ((change.doc.roles && change.doc.roles.length === 0) || change.doc.roles === undefined) {
+      console.log('valid user, add it!');
       // Add new role to valid user.
       if(change.doc.roles === undefined) {
         change.doc.roles = {};
@@ -82,9 +84,9 @@ var createDB = function (message) {
   wss.on('connection', function connection(ws) {
     console.log('new connection');
 
-    ws.on('close'), function closing() {
+    ws.on('close', function closing() {
       console.log('disconnected');
-    }
+    });
     ws.on('message', function incoming(rawmessage) {
       console.log('received: %s', rawmessage);
       let message = JSON.parse(rawmessage);
