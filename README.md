@@ -61,9 +61,9 @@ Clone the repo on your server and
 ```.sh
 git clone git@github.com:nylki/ProjectAnnotator.git
 cd ProjectAnnotator/server
-// Install dependencies
+# Install dependencies
 npm install
-// Start server. If you want to start it automatically, I recommend putting it into the crontab, or creating a systemd service
+# Start server. If you want to start it automatically, I recommend putting it into the crontab, or creating a systemd service
 npm start
 ```
 
