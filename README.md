@@ -29,7 +29,7 @@ On RedHat/Fedora:
 
 `dnf install couchdb nodejs`
 
-To always get the most recent version of node, you may want to use the node version manager (nvm) instead of the version that comes with your distro.
+Please Note: In some distros, the nodejs version is quite old. I recommend using [the node version manager (nvm)](https://github.com/creationix/nvm) if you have version 4.x or older.
 
 
 ### Configure CouchDB
