@@ -16,7 +16,7 @@ The Backend consinsts of a running CouchDB instance and a *NodeJS* script that h
 
 ## Getting Started
 ### Prerequisites
-To use ProjectAnnotator with your own infrastructure you first need to install following dependencies **on your server** (For testing this can be identical with your localhost/client of course):
+To use *ProjectAnnotator* with your own infrastructure you first need to install following dependencies **on your server** (For testing this can be identical with your localhost/client of course):
 - couchdb
 - nodejs (>5 tested, might or might not work with lower versions)
 - npm (should get installed with nodejs)
