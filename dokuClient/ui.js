@@ -474,7 +474,7 @@ function websockettest() {
 app.initWebsockets = function() {
 	return new Promise((resolve, reject) => {
 
-		ws = new WebSocket('ws:/141.20.168.11:7000', ['protocolbla']);
+		ws = new WebSocket('ws://141.20.168.11:7000', ['protocolbla']);
 
 		ws.onopen = function (event) {
 			resolve(ws);
@@ -528,7 +528,7 @@ app.init = function() {
 	// Contains public user info (color, name) and is used for offline situations
 	// and to reduce traffic.
 	localCachedUserDB = new PouchDB('localCachedUserDB');
-	remoteDB = new PouchDB('http://127.0.0.1:5984/collabdb');
+	remoteDB = new PouchDB('http://141.20.168.11:5984/collabdb');
 
 	this.initWebsockets()
 	.then(() => console.log('websocket succesfully connected'))
