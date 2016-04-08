@@ -3,6 +3,7 @@
 
 var ipc = require('ipc');
 
+
 var localDB, localProjectDB, remoteDB, remoteProjectDB, localCachedUserDB;
 var sync;
 var ws; //websocket connection
@@ -23,7 +24,7 @@ app.switchProjectDB = function(newProject) {
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = newProject;
 	localProjectDB = new PouchDB(app.activeProject._id);
-	remoteProjectDB = new PouchDB('http://127.0.0.1:5984/' + app.activeProject._id);
+	remoteProjectDB = new PouchDB('http:/141.20.168.11:5984/' + app.activeProject._id);
 	app.savePreferences();
 
 	// perhaps also on change localDB to rebuildAnnotation elements?
@@ -473,7 +474,7 @@ function websockettest() {
 app.initWebsockets = function() {
 	return new Promise((resolve, reject) => {
 
-		ws = new WebSocket('ws:/localhost:7000', ['protocolbla']);
+		ws = new WebSocket('ws:/141.20.168.11:7000', ['protocolbla']);
 
 		ws.onopen = function (event) {
 			resolve(ws);

@@ -16,7 +16,7 @@ var listenForNewUsers = function () {
 
   var feed = users.follow({since: 'now', include_docs: true, filter: isNewUser});
   feed.on('change', function (change) {
-    console.log('new user.');
+    console.log('new user.', change.doc);
 
     // Immediately remove invalid users.
     if(isValidTestUser(change.doc) === false) {
@@ -39,7 +39,8 @@ var listenForNewUsers = function () {
   });
 
   function isNewUser(doc, req) {
-    return (doc._deleted === undefined);
+    // Filter out deleted users and the admin.
+    return (doc._deleted === undefined && doc._id !== ('org.couchdb.user:' + config.admin));
   }
 
   function isValidTestUser(doc, req) {
