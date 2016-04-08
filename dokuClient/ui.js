@@ -27,17 +27,31 @@ app.switchProjectDB = function(newProject) {
 	remoteProjectDB = new PouchDB('http:/141.20.168.11:5984/' + app.activeProject._id);
 	app.savePreferences();
 
+	remoteProjectDB.on('denied', info => {
+		console.log('remoteProjectDB sync denied');
+		// a document failed to replicate, e.g. due to permissions
+	}).on('complete', info => {
+		console.log('remoteProjectDB sync complete');
+		console.log(info);
+
+		// handle complete
+	}).on('error', err => {
+		console.log('remoteProjectDB sync error');
+		// handle error
+	});
+
 	// perhaps also on change localDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 		live: true,
 		retry: true
 	}).on('change', function(info) {
 		console.log('sync change!!');
+		console.log(info);
 		// TODO: implement function that only updates elements that changed
 		app.updateElements(info.change.docs);
 
-	}).on('paused', () => {
-		console.log('sync pause');
+	}).on('paused', (info) => {
+		console.log('sync pause', info);
 
 		// replication paused (e.g. user went offline)
 	}).on('active', () => {
@@ -168,8 +182,9 @@ app.loadPreferences = function() {
 		}
 
 		console.log('got profile from server:', updatedProfile);
+		let {color, email, name, prename, surname} = updatedProfile;
 		// use fresh profile info to set local profile (eg. when user logged in from other device and changed colors etc.)
-		app.activeProfile = updatedProfile;
+		app.activeProfile.metadata = {color, email, name, prename, surname};
 		return app.preferences;
 	})
 	.catch((err) => {
