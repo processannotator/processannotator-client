@@ -1,9 +1,12 @@
 'use strict'
 
+var fs = require('fs');
+var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
 var WebSocketServer = require('ws').Server
 , wss = new WebSocketServer({ port: 7000 });
 
-let nano = require('nano')('http://couchadmin:thisisacouchdbpassword@localhost:5984');
+let nano = require('nano')('http://' + config.admin + ':' + config.adminpassword + '@127.0.0.1:5984');
 let users = nano.use('_users');
 let auth;
 
