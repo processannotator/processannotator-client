@@ -14,16 +14,15 @@ let auth;
 var listenForNewUsers = function () {
   console.log('Listening for new users...');
 
-  var feed = users.follow({since: 'now', include_docs: true, filter: isNewUser});
+  var feed = users.follow({since: 'now', include_docs: true, filter: isNewUser, inactivity_ms: 10000});
   feed.on('change', function (change) {
     console.log('new user.', change.doc);
 
     // Immediately remove invalid users.
     if(isValidTestUser(change.doc) === false) {
-      console.log('Invalid new user: ' + change.doc._id + ' .Deleting user...');
+      console.log('Invalid new user: ' + change.doc._id + '. Deleting user...');
       change.doc._deleted = true;
       users.insert(change.doc);
-      return;
     } else if ((change.doc.roles && change.doc.roles.length === 0) || change.doc.roles === undefined) {
       console.log('valid user, add it!');
       // Add new role to valid user.
