@@ -24,7 +24,7 @@ app.switchProjectDB = function(newProject) {
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = newProject;
 	localProjectDB = new PouchDB(app.activeProject._id);
-	remoteProjectDB = new PouchDB('http:/141.20.168.11:5984/' + app.activeProject._id);
+	remoteProjectDB = new PouchDB('http://141.20.168.11:5984/' + app.activeProject._id);
 	app.savePreferences();
 
 	remoteProjectDB.on('denied', info => {
@@ -250,6 +250,7 @@ app.setNewProfile = function({prename, surname, email, color}) {
 	.then(() => {
 		// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
 		metadata.testkey = 'testuserkey';
+		console.log('signing up');
 		return remoteDB.signup( id, password, {metadata} );
 	})
 	.then((response) => remoteDB.login(id, password))
@@ -264,7 +265,7 @@ app.setNewProfile = function({prename, surname, email, color}) {
 			console.log(response);
 		}
 	})
-	.catch(err => console.log(err));
+	.catch(err => console.error(err));
 };
 
 app.setNewProject = function({projectname, topicname, file, emails}) {
