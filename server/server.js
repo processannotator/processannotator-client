@@ -58,7 +58,7 @@ var createDB = function (message) {
         console.log(err);
         reject(err);
       }
-      console.log('database created!');
+
       // Now add _security doc, to allow only certain users and roles to write the DB.
       let newdb = nano.use(message.projectname);
       newdb.insert({
@@ -77,6 +77,7 @@ var createDB = function (message) {
             console.log(insert_err);
             reject(insert_err);
           }
+          console.log('database created!');
           resolve(body);
         });
 
