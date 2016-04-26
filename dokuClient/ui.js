@@ -124,15 +124,11 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		position: position,
 		polygon: polygon
 	};
-	console.log('double check, is this the annotation?:');
-	console.log(annotation);
-	console.log('creator', app.activeProfile);
-	console.log('put annotation into DB');
+
 	return localProjectDB.put(annotation);
 };
 
 function login(user, password) {
-	// IDEA: maybe save cookie or do notifactions.
 	return remoteDB.login(user, password);
 }
 
@@ -275,6 +271,9 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	// so we are sending a message via websockets to let the server create the DB.
 	// FIXME: create some kind of queue in the preferences to send out the request
 	// at a later time when the server is offline.
+	
+	// TODO: Instead of Websockets, better add a private field "projects", which the server
+	// listens for and creates a new DB for any new projects that don't exist yet!
 	ws.send(JSON.stringify({type: 'createDB', projectname, emails}));
 
 	console.log('not waiting for response from server, just hoping it works');
@@ -427,31 +426,20 @@ app.onAnnotationEdit = function(evt) {
 
 
 app.updateElements = function() {
-	console.log('update elements, getting attachment?');
-	console.log(app.activeProject);
-
+	
 	localProjectDB.get('info')
-	.then((doc) => {
-		console.log('got info!');
-		console.log(doc);
-		return doc.activeTopic;
-	})
-	.then((activeTopic) => {
-		console.log('get attachments for', activeTopic);
-		return localProjectDB.getAttachment(activeTopic, 'file');
-	})
+	.then((doc) => localProjectDB.getAttachment(doc.activeTopic, 'file'))
 	.then(blob => {
-		console.log('got a file');
-		console.log(blob);
 		app.$.renderView.file = blob;
-		return;
+		return Promis.resolve();
 	})
 	.catch((err) => {
 		console.log(err);
 	});
 
 	app.getAnnotations().then(annotations => {
-		console.log(annotations);
+		// IDEA: use app.annotation = annotations
+		// and then define in UI that annotationList.items = (app.)annotations
 		app.$.annotationList.items = annotations;
 		app.$.renderView.annotations = annotations;
 	});
