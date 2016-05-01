@@ -1,29 +1,30 @@
 'use strict' /*eslint global-strict:0*/
 
 require('electron-compile').init() // to compile to ES6/harmony
-const electron = require('electron')
-const app = electron.app // Module to control application life.
-const ipc = electron.ipcMain // module for interprocess communication (renderer <-> backend)
-const BrowserWindow = electron.BrowserWindow // Module to create native browser window.
+const electron = require('electron');
+const app = electron.app; // Module to control application life.
+const ipcMain = electron.ipcMain; // module for interprocess communication (renderer <-> backend)
+const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
 
 
-app.commandLine.appendSwitch('--enable-file-cookies')
+
+app.commandLine.appendSwitch('--enable-file-cookies');
 
 // Report crashes to our server.
-require('crash-reporter').start()
+require('crash-reporter').start();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is GCed.
-var mainWindow = null
+var mainWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
 	// On OS X it is common for applications and their menu bar
 	// to stay active until the user quits explicitly with Cmd + Q
 	if (process.platform !== 'darwin') {
-		app.quit()
+		app.quit();
 	}
-})
+});
 
 
 
@@ -33,20 +34,25 @@ app.on('ready', function() {
 	mainWindow = new BrowserWindow({
 		width: 1200,
 		height: 800
-	})
+	});
 
 	// load the index.html of the app.
-	mainWindow.loadURL('file://' + __dirname + '/index.html')
-	var webContents = mainWindow.webContents
+	mainWindow.loadURL('file://' + __dirname + '/index.html');
+	var session = mainWindow.webContents.session;
 
-	webContents.on('login', function (event, request, authInfo, callback) {
-		console.log('login?');
-		console.log(event);
-		console.log(request);
-		console.log(authInfo);
-		console.log(callback);
-		// event.preventDefault();
-	})
+	
+	ipcMain.on('asynchronous-message', function(event, arg) {
+	  if(arg === 'resetLocalDB') {
+			session.clearStorageData({
+				storages: ['cookies', 'indexdb', 'local storage', 'serviceworkers']
+			}, () => { console.log('session cleared')});
+		}
+	});
+
+	ipcMain.on('synchronous-message', function(event, arg) {
+	  console.log(arg);  // prints "ping"
+	  event.returnValue = 'pong';
+	});
 
 	// Open the devtools.
 	// mainWindow.openDevTools()
@@ -55,6 +61,6 @@ app.on('ready', function() {
 		// Dereference the window object, usually you would store windows
 		// in an array if your app supports multi windows, this is the time
 		// when you should delete the corresponding element.
-		mainWindow = null
-	})
-})
+		mainWindow = null;
+	});
+});
