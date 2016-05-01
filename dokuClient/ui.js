@@ -1,7 +1,7 @@
 /* eslint no-alert:0*/
 'use strict'; /*eslint global-strict:0*/
 
-var ipc = require('ipc');
+const ipcRenderer = require('electron').ipcRenderer;
 
 
 var localDB, localProjectDB, remoteDB, remoteProjectDB, localCachedUserDB;
@@ -602,6 +602,10 @@ app.switchProject = function (e) {
 	console.log(e);
 };
 
+app.resetLocalDB = function (e) {
+	ipcRenderer.send('asynchronous-message', 'resetLocalDB');
+};
+
 
 
 
@@ -609,6 +613,7 @@ app.switchProject = function (e) {
 // OLD STUFF down there. maybe useful later!?
 /////////////////////////////////////////////
 
-// ipc.on('someNotification', function(annotation, status) {
-// 	console.log('annotation with image arrived')
-// })
+//
+// ipcRenderer.on('asynchronous-reply', function(event, arg) {
+//   console.log(arg); // prints "pong"
+// });
