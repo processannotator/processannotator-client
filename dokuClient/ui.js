@@ -285,18 +285,17 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 		app.projects.push({_id: projectname, activeTopic: topicID});
 		// independently of internet connection and remote DB already create local DB
 		// and add first topic with object/file
-		return new PouchDB(projectname).bulkDocs([
-		{
-			_id: 'info',
-			activeTopic: topicID
-		},
-		{
-			_id: 'topic_' + topicname,
-			_attachments: {
-				'file': { type: file.type, data: file, something: 'else'}
-			}
-		}
-	])
+		return new PouchDB(projectname).bulkDocs(
+			[{
+				_id: 'info',
+				activeTopic: topicID
+			},
+			{
+				_id: 'topic_' + topicname,
+				_attachments: {
+					'file': { type: file.type, data: file, something: 'else'}
+				}
+			}]);
 	})
 	.then(() => {
 		return app.switchProjectDB({_id: projectname})
