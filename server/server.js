@@ -16,23 +16,35 @@ var listenForNewUsers = function () {
 
   var feed = users.follow({since: 'now', include_docs: true, filter: isNewUser, inactivity_ms: 10000});
   feed.on('change', function (change) {
-    console.log('new user.', change.doc);
+    console.log('user change:', change.doc);
 
     // Immediately remove invalid users.
     if(isValidTestUser(change.doc) === false) {
       console.log('Invalid new user: ' + change.doc._id + '. Deleting user...');
       change.doc._deleted = true;
+      change.doc.projects = [];
       users.insert(change.doc);
+      
+    // Approve valid testusers.
     } else if ((change.doc.roles && change.doc.roles.length === 0) || change.doc.roles === undefined) {
-      console.log('valid user, add it!');
+      console.log('valid _new_ user, add it!');
       // Add new role to valid user.
       if(change.doc.roles === undefined) {
         change.doc.roles = {};
       }
       change.doc.roles.push('testuser');
       users.insert(change.doc);
+      
+    // Already regisered and verified user changed something.
+    } else {
+      // Check if user requests any new project DBs to add.
+      // let newProjects = getRequestedProjects(change.doc);
+      getRequestedProjects(change.doc).then((newProjects) => {
+        newProjects.forEach(createDB);
+      });
     }
   });
+  
   feed.follow();
   process.nextTick(function () {
   });
@@ -41,26 +53,39 @@ var listenForNewUsers = function () {
     // Filter out deleted users and the admin.
     return (doc._deleted === undefined && doc._id !== ('org.couchdb.user:' + config.admin));
   }
+  
+  function getRequestedProjects(doc) {
+    // Filter if projects in its "projects" field, has any new projects that don't
+    // exist yet. If so, create a DB for it.
+    
+    return new Promise((resolve, reject) => {
+      let requestedProjects = [];
+      if(doc.projects && doc.projects.length !== 0) {
+        nano.db.list(function(err, dbs) {
+          resolve( doc.projects.filter((project) => !dbs.includes(project) ) );
+        });
+      }
+    });
+  }
 
   function isValidTestUser(doc, req) {
-    console.log('is valid test user', (doc.testkey !== undefined && doc.testkey === 'testuserkey'));
     // filter out invalid users (that include no valid testKey)
     return (doc.testkey !== undefined && doc.testkey === 'testuserkey');
   }
 
 };
 
-var createDB = function (message) {
+var createDB = function (projectname) {
   return new Promise((resolve, reject) => {
 
-    nano.db.create(message.projectname, function (err, body) {
+    nano.db.create(projectname, function (err, body) {
       if(err) {
         console.log(err);
         reject(err);
       }
 
       // Now add _security doc, to allow only certain users and roles to write the DB.
-      let newdb = nano.use(message.projectname);
+      let newdb = nano.use(projectname);
       newdb.insert({
         'members': {
           'names': [],
@@ -97,17 +122,17 @@ var createDB = function (message) {
 
       // handle different messages
       switch (message.type) {
-        case 'createDB':
-        let response = {type: 'createDB', projectname: message.projectname};
-
-        createDB(message).then(result => {
-          response.successful = true;
-          ws.send(JSON.stringify(response));
-        }).catch(err => {
-          response.successful = false;
-          ws.send(JSON.stringify(response));
-        });
-        break;
+        // case 'createDB':
+        // let response = {type: 'createDB', projectname: message.projectname};
+        //
+        // createDB(message).then(result => {
+        //   response.successful = true;
+        //   ws.send(JSON.stringify(response));
+        // }).catch(err => {
+        //   response.successful = false;
+        //   ws.send(JSON.stringify(response));
+        // });
+        // break;
         default:
 
       }

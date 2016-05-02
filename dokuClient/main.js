@@ -10,9 +10,6 @@ const BrowserWindow = electron.BrowserWindow; // Module to create native browser
 
 app.commandLine.appendSwitch('--enable-file-cookies');
 
-// Report crashes to our server.
-require('crash-reporter').start();
-
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is GCed.
 var mainWindow = null;
