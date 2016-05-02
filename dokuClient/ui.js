@@ -2,7 +2,7 @@
 'use strict'; /*eslint global-strict:0*/
 
 const ipcRenderer = require('electron').ipcRenderer;
-const SERVERADDR = '127.0.0.1';
+const SERVERADDR = 'localhost';
 
 var localDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
@@ -20,26 +20,14 @@ app.projects = [];
 app.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 
 app.switchProjectDB = function(newProject) {
-	console.log('switch to projectDB with name', newProject._id);
+	
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = newProject;
+	console.log('switch to projectDB with name', app.activeProject);
 	localProjectDB = new PouchDB(app.activeProject._id);
 	remoteProjectDB = new PouchDB('http://' + SERVERADDR + ':5984/' + app.activeProject._id);
-
+	
 	app.savePreferences();
-
-	remoteProjectDB.on('denied', info => {
-		console.log('remoteProjectDB sync denied');
-		// a document failed to replicate, e.g. due to permissions
-	}).on('complete', info => {
-		console.log('remoteProjectDB sync complete');
-		console.log(info);
-
-		// handle complete
-	}).on('error', err => {
-		console.log('remoteProjectDB sync error');
-		// handle error
-	});
 
 	// perhaps also on change localDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
@@ -74,14 +62,16 @@ app.switchProjectDB = function(newProject) {
 	});
 
 	localProjectDB.get('info').then(info => {
+		console.log('info', info);
 		app.activeProject.activeTopic = info.activeTopic;
+		
+		app.updateElements();
 	});
 
 	// TODO: app.switchTopic().then(() => {
 	//  app.updateElements
 	// })
 
-	app.updateElements();
 	return sync;
 };
 
@@ -116,7 +106,7 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
 		parentProject: app.activeProject._id,
-		parentTopic: app.activeProject.activeTopic._id,
+		parentTopic: app.activeProject.activeTopic,
 		parentObject: app.activeObject_id,
 		creator: app.activeProfile.name,
 		creationDate: new Date().toISOString(),
@@ -125,8 +115,13 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		position: position,
 		polygon: polygon
 	};
+	
+	console.log(annotation);
 
-	return localProjectDB.put(annotation).catch((err) => {
+	return localProjectDB.put(annotation).then((result) => {
+		console.log('added an annotation', result);
+	})
+	.catch((err) => {
 		console.log(err);
 	});
 };
@@ -209,14 +204,21 @@ app.loadPreferences = function() {
 app.savePreferences = function() {
 	console.log('saving preferences...');
 	// _local/lastSession should exist because loadPreferences creates it.
+
 	return localDB.get('_local/lastSession').then(doc => {
+		console.log('getting lastSession for saving:', doc);
 		doc.activeProfile = app.activeProfile;
 		doc.activeProject = app.activeProject;
 		doc.projects = app.projects;
 		return localDB.put(doc);
 	})
-	.then(() => localDB.get('_local/lastSession'))
-	.catch((err) => {throw err});
+	.then((result) => {
+		console.log('saved preferences.', result);
+	})
+	.catch((err) => {
+		console.log('error in saving prefs');
+		console.log(err);
+	});
 
 };
 
@@ -271,50 +273,43 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	// FIXME: create some kind of queue in the preferences to send out the request
 	// at a later time when the server is offline.
 	
-	console.log('updating', app.activeProfile.name);
 	userDB.getUser(app.activeProfile.name).then((response) => {
 		response.projects.push(projectname);
-		return userDB.putUser(app.activeProfile.name, {metadata: {projects: response.projects}});
+		return userDB.putUser(
+			app.activeProfile.name,
+			{metadata: {projects: response.projects}}
+		);
 	}).then(() => {
 		app.projectOpened = true;
-	}).catch(err => {
-		console.log('something went wrong updating user on remote DB');
-		console.log(err);
-	});
-	
-	// independently of internet connection and remote DB already create local DB
-	// and add first topic with object/file
-	app.switchProjectDB({_id: projectname}).then(() => {
-		console.log('trying to do bulkdocs now..');
-		return localProjectDB.bulkDocs([
-			{
-				_id: 'info',
-				activeTopic: 'topic_' + topicname
-			},
-			{
-				_id: 'topic_' + topicname,
-				_attachments: {
-					'file': { type: file.type, data: file, something: 'else'}
-				}
+		let topicID = 'topic_' + topicname;
+		app.projects.push({_id: projectname, activeTopic: topicID});
+		// independently of internet connection and remote DB already create local DB
+		// and add first topic with object/file
+		return new PouchDB(projectname).bulkDocs([
+		{
+			_id: 'info',
+			activeTopic: topicID
+		},
+		{
+			_id: 'topic_' + topicname,
+			_attachments: {
+				'file': { type: file.type, data: file, something: 'else'}
 			}
-		]);
-	}).then((result) => {
-			console.log('result from buldocs', result);
-			app.projects.push({_id: projectname, activeTopic: ('topic_' + topicname)});
-			console.log('created project', projectname, 'with first topic', topicname, 'locally.');
-			console.log('now set a timeout of 1 second to try a live sync.');
-			
-			
-		}).catch(function (err) {
-			console.log('something went wrong switching to the projectDB after creation');
+		}
+	])
+	})
+	.then(() => {
+		return app.switchProjectDB({_id: projectname})
+	})
+	.then((result) => {
+		console.log('created project', projectname, 'with first topic', topicname, 'locally.');
+		app.activeProject.activeTopic = topicID;
+		app.updateElements();
+	})
+	.catch(function (err) {
+			console.log('something went wrong creating the new project db');
 			console.log(err);
 		});
-
-
-
-	
-	
-
 };
 
 // Get all annotation of current project.
@@ -564,7 +559,7 @@ app.init = function() {
 		console.log(app.activeProject);
 		if(app.activeProject === undefined || Object.keys(app.activeProject).length === 0) {
 			app.projectOpened = false;
-			throw new Error('no active Project, yet!');
+			console.log('NO ACTIVE PROFILE YET!');
 		} else {
 			console.log('loaded a project, show the renderview');
 			app.projectOpened = true;
