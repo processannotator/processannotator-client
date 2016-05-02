@@ -2,9 +2,9 @@
 'use strict'; /*eslint global-strict:0*/
 
 const ipcRenderer = require('electron').ipcRenderer;
+const SERVERADDR = '127.0.0.1';
 
-
-var localDB, localProjectDB, remoteDB, remoteProjectDB, localCachedUserDB;
+var localDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
 var ws; //websocket connection
 require('./test').test();
@@ -24,7 +24,8 @@ app.switchProjectDB = function(newProject) {
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = newProject;
 	localProjectDB = new PouchDB(app.activeProject._id);
-	remoteProjectDB = new PouchDB('http://141.20.168.11:5984/' + app.activeProject._id);
+	remoteProjectDB = new PouchDB('http://' + SERVERADDR + ':5984/' + app.activeProject._id);
+
 	app.savePreferences();
 
 	remoteProjectDB.on('denied', info => {
@@ -101,7 +102,7 @@ app.addTopic = function() {
 		_id: 'topic_' + 1,
 		type: 'topic',
 		parentProject: app.activeProject._id,
-		creator: app.activeProfile._id,
+		creator: app.activeProfile.name,
 		creationDate: new Date().toISOString(),
 		title: 'a topic title',
 		description: 'a description to a topic'
@@ -117,7 +118,7 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		parentProject: app.activeProject._id,
 		parentTopic: app.activeProject.activeTopic._id,
 		parentObject: app.activeObject_id,
-		creator: app.activeProfile._id,
+		creator: app.activeProfile.name,
 		creationDate: new Date().toISOString(),
 		title: 'a topic title',
 		description: description,
@@ -125,11 +126,13 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		polygon: polygon
 	};
 
-	return localProjectDB.put(annotation);
+	return localProjectDB.put(annotation).catch((err) => {
+		console.log(err);
+	});
 };
 
 function login(user, password) {
-	return remoteDB.login(user, password);
+	return userDB.login(user, password);
 }
 
 app.loadPreferences = function() {
@@ -154,33 +157,28 @@ app.loadPreferences = function() {
 		// to get up-to-date profile info and save it later
 		console.log('got prefs: ' + preferences);
 		console.log('Use the profile info from preferences to login and possibly update activeProject');
-		console.log(preferences.activeProfile._id);
+		console.log(preferences.activeProfile.name);
 		console.log(preferences.activeProfile.password);
-		return login(preferences.activeProfile._id, preferences.activeProfile.password);
+		return login(preferences.activeProfile.name, preferences.activeProfile.password);
 	})
 	.then(response => {
 		console.log('successfully logged in: ', response);
-		return remoteDB.getSession();
+		return userDB.getSession();
 	})
 	.then(response => {
 		if(!response.userCtx.name){
 			console.error('Couldnt get user session: hmm, nobody logged on.');
 		}
 		// got session, that means login works and user remains logged in, get more userInfo now.
-		return remoteDB.getUser(app.activeProfile._id);
+		return userDB.getUser(app.activeProfile.name);
 	})
 	.then(updatedProfile => {
 		console.log('loaded user info from server', updatedProfile);
 		console.log('current activeProfile', app.activeProfile);
-		if(app.activeProfile) {
-			// don't use the verbose couchdb:etc username, but keep the simple one
-			updatedProfile._id = app.activeProfile._id;
-		}
-
 		console.log('got profile from server:', updatedProfile);
-		let {color, email, name, prename, surname} = updatedProfile;
 		// use fresh profile info to set local profile (eg. when user logged in from other device and changed colors etc.)
-		app.activeProfile.metadata = {color, email, name, prename, surname};
+		app.activeProfile = Object.assign(updatedProfile, app.activeProfile);
+		console.log(updatedProfile);
 		return app.preferences;
 	})
 	.catch((err) => {
@@ -232,12 +230,12 @@ app.setNewProfile = function({prename, surname, email, color}) {
 		creationDate: new Date().toISOString()
 	};
 
-	let id = metadata.prename + metadata.surname;
+	let name = metadata.prename + metadata.surname;
 	// TODO: this is only a testing password for all users
 	let password = 'thisisasupersecrettestingpassworduntilthebeta';
 
 	// Then set the current active profile to the new profile.
-	app.activeProfile = {_id: id, password, metadata};
+	app.activeProfile = {name: name, password, metadata};
 	// FIXME: will be problematic when doing an offline "signup"
 	// will need to redo the signup once possible
 
@@ -246,20 +244,21 @@ app.setNewProfile = function({prename, surname, email, color}) {
 	.then(() => {
 		// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
 		metadata.testkey = 'testuserkey';
+		metadata.projects = [];
 		console.log('signing up');
-		return remoteDB.signup( id, password, {metadata} );
+		return userDB.signup( name, password, {metadata} );
 	})
-	.then((response) => remoteDB.login(id, password))
+	.then((response) => userDB.login(name, password))
 	.then((response) => {
 		console.log('succesfully created user and logged in.', response);
-		return remoteDB.getSession();
+		return userDB.getUser(name);
 	})
 	.then((response) => {
-		if(!response.userCtx.name){
-			console.error('Couldnt get user session, although just logged in, shouldnt happen!');
-		} else {
 			console.log(response);
-		}
+			app.activeProfile = Object.assign(app.activeProfile, response);
+			console.log('showing activeProfile:');
+			console.log(app.activeProfile);
+
 	})
 	.catch(err => console.error(err));
 };
@@ -272,60 +271,54 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	// FIXME: create some kind of queue in the preferences to send out the request
 	// at a later time when the server is offline.
 	
-	// TODO: Instead of Websockets, better add a private field "projects", which the server
-	// listens for and creates a new DB for any new projects that don't exist yet!
-	ws.send(JSON.stringify({type: 'createDB', projectname, emails}));
-
-	console.log('not waiting for response from server, just hoping it works');
-	console.log('if not, we\'ll have to retry once they are online');
-	console.log('listening for', ('db-' + projectname + '-created'));
-
-	app.addEventListener('db-' + projectname + '-created', (e) => {
-		if(e.detail.successful) {
-			console.log('database creation was successful');
-			app.projectOpened = true;
-		} else {
-			console.log('database creation was _not_ successful');
-		}
-	});
-
-	// independently of internet connection and remote DB already create local DB
-	// and add first topic with object/file
-	// TODO: test with switching first
-	app.projects.push({_id: projectname, activeTopic: ('topic_' + topicname)});
-	console.log('pushing new file');
-	console.log(projectname);
-
-	new PouchDB(projectname).put({
-		_id: 'info',
-		activeTopic: 'topic_' + topicname
-	});
-
-	new PouchDB(projectname).put({
-		_id: 'topic_' + topicname,
-		_attachments: {
-			'file': {
-				type: file.type,
-				data: file,
-				something: 'else'
-			}
-		}
+	console.log('updating', app.activeProfile.name);
+	userDB.getUser(app.activeProfile.name).then((response) => {
+		response.projects.push(projectname);
+		return userDB.putUser(app.activeProfile.name, {metadata: {projects: response.projects}});
 	}).then(() => {
-		console.log('created project', projectname, 'with first topic', topicname, 'locally.');
-		console.log('now set a timeout of 1 second to try a live sync.');
-		setTimeout(() => {
-			app.switchProjectDB({_id: projectname});
-		}, 1000);
-
-	}).catch(function (err) {
+		app.projectOpened = true;
+	}).catch(err => {
+		console.log('something went wrong updating user on remote DB');
 		console.log(err);
 	});
+	
+	// independently of internet connection and remote DB already create local DB
+	// and add first topic with object/file
+	app.switchProjectDB({_id: projectname}).then(() => {
+		console.log('trying to do bulkdocs now..');
+		return localProjectDB.bulkDocs([
+			{
+				_id: 'info',
+				activeTopic: 'topic_' + topicname
+			},
+			{
+				_id: 'topic_' + topicname,
+				_attachments: {
+					'file': { type: file.type, data: file, something: 'else'}
+				}
+			}
+		]);
+	}).then((result) => {
+			console.log('result from buldocs', result);
+			app.projects.push({_id: projectname, activeTopic: ('topic_' + topicname)});
+			console.log('created project', projectname, 'with first topic', topicname, 'locally.');
+			console.log('now set a timeout of 1 second to try a live sync.');
+			
+			
+		}).catch(function (err) {
+			console.log('something went wrong switching to the projectDB after creation');
+			console.log(err);
+		});
 
+
+
+	
+	
 
 };
 
 // Get all annotation of current project.
-// 1. Update localCachedUserDB based in annotation creators (if remoteDB is available)
+// 1. Update localCachedUserDB based in annotation creators (if userDB is available)
 // 2. Use localCachedUserDB to add profile info (color, name) to annotation.
 // 3. return updated annotations.
 app.getAnnotations = function() {
@@ -351,10 +344,11 @@ app.getAnnotations = function() {
 		startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
 		endkey: 'annotation\uffff' /* and keeps the cod more readable  */
 	})
-	// now fetch the profile of the annotation creator and try to get it from remoteDB
+	// now fetch the profile of the annotation creator and try to get it from userDB
 	// to update the localCachedUserDB.
 	.then(result => {
 		annotations = result.rows;
+		console.log(annotations);
 		let promiseUserUpdates = [];
 		let updatedAnnotations = [];
 
@@ -366,7 +360,9 @@ app.getAnnotations = function() {
 		// HACK! This is inefficient. In future update localCachedUserDB periodically (try every 10 mins?)
 		// And update annotations only from local cache
 		for (let {doc} of annotations) {
-			let updatedAnnotation = remoteDB.getUser(doc.creator).then((creatorProfile) => {
+			console.log(doc.creator);
+			let updatedAnnotation = userDB.getUser(doc.creator).then((creatorProfile) => {
+				console.log('profile:', creatorProfile);
 				let {color, name, prename} = creatorProfile;
 				doc.creatorProfile = {color, name, prename};
 
@@ -431,7 +427,7 @@ app.updateElements = function() {
 	.then((doc) => localProjectDB.getAttachment(doc.activeTopic, 'file'))
 	.then(blob => {
 		app.$.renderView.file = blob;
-		return Promis.resolve();
+		return Promise.resolve();
 	})
 	.catch((err) => {
 		console.log(err);
@@ -478,7 +474,7 @@ function websockettest() {
 app.initWebsockets = function() {
 	return new Promise((resolve, reject) => {
 
-		ws = new WebSocket('ws://141.20.168.11:7000', ['protocolbla']);
+		ws = new WebSocket('ws://' + SERVERADDR + ':7000', ['protocolbla']);
 
 		ws.onopen = function (event) {
 			resolve(ws);
@@ -487,7 +483,7 @@ app.initWebsockets = function() {
 		ws.onmessage = function (event) {
 			let msg = JSON.parse(event.data);
 			switch (msg.type) {
-				case 'createDB':
+				case '':
 				let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg});
 
 				console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!');
@@ -532,7 +528,7 @@ app.init = function() {
 	// Contains public user info (color, name) and is used for offline situations
 	// and to reduce traffic.
 	localCachedUserDB = new PouchDB('localCachedUserDB');
-	remoteDB = new PouchDB('http://141.20.168.11:5984/collabdb');
+	userDB = new PouchDB('http://' + SERVERADDR + ':5984/_users');
 
 	this.initWebsockets()
 	.then(() => console.log('websocket succesfully connected'))
