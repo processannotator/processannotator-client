@@ -1,6 +1,6 @@
 'use strict' /*eslint global-strict:0*/
 
-require('electron-compile').init() // to compile to ES6/harmony
+// require('electron-compile').init() // to compile to ES6/harmony
 const electron = require('electron');
 const app = electron.app; // Module to control application life.
 const ipcMain = electron.ipcMain; // module for interprocess communication (renderer <-> backend)
