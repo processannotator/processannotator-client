@@ -41,15 +41,15 @@
 
 	// FIXME: shouldnt those global variables better reside inside the element
 	// vis this.glRenderer = ...
-	var glScene = new THREE.Scene()
-	var cssScene = new THREE.Scene()
-	var camera
-	var controls
-	var cssObject
-	var glRenderer
-	var cssRenderer
-	var render
-	var animate
+	var glScene = new THREE.Scene();
+	var cssScene = new THREE.Scene();
+	var camera;
+	var controls;
+	var cssObject;
+	var glRenderer;
+	var cssRenderer;
+	var render;
+	var animate;
 
 	Polymer({
 		is: "render-view",
@@ -94,6 +94,18 @@
 			glRenderer.render(glScene, camera)
 			cssRenderer.render(cssScene, camera)
 		},
+		
+		resetGroups: function () {
+			// create group for text annotations in 3D
+			if(this.labelGroup && this.annotationGlGroups) {
+				cssScene.remove(this.labelGroup);
+				glScene.remove(this.annotationGlGroups);
+			}
+			this.labelGroup = new THREE.Object3D();
+			this.annotationGlGroups = new THREE.Object3D();
+			cssScene.add(this.labelGroup);
+			glScene.add(this.annotationGlGroups);
+		},
 
 		attached: function() {
 
@@ -135,10 +147,7 @@
 			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
 
 			// create group for text annotations in 3D
-			this.labelGroup = new THREE.Object3D()
-			this.annotationGlGroups = new THREE.Object3D()
-			cssScene.add(this.labelGroup)
-			glScene.add(this.annotationGlGroups)
+			this.resetGroups();
 
 			// setup 3d-controls (rotating the camera with cursor)
 			controls = new THREE.TrackballControls(camera, this)
@@ -165,8 +174,8 @@
 			controls.handleResize()
 
 			// init annotations to empty array
-			this.annotations = []
-			this.annotation3DObjects = []
+			this.annotations = [];
+			this.annotation3DObjects = [];
 
 			this.fire('initialized')
 		},
@@ -185,7 +194,10 @@
 		_fileChanged: function () {
 			console.log('fileChanged')
 			console.log(this.file)
-
+			
+			this.resetGroups();
+			this.annotations = [];
+			
 			// load the file and use it for display
 			var loader = new THREE.STLLoader()
 			var filepath = URL.createObjectURL(this.file)
@@ -208,30 +220,31 @@
 		},
 
 		_annotationsChanged: function() {
-			console.log('_annotationsChanged')
-			console.log(this.annotations)
+			console.log('_annotationsChanged');
+			console.log(this.annotations);
 			// debug output of annotations
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
 			if(this.labelGroup !== undefined){
 				for (let child of this.labelGroup.children) {
-					this.labelGroup.remove(child)
+					this.labelGroup.remove(child);
 				}
 			}
+			
+
 
 			for (let annotation of this.annotations) {
-				let annotation3DObject = {}
-				let annotationGlGroup = new THREE.Object3D()
-				let multFactor = 2
-				console.log(annotation)
-				let label = this.createLabel(annotation.description, annotation.position, multFactor, annotation.creatorProfile.color)
-				this.labelGroup.add(label)
-				annotation3DObject.label = label
+				let annotation3DObject = {};
+				let annotationGlGroup = new THREE.Object3D();
+				let multFactor = 2;
+				let label = this.createLabel(annotation.description, annotation.position, multFactor, annotation.creatorProfile.color);
+				this.labelGroup.add(label);
+				annotation3DObject.label = label;
 
 				// TODO: add arrow, label to a group/structure to be selectable
-				let arrow = this.createArrow(annotation.position, multFactor, annotation.creatorProfile.color)
-				annotationGlGroup.add(arrow)
-				annotation3DObject.arrow = arrow
+				let arrow = this.createArrow(annotation.position, multFactor, annotation.creatorProfile.color);
+				annotationGlGroup.add(arrow);
+				annotation3DObject.arrow = arrow;
 
 				// if annotation has polygon info, create it and add it to the scene
 				if(annotation.polygon !== undefined) {
@@ -239,10 +252,10 @@
 					annotationGlGroup.add(polygon)
 					annotation3DObject.polygon = polygon
 				}
-				this.annotationGlGroups.add(annotationGlGroup)
-				this.annotation3DObjects.push(annotation3DObject)
+				this.annotationGlGroups.add(annotationGlGroup);
+				this.annotation3DObjects.push(annotation3DObject);
 			}
-			this.render()
+			this.render();
 		},
 
 		updateAnnotationVisibility: function () {

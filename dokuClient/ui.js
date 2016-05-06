@@ -274,6 +274,9 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	// at a later time when the server is offline.
 	
 	userDB.getUser(app.activeProfile.name).then((response) => {
+		// Save intend of user to create new DB into it's 'projects' field.
+		// This field will get read on the server, which decices wether to create a
+		// DB for it.
 		response.projects.push(projectname);
 		return userDB.putUser(
 			app.activeProfile.name,
@@ -298,7 +301,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 			}]);
 	})
 	.then(() => {
-		return app.switchProjectDB({_id: projectname})
+		return app.switchProjectDB({_id: projectname});
 	})
 	.then((result) => {
 		console.log('created project', projectname, 'with first topic', topicname, 'locally.');
@@ -335,17 +338,15 @@ app.getAnnotations = function() {
 	return localProjectDB.allDocs({
 		include_docs: true,
 		attachments: true,
-		startkey: 'annotation', /* using startkey and endkey is faster than querying by type */
-		endkey: 'annotation\uffff' /* and keeps the cod more readable  */
+		startkey: 'annotation',
+		endkey: 'annotation\uffff'
 	})
-	// now fetch the profile of the annotation creator and try to get it from userDB
-	// to update the localCachedUserDB.
 	.then(result => {
 		annotations = result.rows;
-		console.log(annotations);
 		let promiseUserUpdates = [];
 		let updatedAnnotations = [];
-
+		// now fetch the profile of the annotation creator and try to get it from userDB
+		// to update the localCachedUserDB.
 		// Collect all creator names and fetch them from localCachedUserDB
 		// for (let {doc: {creator}} of annotations) {
 		// 	creators.add(creator);
@@ -356,7 +357,6 @@ app.getAnnotations = function() {
 		for (let {doc} of annotations) {
 			console.log(doc.creator);
 			let updatedAnnotation = userDB.getUser(doc.creator).then((creatorProfile) => {
-				console.log('profile:', creatorProfile);
 				let {color, name, prename} = creatorProfile;
 				doc.creatorProfile = {color, name, prename};
 
@@ -408,7 +408,6 @@ app.onAnnotationEdit = function(evt) {
 	// emitted when user edits text in annotationbox and hits enter
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description;
-		console.log('changing annotation');
 		return localProjectDB.put(doc).then((value) => {app.updateElements(); });
 		// after put into DB, DB change event should be triggered automatically to update
 	});//.then(() => {updateElements()})
