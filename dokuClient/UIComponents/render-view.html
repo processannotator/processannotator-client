@@ -98,18 +98,23 @@
 		resetGroups: function () {
 			// create group for text annotations in 3D
 			if(this.labelGroup && this.annotationGlGroups) {
-				cssScene.remove(this.labelGroup);
-				glScene.remove(this.annotationGlGroups);
+
+				for( var i = this.labelGroup.children.length - 1; i >= 0; i--) {
+					this.labelGroup.remove(this.labelGroup.children[i]);
+					cssScene.remove(this.labelGroup.children[i]);
+				}
+				
+				for( var i = this.annotationGlGroups.children.length - 1; i >= 0; i--) {
+					this.annotationGlGroups.remove(this.annotationGlGroups.children[i]);
+					cssScene.remove(this.annotationGlGroups.children[i]);
+				}
 			}
-			this.labelGroup = new THREE.Object3D();
-			this.annotationGlGroups = new THREE.Object3D();
-			cssScene.add(this.labelGroup);
-			glScene.add(this.annotationGlGroups);
+
 		},
 
 		attached: function() {
 
-			this.modus = {tool: '', modelGrabbing: false}
+			this.modus = {tool: '', modelGrabbing: false};
 			// the render-view is interested in the state of the tool-box selector
 			// lets add the event listener then
 			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
@@ -129,24 +134,28 @@
 			glRenderer = new THREE.WebGLRenderer({
 				antialias: true,
 				alpha: true
-			})
-			glRenderer.setClearColor(0x00ff00, 0.0)
-			glRenderer.setSize(width, height)
+			});
+			glRenderer.setClearColor(0x00ff00, 0.0);
+			glRenderer.setSize(width, height);
 
 			// let both renderers/canvases overlap
 			glRenderer.domElement.style.position = 'absolute';
 			glRenderer.domElement.style.top = 0;
 
 			// cssRenderer is used for font rendering
-			cssRenderer = new THREE.CSS3DRenderer()
-			cssRenderer.setSize(width, height)
+			cssRenderer = new THREE.CSS3DRenderer();
+			cssRenderer.setSize(width, height);
 
-			glRenderer.domElement.id = 'glRenderer'
-			cssRenderer.domElement.id = 'cssRenderer'
-			Polymer.dom(this.root).appendChild(glRenderer.domElement)
-			Polymer.dom(this.root).appendChild(cssRenderer.domElement)
+			glRenderer.domElement.id = 'glRenderer';
+			cssRenderer.domElement.id = 'cssRenderer';
+			Polymer.dom(this.root).appendChild(glRenderer.domElement);
+			Polymer.dom(this.root).appendChild(cssRenderer.domElement);
 
 			// create group for text annotations in 3D
+			this.labelGroup = new THREE.Object3D();
+			this.annotationGlGroups = new THREE.Object3D();
+			cssScene.add(this.labelGroup);
+			glScene.add(this.annotationGlGroups);
 			this.resetGroups();
 
 			// setup 3d-controls (rotating the camera with cursor)
@@ -161,10 +170,10 @@
 			controls.keys = [65, 83, 68]
 
 			// add cursor pointer to 3D scene
-			var sphereGeometry = new THREE.SphereGeometry( 5, 6, 6 )
-			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} )
-			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial )
-			glScene.add(this.pointerSphere)
+			var sphereGeometry = new THREE.SphereGeometry( 5, 6, 6 );
+			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+			glScene.add(this.pointerSphere);
 
 			// create Raycaster used for polygon editing tool
 			this.raycaster = new THREE.Raycaster()
@@ -225,13 +234,8 @@
 			// debug output of annotations
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
-			if(this.labelGroup !== undefined){
-				for (let child of this.labelGroup.children) {
-					this.labelGroup.remove(child);
-				}
-			}
+			this.resetGroups();
 			
-
 
 			for (let annotation of this.annotations) {
 				let annotation3DObject = {};
@@ -391,20 +395,20 @@
 		},
 
 		createLabel: function (text, point, multFactor, color) {
-			let div = document.createElement('div')
-			let textElement = document.createElement('span')
-			div.style.opacity = '0.85'
-			div.style.fontSize = '40px'
-			div.style.padding = "0.35em"
-			div.style.background = "rgb(255, 255, 255)"
-			div.style.border = color + " solid 0.125em"
-			div.style.transition = "opacity 0.5s"
-			div.innerHTML = text
-			div.addEventListener('mouseover', () => console.log('over'))
-			let label = new THREE.CSS3DSprite(div)
-			label.position.set(point.x, point.y, point.z)
-			label.position.multiplyScalar(multFactor)
-			return label
+			let div = document.createElement('div');
+			let textElement = document.createElement('span');
+			div.style.opacity = '0.85';
+			div.style.fontSize = '40px';
+			div.style.padding = "0.35em";
+			div.style.background = "rgb(255, 255, 255)";
+			div.style.border = color + " solid 0.125em";
+			div.style.transition = "opacity 0.5s";
+			div.innerHTML = text;
+			div.addEventListener('mouseover', () => console.log('over'));
+			let label = new THREE.CSS3DSprite(div);
+			label.position.set(point.x, point.y, point.z);
+			label.position.multiplyScalar(multFactor);
+			return label;
 		},
 
 		createArrow: function (point, multFactor, color) {
