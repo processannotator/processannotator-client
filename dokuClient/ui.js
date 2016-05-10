@@ -21,6 +21,8 @@ app.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 
 app.switchProjectDB = function(newProject) {
 	
+	console.log('switch project DB');
+	
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = newProject;
 	console.log('switch to projectDB with name', app.activeProject);
@@ -28,6 +30,15 @@ app.switchProjectDB = function(newProject) {
 	remoteProjectDB = new PouchDB('http://' + SERVERADDR + ':5984/' + app.activeProject._id);
 	
 	app.savePreferences();
+	localProjectDB.changes({live: true, since: 'now', include_docs: true})
+	.on('change', (info) => {
+		app.updateElements();
+	})
+	.on('complete', function(info) {
+		// changes() was canceled
+	}).on('error', function (err) {
+		console.log(err);
+	});
 
 	// perhaps also on change localDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
