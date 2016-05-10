@@ -45,10 +45,10 @@ app.switchProjectDB = function(newProject) {
 		live: true,
 		retry: true
 	}).on('change', function(info) {
-		console.log('sync change!!');
-		console.log(info);
-		// TODO: implement function that only updates elements that changed
-		app.updateElements(info.change.docs);
+		// console.log('sync change!!');
+		// console.log(info);
+		// // TODO: implement function that only updates elements that changed
+		// app.updateElements(info.change.docs);
 
 	}).on('paused', (info) => {
 		console.log('sync pause', info);
