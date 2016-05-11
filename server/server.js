@@ -73,7 +73,7 @@ var listenForNewUsers = function () {
   }
 
   function isDesignDoc(doc, req) {
-    return doc._id.startWith('_design');
+    return doc._id.startsWith('_design');
   }
 
   function isValidTestUser(doc, req) {
