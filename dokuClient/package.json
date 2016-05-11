@@ -11,7 +11,7 @@
     "build": "babel ui.js --out-file bundle.js --source-maps",
     "install": "bower install",
     "start": "npm run build && electron .",
-    "package": "npm run build && electron-packager . DocumentDesktopClient --platform=darwin --arch=x64 --out=dist --overwrite"
+    "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
   },
   "devDependencies": {
     "babel-cli": "^6.8.0",
