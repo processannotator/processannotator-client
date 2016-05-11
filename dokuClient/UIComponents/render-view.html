@@ -94,7 +94,7 @@
 			glRenderer.render(glScene, camera);
 			cssRenderer.render(cssScene, camera);
 		},
-		
+
 		resetGroups: function () {
 			// create group for text annotations in 3D
 			if(this.labelGroup && this.annotationGlGroups) {
@@ -103,7 +103,7 @@
 					this.labelGroup.remove(this.labelGroup.children[i]);
 					cssScene.remove(this.labelGroup.children[i]);
 				}
-				
+
 				for( var i = this.annotationGlGroups.children.length - 1; i >= 0; i--) {
 					this.annotationGlGroups.remove(this.annotationGlGroups.children[i]);
 					cssScene.remove(this.annotationGlGroups.children[i]);
@@ -203,10 +203,10 @@
 		_fileChanged: function () {
 			console.log('fileChanged')
 			console.log(this.file)
-			
+
 			this.resetGroups();
 			this.annotations = [];
-			
+
 			// load the file and use it for display
 			var loader = new THREE.STLLoader()
 			var filepath = URL.createObjectURL(this.file)
@@ -242,8 +242,8 @@
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
 			this.resetGroups();
-			
-			
+
+
 			for (let annotation of this.annotations) {
 				let annotation3DObject = {};
 				let annotationGlGroup = new THREE.Object3D();
@@ -301,14 +301,18 @@
 			this.mouse = new THREE.Vector2(
 				(mouseEvent.layerX / canvas.width) * 2 - 1,
 				-((mouseEvent.layerY / canvas.height) * 2 - 1)
-			)
+			);
 		},
 
 		mouseMoved: function (e) {
 			if(this.modus.tool === 'polygon') {
 				this.updateMouse(e)
 				this.raycaster.setFromCamera(this.mouse, camera)
-				let intersections = this.raycaster.intersectObject(this.fileRepresentation)
+
+				let intersections = [];
+				if(this.fileRepresentation) {
+					intersections = this.raycaster.intersectObject(this.fileRepresentation)
+				}
 
 				if(intersections.length !== 0){
 					if(this.modus.modelGrabbing === false)
@@ -322,7 +326,7 @@
 		},
 
 		keydown: function (e) {
-			if (event.defaultPrevented) {
+			if (e.defaultPrevented) {
 				return; // Should do nothing if the key event was already consumed.
 			}
 

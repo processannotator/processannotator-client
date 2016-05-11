@@ -8,7 +8,7 @@ const PORT = '80';
 var localDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
 var ws; //websocket connection
-require('./test').test();
+// require('./test').test();
 
 var annotationElements = new Map();
 
@@ -523,7 +523,7 @@ app.createProject = function() {
 
 
 app.init = function() {
-
+	console.log('init app');
 	imageContainer = document.querySelector('.object-view');
 	annotationList = document.querySelector('.annotation-list');
 	renderView = document.querySelector('render-view');
