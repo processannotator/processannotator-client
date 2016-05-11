@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "main": "main.js",
   "dependencies": {
-    "electron-packager": "^7.0",
     "pouchdb": "^5.3.2",
     "pouchdb-authentication": "^0.5"
   },
@@ -11,10 +10,11 @@
     "build": "babel ui.js --out-file bundle.js --source-maps",
     "install": "bower install",
     "start": "npm run build && electron .",
-    "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --osx-sign.identity=\"HU Berlin\" --out=dist --overwrite"
+    "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
   },
   "devDependencies": {
     "babel-cli": "^6.8.0",
+    "electron-packager": "^7.0",
     "electron-prebuilt": "^0.37.8"
   }
 }
