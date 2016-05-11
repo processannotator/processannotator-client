@@ -18,13 +18,17 @@ var listenForNewUsers = function () {
   feed.on('change', function (change) {
     console.log('user change:', change.doc);
 
+    // Skip design docs
+    if(isDesignDoc(change.doc)) {
+      return;
+    }
     // Immediately remove invalid users.
-    if(isValidTestUser(change.doc) === false) {
+    else if(isValidTestUser(change.doc) === false) {
       console.log('Invalid new user: ' + change.doc._id + '. Deleting user...');
       change.doc._deleted = true;
       change.doc.projects = [];
       users.insert(change.doc);
-      
+
     // Approve valid testusers.
     } else if ((change.doc.roles && change.doc.roles.length === 0) || change.doc.roles === undefined) {
       console.log('valid _new_ user, add it!');
@@ -34,7 +38,7 @@ var listenForNewUsers = function () {
       }
       change.doc.roles.push('testuser');
       users.insert(change.doc);
-      
+
     // Already regisered and verified user changed something.
     } else {
       // Check if user requests any new project DBs to add.
@@ -44,7 +48,7 @@ var listenForNewUsers = function () {
       });
     }
   });
-  
+
   feed.follow();
   process.nextTick(function () {
   });
@@ -53,11 +57,11 @@ var listenForNewUsers = function () {
     // Filter out deleted users and the admin.
     return (doc._deleted === undefined && doc._id !== ('org.couchdb.user:' + config.admin));
   }
-  
+
   function getRequestedProjects(doc) {
     // Filter if projects in its "projects" field, has any new projects that don't
     // exist yet. If so, create a DB for it.
-    
+
     return new Promise((resolve, reject) => {
       let requestedProjects = [];
       if(doc.projects && doc.projects.length !== 0) {
@@ -66,6 +70,10 @@ var listenForNewUsers = function () {
         });
       }
     });
+  }
+
+  function isDesignDoc(doc, req) {
+    return doc._id.startWith('_design');
   }
 
   function isValidTestUser(doc, req) {
