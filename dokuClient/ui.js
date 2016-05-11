@@ -2,7 +2,8 @@
 'use strict'; /*eslint global-strict:0*/
 
 const ipcRenderer = require('electron').ipcRenderer;
-const SERVERADDR = 'localhost';
+const SERVERADDR = '141.20.168.11';
+const PORT = '80';
 
 var localDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
@@ -20,15 +21,15 @@ app.projects = [];
 app.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 
 app.switchProjectDB = function(newProject) {
-	
+
 	console.log('switch project DB');
-	
+
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = newProject;
 	console.log('switch to projectDB with name', app.activeProject);
 	localProjectDB = new PouchDB(app.activeProject._id);
-	remoteProjectDB = new PouchDB('http://' + SERVERADDR + ':5984/' + app.activeProject._id);
-	
+	remoteProjectDB = new PouchDB('http://' + SERVERADDR + ':' + PORT + '/' + app.activeProject._id);
+
 	app.savePreferences();
 	localProjectDB.changes({live: true, since: 'now', include_docs: true})
 	.on('change', (info) => {
@@ -75,7 +76,7 @@ app.switchProjectDB = function(newProject) {
 	localProjectDB.get('info').then(info => {
 		console.log('info', info);
 		app.activeProject.activeTopic = info.activeTopic;
-		
+
 		app.updateElements();
 	});
 
@@ -126,7 +127,7 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		position: position,
 		polygon: polygon
 	};
-	
+
 	console.log(annotation);
 
 	return localProjectDB.put(annotation).then((result) => {
@@ -283,7 +284,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	// so we are sending a message via websockets to let the server create the DB.
 	// FIXME: create some kind of queue in the preferences to send out the request
 	// at a later time when the server is offline.
-	
+
 	userDB.getUser(app.activeProfile.name).then((response) => {
 		// Save intend of user to create new DB into it's 'projects' field.
 		// This field will get read on the server, which decices wether to create a
@@ -426,7 +427,7 @@ app.onAnnotationEdit = function(evt) {
 
 
 app.updateElements = function() {
-	
+
 	localProjectDB.get('info')
 	.then((doc) => localProjectDB.getAttachment(doc.activeTopic, 'file'))
 	.then(blob => {
@@ -532,11 +533,11 @@ app.init = function() {
 	// Contains public user info (color, name) and is used for offline situations
 	// and to reduce traffic.
 	localCachedUserDB = new PouchDB('localCachedUserDB');
-	userDB = new PouchDB('http://' + SERVERADDR + ':5984/_users');
+	userDB = new PouchDB('http://' + SERVERADDR + ':' + PORT + '/_users');
 
-	this.initWebsockets()
-	.then(() => console.log('websocket succesfully connected'))
-	.catch(err => console.error(err));
+	// this.initWebsockets()
+	// .then(() => console.log('websocket succesfully connected'))
+	// .catch(err => console.error(err));
 
 	app.loadPreferences().then(() => {
 		console.log('Loaded preferences.');
