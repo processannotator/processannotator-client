@@ -1,0 +1,16 @@
+[Unit]
+Description=ProcessAnnotator Deamon
+Requires=couchdb.service
+After=couchdb.service
+
+
+[Service]
+User=tom
+Group=tom
+Type=simple
+ExecStart=/home/tom/.nvm/versions/node/v6.1.0/bin/node /home/tom/Programming/ProjectAnnotator/server/server.js
+Restart=always
+RestartSec=30s
+
+[Install]
+WantedBy=multi-user.target
