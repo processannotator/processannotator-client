@@ -5,7 +5,7 @@ const ipcRenderer = require('electron').ipcRenderer;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
 
-var localDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
+var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
 var ws; //websocket connection
 // require('./test').test();
@@ -43,7 +43,7 @@ app.switchProjectDB = function(newProject) {
 		console.log(err);
 	});
 
-	// perhaps also on change localDB to rebuildAnnotation elements?
+	// perhaps also on change localInfoDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 		live: true,
 		retry: true
@@ -91,18 +91,18 @@ app.switchProjectDB = function(newProject) {
 
 function completeReset() {
 	alert('pressed "-", doing a complete reset.');
-	return localDB.get('_local/lastSession').then(doc => {
+	return localInfoDB.get('_local/lastSession').then(doc => {
 		doc.activeProfile = {};
 		doc.activeProject = {};
-		return localDB.put(doc);
+		return localInfoDB.put(doc);
 	})
-	.then(() => localDB.destroy())
+	.then(() => localInfoDB.destroy())
 	.then(() => renderView.annotations = []);
 }
 
 app.addTopic = function() {
 	// add new topic to active project
-	return localDB.put({
+	return localProjectDB.put({
 		_id: 'topic_' + 1,
 		type: 'topic',
 		parentProject: app.activeProject._id,
@@ -144,7 +144,7 @@ function login(user, password) {
 
 app.loadPreferences = function() {
 
-	return localDB.get('_local/lastSession')
+	return localInfoDB.get('_local/lastSession')
 	.then((preferences) => {
 		console.log('preferences loaded?');
 		if(preferences !== undefined) {
@@ -191,7 +191,7 @@ app.loadPreferences = function() {
 	.catch((err) => {
 		if(err.message === 'missing'){
 			console.log('no preferences yet, creating template.');
-			return localDB.put({
+			return localInfoDB.put({
 				_id: '_local/lastSession',
 				projects: [],
 				activeProfile: '',
@@ -217,12 +217,12 @@ app.savePreferences = function() {
 	console.log('saving preferences...');
 	// _local/lastSession should exist because loadPreferences creates it.
 
-	return localDB.get('_local/lastSession').then(doc => {
+	return localInfoDB.get('_local/lastSession').then(doc => {
 		console.log('getting lastSession for saving:', doc);
 		doc.activeProfile = app.activeProfile;
 		doc.activeProject = app.activeProject;
 		doc.projects = app.projects;
-		return localDB.put(doc);
+		return localInfoDB.put(doc);
 	})
 	.then((result) => {
 		console.log('saved preferences.', result);
@@ -277,6 +277,10 @@ app.setNewProfile = function({prename, surname, email, color}) {
 	.catch(err => console.error(err));
 };
 
+function normalizeCouchDBName(name) {
+	return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_$()+/-]/g, '$');
+}
+
 app.setNewProject = function({projectname, topicname, file, emails}) {
 	// Assumes current activeProfile as the creator.
 	// We will create a new db for the project.
@@ -288,7 +292,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 
 	let topicID = 'topic_' + topicname;
 	let newProjectDescription = {
-		_id: 'project_' + (Date.now()) + '_' + projectname.replace(/\s+/g, '-'),
+		_id: 'project_' + (Date.now()) + '_' + normalizeCouchDBName(projectname),
 		name: projectname,
 		activeTopic: topicID
 	};
@@ -306,6 +310,15 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 		app.projectOpened = true;
 		console.log('new project description');
 		console.log(newProjectDescription);
+
+		localInfoDB.get('projectsInfo').then((doc) => {
+			doc.projects.push(newProjectDescription);
+			return localInfoDB.put(doc);
+		}).catch((err) => {
+			if(err.status === 404) {
+				return localInfoDB.put({_id: 'projectsInfo', projects: [newProjectDescription]});
+			}
+		});
 
 		app.push('projects', newProjectDescription);
 		// independently of internet connection and remote DB already create local DB
@@ -542,7 +555,20 @@ app.init = function() {
 	renderView = document.querySelector('render-view');
 
 	// This is only a temporary DB, will be replaced once switchDB(dbname) is called soon.
-	localDB = new PouchDB('collabdb');
+	localInfoDB = new PouchDB('info');
+	remoteInfoDB = new PouchDB('http://' + SERVERADDR + ':' + PORT + '/info');
+	localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
+	localInfoDB.changes({live: true, since: 'now'})
+		.on('change', (info) => {
+			console.log('localInfoDB change...', info);
+			localInfoDB.get('info').then((doc) => {
+				app.set('projects', doc.projects);
+			});
+		})
+		.on('error', function (err) {
+			console.log(err);
+		});
+
 	// Contains public user info (color, name) and is used for offline situations
 	// and to reduce traffic.
 	localCachedUserDB = new PouchDB('localCachedUserDB');
