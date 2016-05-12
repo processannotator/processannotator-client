@@ -33,8 +33,12 @@ it's not supposed to actually handle the editing itself, just:
 
 	</style>
 	<!-- <paper-material id="base" elevation="3"> -->
+		<h1>Create</h1>
 		<paper-button id="createProjectBtn" raised on-tap="createProjectClick"><iron-icon icon="add"></iron-icon>Create New Project</paper-button>
 
+		<h1>Join</h1>
+
+		<h1>Switch</h1>
 		<paper-datatable data="{{projects}}" on-row-tap="rowTap">
 			<paper-datatable-column header="ID" property="_id" sortable>
 				<template>
@@ -60,6 +64,7 @@ Polymer({
 	properties: {
 		isVisible: Boolean,
 		projects: Array,
+		remoteUrl: String,
 		animationConfig: {
 			value: function() {
 				return {
@@ -83,6 +88,7 @@ Polymer({
 		this.isVisible = false;
 	},
 	toggle: function() {
+		console.log(this.remoteUrl);
 		this.isVisible = !this.isVisible;
 		if(this.isVisible) {
 			this.style.display = "block";

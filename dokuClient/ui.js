@@ -19,6 +19,8 @@ var annotationList;
 var renderView;
 app.projects = [];
 app.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
+app.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
+console.log(app.remoteUrl);
 
 app.switchProjectDB = function(newProject) {
 
@@ -33,7 +35,7 @@ app.switchProjectDB = function(newProject) {
 	app.savePreferences();
 	localProjectDB.changes({live: true, since: 'now', include_docs: true})
 	.on('change', (info) => {
-		app.updateElements();
+		app.updateElements({updateFile: false});
 	})
 	.on('complete', function(info) {
 		// changes() was canceled
@@ -77,7 +79,7 @@ app.switchProjectDB = function(newProject) {
 		console.log('info', info);
 		app.activeProject.activeTopic = info.activeTopic;
 
-		app.updateElements();
+		app.updateElements({updateFile: true});
 	});
 
 	// TODO: app.switchTopic().then(() => {
@@ -127,8 +129,6 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		position: position,
 		polygon: polygon
 	};
-
-	console.log(annotation);
 
 	return localProjectDB.put(annotation).then((result) => {
 		console.log('added an annotation', result);
@@ -328,7 +328,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	.then((result) => {
 		console.log('created project', projectname, 'with first topic', topicname, 'locally.');
 		app.activeProject.activeTopic = topicID;
-		app.updateElements();
+		app.updateElements({updateFile: true});
 	})
 	.catch(function (err) {
 			console.log('something went wrong creating the new project db');
@@ -430,23 +430,25 @@ app.onAnnotationEdit = function(evt) {
 	// emitted when user edits text in annotationbox and hits enter
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description;
-		return localProjectDB.put(doc).then((value) => {app.updateElements(); });
+		return localProjectDB.put(doc).then((value) => {app.updateElements({updateFile: false}); });
 		// after put into DB, DB change event should be triggered automatically to update
 	});//.then(() => {updateElements()})
 };
 
 
-app.updateElements = function() {
+app.updateElements = function(options) {
+	if(options.updateFile && options.updateFile === true) {
+		localProjectDB.get('info')
+		.then((doc) => localProjectDB.getAttachment(doc.activeTopic, 'file'))
+		.then(blob => {
+			app.$.renderView.file = blob;
+			return Promise.resolve();
+		})
+		.catch((err) => {
+			console.log(err);
+		});
+}
 
-	localProjectDB.get('info')
-	.then((doc) => localProjectDB.getAttachment(doc.activeTopic, 'file'))
-	.then(blob => {
-		app.$.renderView.file = blob;
-		return Promise.resolve();
-	})
-	.catch((err) => {
-		console.log(err);
-	});
 
 	app.getAnnotations().then(annotations => {
 		// IDEA: use app.annotation = annotations
@@ -589,7 +591,7 @@ app.init = function() {
 
 	}).then(() => {
 		console.log('continue');
-		app.updateElements();
+		app.updateElements({updateFile: true});
 	});
 
 };
