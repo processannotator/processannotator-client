@@ -33,15 +33,6 @@ app.switchProjectDB = function(newProject) {
 	remoteProjectDB = new PouchDB('http://' + SERVERADDR + ':' + PORT + '/' + app.activeProject._id);
 
 	app.savePreferences();
-	localProjectDB.changes({live: true, since: 'now', include_docs: true})
-	.on('change', (info) => {
-		app.updateElements({updateFile: false});
-	})
-	.on('complete', function(info) {
-		// changes() was canceled
-	}).on('error', function (err) {
-		console.log(err);
-	});
 
 	// perhaps also on change localInfoDB to rebuildAnnotation elements?
 	sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
@@ -73,6 +64,16 @@ app.switchProjectDB = function(newProject) {
 	}).on('error', err => {
 		console.log('sync error');
 		// handle error
+	});
+
+	localProjectDB.changes({live: true, since: 'now', include_docs: true})
+	.on('change', (info) => {
+		app.updateElements({updateFile: true});
+	})
+	.on('complete', function(info) {
+		// changes() was canceled
+	}).on('error', function (err) {
+		console.log(err);
 	});
 
 	localProjectDB.get('info').then(info => {
@@ -151,7 +152,6 @@ app.loadPreferences = function() {
 			console.log('setting active profile, project and topic from local preferences');
 			console.log(preferences);
 			app.preferences = preferences;
-			app.projects = 	preferences.projects;
 			app.activeProfile = preferences.activeProfile;
 			app.activeProject = preferences.activeProject;
 		}
@@ -221,7 +221,6 @@ app.savePreferences = function() {
 		console.log('getting lastSession for saving:', doc);
 		doc.activeProfile = app.activeProfile;
 		doc.activeProject = app.activeProject;
-		doc.projects = app.projects;
 		return localInfoDB.put(doc);
 	})
 	.then((result) => {
@@ -547,6 +546,11 @@ app.createProject = function() {
 	projectOverlay.open();
 };
 
+app.updateProjectList = function () {
+	return localInfoDB.get('projectsInfo').then((doc) => {
+		app.set('projects', doc.projects);
+	});
+};
 
 app.init = function() {
 	console.log('init app');
@@ -560,15 +564,13 @@ app.init = function() {
 	localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
 	localInfoDB.changes({live: true, since: 'now'})
 		.on('change', (info) => {
-			console.log('localInfoDB change...', info);
-			localInfoDB.get('projectsInfo').then((doc) => {
-				console.log('new project list!!', doc);
-				app.set('projects', doc.projects);
-			});
+			return app.updateProjectList();
 		})
 		.on('error', function (err) {
 			console.log(err);
 		});
+
+	app.updateProjectList();
 
 	// Contains public user info (color, name) and is used for offline situations
 	// and to reduce traffic.
