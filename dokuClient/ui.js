@@ -547,6 +547,7 @@ app.createProject = function() {
 };
 
 app.updateProjectList = function () {
+	console.log('update project list.', info);
 	return localInfoDB.get('projectsInfo').then((doc) => {
 		app.set('projects', doc.projects);
 	});
@@ -564,13 +565,14 @@ app.init = function() {
 	localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
 	localInfoDB.changes({live: true, since: 'now'})
 		.on('change', (info) => {
+			console.log('local info DB changed!!');
 			return app.updateProjectList();
 		})
 		.on('error', function (err) {
 			console.log(err);
 		});
 
-	app.updateProjectList();
+
 
 	// Contains public user info (color, name) and is used for offline situations
 	// and to reduce traffic.
