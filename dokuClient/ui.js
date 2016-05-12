@@ -562,6 +562,7 @@ app.init = function() {
 		.on('change', (info) => {
 			console.log('localInfoDB change...', info);
 			localInfoDB.get('info').then((doc) => {
+				console.log('new project list!!', doc);
 				app.set('projects', doc.projects);
 			});
 		})
