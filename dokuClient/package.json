@@ -15,6 +15,6 @@
   "devDependencies": {
     "babel-cli": "^6.8.0",
     "electron-packager": "^7.0",
-    "electron-prebuilt": "^0.37.8"
+    "electron-prebuilt": "^1.0.1"
   }
 }

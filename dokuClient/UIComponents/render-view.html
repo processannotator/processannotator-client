@@ -117,9 +117,10 @@
 			this.modus = {tool: '', modelGrabbing: false};
 			// the render-view is interested in the state of the tool-box selector
 			// lets add the event listener then
-			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
-			if (toolBox) {
-				toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
+			this.toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
+			if (this.toolBox) {
+				this.toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
+				// this.toolBox.addEventListener('tap', this.toolChanged.bind(this))
 			} else {
 				console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
 			}
@@ -128,7 +129,7 @@
 			let width = this.parentNode.getBoundingClientRect().width
 			let height = this.parentNode.getBoundingClientRect().height
 
-			camera = new THREE.PerspectiveCamera(50, width / height, 0.01, 2000);
+			camera = new THREE.PerspectiveCamera(50, width / height, 0.01, 10000);
 			camera.position.set(800, 800, 800);
 
 			glRenderer = new THREE.WebGLRenderer({
@@ -439,6 +440,9 @@
 		toolChanged: function(e) {
 			// this is render-view's event listener on the toolBox
 			// when a different tool is selected, this function is triggered
+
+			console.log(e);
+			console.log(e.target.selected);
 
 			//do some cleanup/inits
 			glScene.remove(this.previewPolygon)
