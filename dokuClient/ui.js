@@ -288,7 +288,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 
 	let topicID = 'topic_' + topicname;
 	let newProjectDescription = {
-		_id: 'project_' + (new Date().toJSON()) + '_' + projectname.replace(/\s+/g, '-'),
+		_id: 'project_' + (Date.now()) + '_' + projectname.replace(/\s+/g, '-'),
 		name: projectname,
 		activeTopic: topicID
 	};
@@ -297,7 +297,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 		// Save intend of user to create new DB into it's 'projects' field.
 		// This field will get read on the server, which decices wether to create a
 		// DB for it.
-		response.projects.push(projectname);
+		response.projects.push(newProjectDescription._id);
 		return userDB.putUser(
 			app.activeProfile.name,
 			{metadata: {projects: response.projects}}
