@@ -282,8 +282,16 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 	// We will create a new db for the project.
 	// However, only server admins are allowed to create db's in couchdb,
 	// so we are sending a message via websockets to let the server create the DB.
+
 	// FIXME: create some kind of queue in the preferences to send out the request
 	// at a later time when the server is offline.
+
+	let topicID = 'topic_' + topicname;
+	let newProjectDescription = {
+		_id: 'project_' + (new Date().toJSON()) + '_' + projectname.replace(/\s+/g, '-'),
+		name: projectname,
+		activeTopic: topicID
+	};
 
 	userDB.getUser(app.activeProfile.name).then((response) => {
 		// Save intend of user to create new DB into it's 'projects' field.
@@ -296,13 +304,15 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 		);
 	}).then(() => {
 		app.projectOpened = true;
-		let topicID = 'topic_' + topicname;
-		app.projects.push({_id: projectname, activeTopic: topicID});
+		console.log('new project description');
+		console.log(newProjectDescription);
+		app.projects.push(newProjectDescription);
 		// independently of internet connection and remote DB already create local DB
 		// and add first topic with object/file
-		return new PouchDB(projectname).bulkDocs(
+		return new PouchDB(newProjectDescription._id).bulkDocs(
 			[{
 				_id: 'info',
+				name: projectname,
 				activeTopic: topicID
 			},
 			{
@@ -313,7 +323,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 			}]);
 	})
 	.then(() => {
-		return app.switchProjectDB({_id: projectname});
+		return app.switchProjectDB(newProjectDescription);
 	})
 	.then((result) => {
 		console.log('created project', projectname, 'with first topic', topicname, 'locally.');
