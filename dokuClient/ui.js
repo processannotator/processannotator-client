@@ -30,7 +30,7 @@ app.switchProjectDB = function(newProject) {
 	app.activeProject = newProject;
 	console.log('switch to projectDB with name', app.activeProject);
 	localProjectDB = new PouchDB(app.activeProject._id);
-	remoteProjectDB = new PouchDB('http://' + SERVERADDR + ':' + PORT + '/' + app.activeProject._id);
+	remoteProjectDB = new PouchDB(app.remoteUrl + '/' + app.activeProject._id);
 
 	app.savePreferences();
 
@@ -354,6 +354,7 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 // 2. Use localCachedUserDB to add profile info (color, name) to annotation.
 // 3. return updated annotations.
 app.getAnnotations = function() {
+	if(localProjectDB === undefined) return false;
 	let creators = new Set();
 	let updatedCreators = new Set();
 	let annotations;
@@ -450,7 +451,9 @@ app.onAnnotationEdit = function(evt) {
 
 
 app.updateElements = function(options) {
-	if(options.updateFile && options.updateFile === true) {
+	if(localProjectDB === undefined) return;
+
+	if((options.updateFile && options.updateFile === true)) {
 		localProjectDB.get('info')
 		.then((doc) => localProjectDB.getAttachment(doc.activeTopic, 'file'))
 		.then(blob => {
@@ -547,9 +550,11 @@ app.createProject = function() {
 };
 
 app.updateProjectList = function () {
-	console.log('update project list.', info);
+	console.log('update project list.');
 	return localInfoDB.get('projectsInfo').then((doc) => {
 		app.set('projects', doc.projects);
+	}).catch((err) => {
+		console.log(err);
 	});
 };
 
@@ -561,7 +566,7 @@ app.init = function() {
 
 	// This is only a temporary DB, will be replaced once switchDB(dbname) is called soon.
 	localInfoDB = new PouchDB('info');
-	remoteInfoDB = new PouchDB('http://' + SERVERADDR + ':' + PORT + '/info');
+	remoteInfoDB = new PouchDB(app.remoteUrl + '/info');
 	localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
 	localInfoDB.changes({live: true, since: 'now'})
 		.on('change', (info) => {
@@ -573,11 +578,11 @@ app.init = function() {
 		});
 
 
-
+	app.updateProjectList();
 	// Contains public user info (color, name) and is used for offline situations
 	// and to reduce traffic.
 	localCachedUserDB = new PouchDB('localCachedUserDB');
-	userDB = new PouchDB('http://' + SERVERADDR + ':' + PORT + '/_users');
+	userDB = new PouchDB(app.remoteUrl + '/_users');
 
 	// this.initWebsockets()
 	// .then(() => console.log('websocket succesfully connected'))
