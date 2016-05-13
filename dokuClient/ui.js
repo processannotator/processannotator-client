@@ -650,9 +650,15 @@ app.resetLocalDB = function (e) {
 	ipcRenderer.send('asynchronous-message', 'resetLocalDB');
 };
 
-app.annotationLabelHovered = function (e) {
-	let index = app.annotations.findIndex((annotation) => annotation._id === e.detail);
-	app.$.annotationList.scrollToIndex(index);
+app.mouseOutAnnotationLabel = function (e) {
+	clearTimeout(app.labelHoverTimeout);
+};
+
+app.mouseOverAnnotationLabel = function (e) {
+	app.labelHoverTimeout = setTimeout(() => {
+		let index = app.annotations.findIndex((annotation) => annotation._id === e.detail);
+		app.$.annotationList.scrollToIndex(index);
+	}, 500);
 };
 
 

@@ -417,7 +417,10 @@
 			div.style.transition = "opacity 0.5s";
 			div.innerHTML = annotation.description;
 			div.addEventListener('mouseover', (e) => {
-				this.fire('label-hovered', annotation._id);
+				this.fire('label-over', annotation._id);
+			});
+			div.addEventListener('mouseout', (e) => {
+				this.fire('label-out', annotation._id);
 			});
 			let label = new THREE.CSS3DSprite(div);
 			label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
