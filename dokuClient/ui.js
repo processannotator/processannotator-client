@@ -15,7 +15,6 @@ var annotationElements = new Map();
 // DOM elements
 var app = document.querySelector('#app');
 var imageContainer;
-var annotationList;
 var renderView;
 app.projects = [];
 app.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
@@ -465,12 +464,8 @@ app.updateElements = function(options) {
 		});
 }
 
-
 	app.getAnnotations().then(annotations => {
-		// IDEA: use app.annotation = annotations
-		// and then define in UI that annotationList.items = (app.)annotations
-		app.$.annotationList.items = annotations;
-		app.$.renderView.annotations = annotations;
+		app.annotations = annotations;
 	});
 };
 
@@ -561,7 +556,6 @@ app.updateProjectList = function () {
 app.init = function() {
 	console.log('init app');
 	imageContainer = document.querySelector('.object-view');
-	annotationList = document.querySelector('.annotation-list');
 	renderView = document.querySelector('render-view');
 
 	// This is only a temporary DB, will be replaced once switchDB(dbname) is called soon.
@@ -654,6 +648,11 @@ app.switchProject = function (e) {
 
 app.resetLocalDB = function (e) {
 	ipcRenderer.send('asynchronous-message', 'resetLocalDB');
+};
+
+app.annotationLabelHovered = function (e) {
+	let index = app.annotations.findIndex((annotation) => annotation._id === e.detail);
+	app.$.annotationList.scrollToIndex(index);
 };
 
 
