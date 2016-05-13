@@ -249,7 +249,7 @@
 				let annotation3DObject = {};
 				let annotationGlGroup = new THREE.Object3D();
 				let multFactor = 2;
-				let label = this.createLabel(annotation.description, annotation.position, multFactor, annotation.creatorProfile.color);
+				let label = this.createLabel(annotation, multFactor);
 				this.labelGroup.add(label);
 				annotation3DObject.label = label;
 
@@ -406,22 +406,25 @@
 				)
 		},
 
-		createLabel: function (text, point, multFactor, color) {
+		createLabel: function (annotation, multFactor) {
 			let div = document.createElement('div');
 			let textElement = document.createElement('span');
 			div.style.opacity = '0.85';
 			div.style.fontSize = '40px';
 			div.style.padding = "0.35em";
 			div.style.background = "rgb(255, 255, 255)";
-			div.style.border = color + " solid 0.125em";
+			div.style.border = annotation.creatorProfile.color + " solid 0.125em";
 			div.style.transition = "opacity 0.5s";
-			div.innerHTML = text;
-			div.addEventListener('mouseover', () => console.log('over'));
+			div.innerHTML = annotation.description;
+			div.addEventListener('mouseover', (e) => {
+				this.fire('label-hovered', annotation._id);
+			});
 			let label = new THREE.CSS3DSprite(div);
-			label.position.set(point.x, point.y, point.z);
+			label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
 			label.position.multiplyScalar(multFactor);
 			return label;
 		},
+		
 
 		createArrow: function (point, multFactor, color) {
 			var material = new THREE.LineBasicMaterial({
@@ -461,7 +464,7 @@
 
 			}
 
-			console.log(this.modus.tool)
+			console.log(this.modus.tool);
 		}
 
 	})
