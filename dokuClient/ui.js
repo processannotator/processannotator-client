@@ -483,10 +483,10 @@ app.handleResize = function(event) {
 
 
 app.keyUp = function(evt) {
-	if(evt.keyCode === 189){
-		console.log('complete reset');
-		completeReset();
-	}
+	// if(evt.keyCode === 189){
+	// 	console.log('complete reset');
+	// 	completeReset();
+	// }
 };
 
 window.addEventListener('online', alertOnlineStatus);
