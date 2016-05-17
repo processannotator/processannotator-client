@@ -249,12 +249,12 @@
 				let annotation3DObject = {};
 				let annotationGlGroup = new THREE.Object3D();
 				let multFactor = 2;
-				let label = this.createLabel(annotation.description, annotation.position, multFactor, annotation.creatorProfile.color);
+				let label = this.createLabel(annotation, multFactor);
 				this.labelGroup.add(label);
 				annotation3DObject.label = label;
 
 				// TODO: add arrow, label to a group/structure to be selectable
-				let arrow = this.createArrow(annotation.position, multFactor, annotation.creatorProfile.color);
+				let arrow = this.createArrow(annotation.position, label.position, annotation.creatorProfile.color);
 				annotationGlGroup.add(arrow);
 				annotation3DObject.arrow = arrow;
 
@@ -407,24 +407,38 @@
 				)
 		},
 
-		createLabel: function (text, point, multFactor, color) {
+		createLabel: function (annotation, multFactor) {
 			let div = document.createElement('div');
 			let textElement = document.createElement('span');
 			div.style.opacity = '0.85';
 			div.style.fontSize = '40px';
 			div.style.padding = "0.35em";
 			div.style.background = "rgb(255, 255, 255)";
-			div.style.border = color + " solid 0.125em";
+			div.style.border = annotation.creatorProfile.color + " solid 0.125em";
 			div.style.transition = "opacity 0.5s";
-			div.innerHTML = text;
-			div.addEventListener('mouseover', () => console.log('over'));
+			div.innerHTML = annotation.description;
+			div.addEventListener('mouseover', (e) => {
+				this.fire('label-over', annotation._id);
+			});
+			div.addEventListener('mouseout', (e) => {
+				this.fire('label-out', annotation._id);
+			});
 			let label = new THREE.CSS3DSprite(div);
-			label.position.set(point.x, point.y, point.z);
-			label.position.multiplyScalar(multFactor);
+
+			if (annotation.cameraPosition !== undefined) {
+				console.log(annotation.cameraPosition);
+				let pointToCam = new THREE.Vector3().subVectors(annotation.cameraPosition, annotation.position);
+				pointToCam.y -= pointToCam.y / 10;
+				pointToCam.multiplyScalar(0.75);
+				label.position.copy(pointToCam);
+			} else {
+				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
+				label.position.multiplyScalar(multFactor);
+			}
 			return label;
 		},
 
-		createArrow: function (point, multFactor, color) {
+		createArrow: function (point, labelpos, color) {
 			var material = new THREE.LineBasicMaterial({
 				color: color
 			})
@@ -432,7 +446,7 @@
 			var geometry = new THREE.Geometry()
 			geometry.vertices.push(
 				point,
-				new THREE.Vector3().copy(point).multiplyScalar(multFactor)
+				labelpos
 			)
 
 			return new THREE.Line( geometry, material )
@@ -442,9 +456,6 @@
 			// this is render-view's event listener on the toolBox
 			// when a different tool is selected, this function is triggered
 
-			console.log(e);
-			console.log(e.target.selected);
-
 			//do some cleanup/inits
 			glScene.remove(this.previewPolygon)
 			this.previewPolygon = undefined
@@ -452,7 +463,6 @@
 
 			// set this.modus.tool to the tool clicked in the box
 			this.modus.tool = e.target.selected
-			console.log(this.modus.tool)
 
 			switch (this.modus.tool) {
 				case 'polygon':
