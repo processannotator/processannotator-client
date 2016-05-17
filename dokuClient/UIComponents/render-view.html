@@ -117,10 +117,10 @@
 			this.modus = {tool: '', modelGrabbing: false};
 			// the render-view is interested in the state of the tool-box selector
 			// lets add the event listener then
-			this.toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
-			if (this.toolBox) {
-				this.toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
-				// this.toolBox.addEventListener('tap', this.toolChanged.bind(this))
+			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
+			if (toolBox) {
+				toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
+			toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
 			} else {
 				console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
 			}
@@ -249,7 +249,7 @@
 				let annotation3DObject = {};
 				let annotationGlGroup = new THREE.Object3D();
 				let multFactor = 2;
-				let label = this.createLabel(annotation, multFactor);
+				let label = this.createLabel(annotation.description, annotation.position, multFactor, annotation.creatorProfile.color);
 				this.labelGroup.add(label);
 				annotation3DObject.label = label;
 
@@ -339,7 +339,8 @@
 						this.fire('create-annotation', {
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
-							position: this.verticesPolygonTool[0]
+							position: this.verticesPolygonTool[0],
+							cameraPosition: camera.position
 						})
 
 						glScene.remove(this.previewPolygon)
@@ -406,28 +407,22 @@
 				)
 		},
 
-		createLabel: function (annotation, multFactor) {
+		createLabel: function (text, point, multFactor, color) {
 			let div = document.createElement('div');
 			let textElement = document.createElement('span');
 			div.style.opacity = '0.85';
 			div.style.fontSize = '40px';
 			div.style.padding = "0.35em";
 			div.style.background = "rgb(255, 255, 255)";
-			div.style.border = annotation.creatorProfile.color + " solid 0.125em";
+			div.style.border = color + " solid 0.125em";
 			div.style.transition = "opacity 0.5s";
-			div.innerHTML = annotation.description;
-			div.addEventListener('mouseover', (e) => {
-				this.fire('label-over', annotation._id);
-			});
-			div.addEventListener('mouseout', (e) => {
-				this.fire('label-out', annotation._id);
-			});
+			div.innerHTML = text;
+			div.addEventListener('mouseover', () => console.log('over'));
 			let label = new THREE.CSS3DSprite(div);
-			label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
+			label.position.set(point.x, point.y, point.z);
 			label.position.multiplyScalar(multFactor);
 			return label;
 		},
-		
 
 		createArrow: function (point, multFactor, color) {
 			var material = new THREE.LineBasicMaterial({
@@ -467,7 +462,7 @@
 
 			}
 
-			console.log(this.modus.tool);
+			console.log(this.modus.tool)
 		}
 
 	})
