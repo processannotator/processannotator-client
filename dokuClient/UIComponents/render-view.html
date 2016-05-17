@@ -120,7 +120,7 @@
 			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
 			if (toolBox) {
 				toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
-			toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
+				toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
 			} else {
 				console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
 			}
@@ -340,7 +340,9 @@
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
 							position: this.verticesPolygonTool[0],
-							cameraPosition: camera.position
+							cameraPosition: camera.position,
+							// cameraRotation: camera.rotation,
+							cameraUp: camera.up
 						})
 
 						glScene.remove(this.previewPolygon)
@@ -428,8 +430,7 @@
 			if (annotation.cameraPosition !== undefined) {
 				console.log(annotation.cameraPosition);
 				let pointToCam = new THREE.Vector3().subVectors(annotation.cameraPosition, annotation.position);
-				pointToCam.y -= pointToCam.y / 10;
-				pointToCam.multiplyScalar(0.75);
+				pointToCam.multiplyScalar(0.8);
 				label.position.copy(pointToCam);
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
@@ -473,6 +474,17 @@
 			}
 
 			console.log(this.modus.tool)
+		},
+		focusAnnotation: function (annotation) {
+			console.log('focusAnnotation!', annotation._id);
+			if(annotation.cameraPosition !== undefined) {
+				camera.position.copy(annotation.cameraPosition);
+				camera.rotation.copy(annotation.cameraRotation);
+				camera.up.copy(annotation.up);
+			} else {
+				return;
+			}
+
 		}
 
 	})
