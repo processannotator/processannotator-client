@@ -131,7 +131,6 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 	};
 
 	return localProjectDB.put(annotation).then((result) => {
-		console.log('added an annotation', result);
 	})
 	.catch((err) => {
 		console.log(err);
@@ -161,14 +160,9 @@ app.loadPreferences = function() {
 
 		// try to login to profile thats saved in preferences info from remote server
 		// to get up-to-date profile info and save it later
-		console.log('got prefs: ' + preferences);
-		console.log('Use the profile info from preferences to login and possibly update activeProject');
-		console.log(preferences.activeProfile.name);
-		console.log(preferences.activeProfile.password);
 		return login(preferences.activeProfile.name, preferences.activeProfile.password);
 	})
 	.then(response => {
-		console.log('successfully logged in: ', response);
 		return userDB.getSession();
 	})
 	.then(response => {
@@ -179,12 +173,8 @@ app.loadPreferences = function() {
 		return userDB.getUser(app.activeProfile.name);
 	})
 	.then(updatedProfile => {
-		console.log('loaded user info from server', updatedProfile);
-		console.log('current activeProfile', app.activeProfile);
-		console.log('got profile from server:', updatedProfile);
 		// use fresh profile info to set local profile (eg. when user logged in from other device and changed colors etc.)
 		app.activeProfile = Object.assign(updatedProfile, app.activeProfile);
-		console.log(updatedProfile);
 		return app.preferences;
 	})
 	.catch((err) => {
@@ -266,11 +256,7 @@ app.setNewProfile = function({prename, surname, email, color}) {
 		return userDB.getUser(name);
 	})
 	.then((response) => {
-			console.log(response);
 			app.activeProfile = Object.assign(app.activeProfile, response);
-			console.log('showing activeProfile:');
-			console.log(app.activeProfile);
-
 	})
 	.catch(err => console.error(err));
 };
@@ -306,9 +292,6 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 		);
 	}).then(() => {
 		app.projectOpened = true;
-		console.log('new project description');
-		console.log(newProjectDescription);
-
 		localInfoDB.get('projectsInfo').then((doc) => {
 			doc.projects.push(newProjectDescription);
 			return localInfoDB.put(doc);
@@ -338,7 +321,6 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 		return app.switchProjectDB(newProjectDescription);
 	})
 	.then((result) => {
-		console.log('created project', projectname, 'with first topic', topicname, 'locally.');
 		app.activeProject.activeTopic = topicID;
 		app.updateElements({updateFile: true});
 	})
@@ -390,7 +372,6 @@ app.getAnnotations = function() {
 		// HACK! This is inefficient. In future update localCachedUserDB periodically (try every 10 mins?)
 		// And update annotations only from local cache
 		for (let {doc} of annotations) {
-			console.log(doc.creator);
 			let updatedAnnotation = userDB.getUser(doc.creator).then((creatorProfile) => {
 				let {color, name, prename} = creatorProfile;
 				doc.creatorProfile = {color, name, prename};
@@ -402,7 +383,6 @@ app.getAnnotations = function() {
 						cachedProfile.color = color;
 						cachedProfile.name = name;
 						cachedProfile.prename = prename;
-						console.log('put user info into pouchdb cache');
 						return localCachedUserDB.put(cachedProfile);
 					})
 					.catch((err) => {
@@ -439,7 +419,6 @@ app.getAnnotations = function() {
 
 
 app.onAnnotationEdit = function(evt) {
-	console.log(evt);
 	// emitted when user edits text in annotationbox and hits enter
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description;
@@ -499,39 +478,35 @@ function websockettest() {
 
 }
 
-app.initWebsockets = function() {
-	return new Promise((resolve, reject) => {
-
-		ws = new WebSocket('ws://' + SERVERADDR + ':7000', ['protocolbla']);
-
-		ws.onopen = function (event) {
-			resolve(ws);
-		};
-
-		ws.onmessage = function (event) {
-			let msg = JSON.parse(event.data);
-			switch (msg.type) {
-				case '':
-				let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg});
-
-				console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!');
-				app.dispatchEvent(e);
-				break;
-				default:
-				console.log('unknown websockets event:', msg);
-			}
-		};
-	});
-
-};
+// app.initWebsockets = function() {
+// 	return new Promise((resolve, reject) => {
+//
+// 		ws = new WebSocket('ws://' + SERVERADDR + ':7000', ['protocolbla']);
+//
+// 		ws.onopen = function (event) {
+// 			resolve(ws);
+// 		};
+//
+// 		ws.onmessage = function (event) {
+// 			let msg = JSON.parse(event.data);
+// 			switch (msg.type) {
+// 				case '':
+// 				let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg});
+//
+// 				console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!');
+// 				app.dispatchEvent(e);
+// 				break;
+// 				default:
+// 				console.log('unknown websockets event:', msg);
+// 			}
+// 		};
+// 	});
+//
+// };
 
 app.createProject = function() {
-	console.log('create Project');
 	let projectOverlay = document.querySelector('#projectSetupOverlay');
 	projectOverlay.addEventListener('iron-overlay-closed', (e) => {
-		console.log('overlay closed');
-		console.log(projectOverlay.projectname, projectOverlay.file);
-		console.log(projectOverlay);
 
 		app.setNewProject({
 			projectname: projectOverlay.projectname,
@@ -545,7 +520,6 @@ app.createProject = function() {
 };
 
 app.updateProjectList = function () {
-	console.log('update project list.');
 	return localInfoDB.get('projectsInfo').then((doc) => {
 		app.set('projects', doc.projects);
 	}).catch((err) => {
@@ -584,7 +558,6 @@ app.init = function() {
 
 	app.loadPreferences().then(() => {
 		console.log('Loaded preferences.');
-		console.log('active profile:', app.activeProfile);
 
 		return new Promise((resolve, reject) => {
 			if(app.activeProfile === ''){
