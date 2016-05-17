@@ -114,7 +114,7 @@ app.addTopic = function() {
 };
 
 // this is an event handler, triggering on enter-key event in renderview
-app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 0}, polygon=[]}}) {
+app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, polygon=[]}}) {
 	console.log('about to add annotation to', app.activeProject._id);
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
@@ -124,10 +124,10 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		parentObject: app.activeObject_id,
 		creator: app.activeProfile.name,
 		creationDate: new Date().toISOString(),
-		title: 'a topic title',
-		description: description,
-		position: position,
-		polygon: polygon
+		cameraPosition,
+		description,
+		position,
+		polygon
 	};
 
 	return localProjectDB.put(annotation).then((result) => {

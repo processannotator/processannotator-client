@@ -7,9 +7,10 @@
 <link rel="import" href="../bower_components/neon-animation/animations/fade-in-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-down-animation.html">
 <link rel="import" href="../bower_components/paper-material/paper-material.html">
-<link rel="import" href="../bower_components/iron-list/iron-list.html">
-<!-- <link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html"> -->
-<link rel="import" href="../bower_components/paper-datatable/paper-datatable.html">
+<!-- <link rel="import" href="../bower_components/iron-list/iron-list.html"> -->
+<!-- <link rel="import" href="../bower_components/paper-datatable/paper-datatable.html"> -->
+<link rel="import" href="bower_components/iron-selector/iron-selector.html">
+
 
 <!-- this element handles the selection of tools in the object view
 it's not supposed to actually handle the editing itself, just:
@@ -31,27 +32,32 @@ it's not supposed to actually handle the editing itself, just:
 		width: 100%;
 	}
 
+
+		iron-list {
+		  flex: 1 1 auto;
+		  overflow-y: auto;
+		  min-height: 0px;
+		  max-height: auto;
+		  height: 100%;
+		  padding: 1em;
+		}
+
 	</style>
 	<!-- <paper-material id="base" elevation="3"> -->
 		<h1>Create</h1>
 		<paper-button id="createProjectBtn" raised on-tap="createProjectClick"><iron-icon icon="add"></iron-icon>Create New Project</paper-button>
 
-		<h1>Join</h1>
-		<paper-input label="project name"></paper-input>
-
 		<h1>Switch</h1>
-		<paper-datatable data="{{projects}}" on-row-tap="rowTap">
-			<paper-datatable-column header="ID" property="_id" sortable>
-				<template>
-					<span>{{value}}</span>
-				</template>
-			</paper-datatable-column>
-			<paper-datatable-column header="Activity" property="activity" sortable>
-				<template>
-					<span>{{value}}</span>
-				</template>
-			</paper-datatable-column>
-		</paper-datatable>
+
+
+		<iron-selector selected="0" on-iron-select="projectSelect">
+			<template id="projectList" is="dom-repeat" items="{{projects}}" as="project">
+				<paper-button>
+					{{project.name}}
+				</paper-button>
+			</template>
+		</iron-selector>
+
 
 
 		</template>
@@ -107,9 +113,9 @@ Polymer({
 		console.log('click');
 		this.fire('boom');
 	},
-	rowTap: function (e) {
-		console.log('clicked project', e.detail);
-		this.fire('switch-project-click', e.detail.item);
+	projectSelect: function(e) {
+		var item = this.$.projectList.itemForElement(e.detail.item);
+		this.fire('switch-project-click', item);
 	}
 });
 
