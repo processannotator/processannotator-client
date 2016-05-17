@@ -114,8 +114,9 @@ app.addTopic = function() {
 };
 
 // this is an event handler, triggering on enter-key event in renderview
-app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, polygon=[]}}) {
+app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[]}}) {
 	console.log('about to add annotation to', app.activeProject._id);
+
 	let annotation = {
 		_id: 'annotation_' + new Date().toISOString(),
 		type: 'annotation',
@@ -125,10 +126,14 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		creator: app.activeProfile.name,
 		creationDate: new Date().toISOString(),
 		cameraPosition,
+		// cameraRotation,
+		cameraUp,
 		description,
 		position,
 		polygon
 	};
+
+	console.log(annotation);
 
 	return localProjectDB.put(annotation).then((result) => {
 	})
@@ -633,6 +638,12 @@ app.mouseOverAnnotationLabel = function (e) {
 		app.$.annotationList.scrollToIndex(index);
 	}, 500);
 };
+
+app.annotationSelected = function (e) {
+	if(app.selectedAnnotation === undefined || app.selectedAnnotation === null) return;
+	app.$.renderView.focusAnnotation(app.selectedAnnotation);
+};
+
 
 
 

@@ -110,7 +110,7 @@
 
 		</style>
 
-		<div id="container">
+		<div id="container" on-tap="tap">
 
 			<div id="header">
 				<div style.backgroundColor="" id="letters_id">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
@@ -156,18 +156,20 @@
 					return; // Should do nothing if the key event was already consumed.
 
 				if(event.keyIdentifier === 'Enter'){
-					console.log('enterkey')
-					event.preventDefault()
-					this.handleTextChange(event)
+					event.preventDefault();
+					this.handleTextChange(event);
 				}
 			},
 			handleTextChange: function(event, detail, sender) {
 				this.annotation.description = event.srcElement.innerHTML;
-				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this})
+				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
 			},
 			computeNameLetters: function (prename, surname) {
 				console.log('computeNameLetters:', prename, surname);
 				return prename[0] + surname[0]
+			},
+			tap: function () {
+				this.fire('annotation-box-mouse-enter', this.annotation);
 			}
 
 		});
