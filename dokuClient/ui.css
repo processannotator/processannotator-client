@@ -34,7 +34,7 @@ body {
   flex: 1 0 0;
   display: flex;
   flex-direction: column;
-  background-color: #4a4a4a;
+  background-color: rgb(7, 20, 26);
   height: 100%;
   min-width: 15em;
 }
@@ -51,10 +51,14 @@ body {
   height: 2.9em;
   min-height: 2.9em;
   padding-left: 2em;
-  background-color: #4A4A4A;
+  background-color: rgb(5, 73, 105);
 }
+
+.menu.side {
+  background-color: rgb(12, 38, 50);
+}
+
 .menu-item {
-  opacity: 0.70;
   color: #c8c8c8;
   cursor: pointer;
   transition: opacity 0.25s ease-out;
@@ -67,6 +71,9 @@ body {
 }
 .side-container .menu-item {
   padding-right: 5em;
+}
+.appname {
+  cursor:default;
 }
 
 #workspace {
