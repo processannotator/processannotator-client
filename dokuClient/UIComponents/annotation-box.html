@@ -18,17 +18,25 @@
 			#container {
 				display: flex;
 				flex-direction: column;
-				background-color: #c11a1a;
-				transition: all 0.2125s ease-out;
-				height: 15em;
-				min-height: 15em;
+				background-color: none;
+				/*transition: all 0.2125s ease-out;*/
+				height: 10em;
+				min-height: 10em;
 				max-height: 15em;
-				margin-bottom: 1em;
+				/*margin-bottom: 1em;*/
+				border-top: 1px solid rgb(21, 68, 89);
 			}
 
 			#container:hover {
-				-webkit-transform: scale(1.1);
-				background-color: rgba(200, 50, 50, 0.5);
+				background-color: red;
+
+				/*-webkit-transform:rotateY(50deg);*/
+				/*-webkit-transform:rotateZ(25deg);*/
+			}
+
+			#container:active {
+				border: 5px solid green;
+
 				/*-webkit-transform:rotateY(50deg);*/
 				/*-webkit-transform:rotateZ(25deg);*/
 			}
@@ -48,16 +56,18 @@
 				flex: 1 0 0;
 				display: flex;
 				flex-direction: row;
+				font-size: 1.2em;
 				color: #4A4A4A;
-				background-color: #E0E0E0;
+				min-height: 1.5em;
+				background-color: rgba(0,0,0,0);
 			}
 
 			#header > #letters_id {
 				text-align: center;
-				min-height: 100%;
+				min-height: 1.5em;
 				padding-top: 0.1em;
 				padding-bottom: 0.1em;
-				min-width: 2em;
+				min-width: 1.5em;
 				background: #9B9B9B;
 				color: white;
 				font-family: "SourceSansPro-Semibold";
@@ -72,27 +82,32 @@
 
 			#main {
 				flex: 4 0 0;
-				background-color: white;
-				color: #4A4A4A;
+				background-color: rgba(0,0,0,0);
+				color: rgb(197, 227, 241);
+				font-size: 0.8em;
 			}
 
 			#tags_and_tasks {
 				flex: 1 0 0;
 				display: flex;
 				flex-direction: row;
-				color: white;
+				padding: 0.5em;
+				color: rgb(197, 227, 241);
 			}
 
 			#tags_and_tasks > #tags {
 				flex: 2 0 0;
 				vertical-align: middle;
-				background-color: #4A4A4A;
+				/*background-color: #4A4A4A;*/
 			}
 
 			#tags_and_tasks > #task {
 				flex: 1 0 0;
 				text-align: center;
-				background-color: #F5A623;
+			}
+
+			#task:hover {
+				cursor: pointer;
 			}
 
 			#footer {
@@ -100,7 +115,7 @@
 				text-align: center;
 				vertical-align: bottom;
 				color: #303030;
-				background-color: #696565;
+				/*background-color: #696565;*/
 			}
 
 			.annotationText:focus {
@@ -132,9 +147,9 @@
 			</div>
 
 
-			<div id="footer">
+			<!-- <div id="footer">
 				<span>[[annotation.creatorProfile.prename]]</span>
-			</div>
+			</div> -->
 		</div>
 
 	</template>
@@ -149,7 +164,8 @@
 				}
 			},
 			_annotationChanged: function() {
-				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color
+				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color;
+				this.$.header.style.color = this.annotation.creatorProfile.color;
 			},
 			keydown: function (event) {
 				if (event.defaultPrevented)
@@ -166,7 +182,7 @@
 			},
 			computeNameLetters: function (prename, surname) {
 				console.log('computeNameLetters:', prename, surname);
-				return prename[0] + surname[0]
+				return prename[0] + surname[0];
 			},
 			tap: function () {
 				this.fire('annotation-box-mouse-enter', this.annotation);

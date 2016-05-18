@@ -39,13 +39,13 @@
 		background-color: rgb(98, 98, 98)
 	}
 
-	iron-list {
+	#annotationList {
 	  flex: 1 1 auto;
 	  overflow-y: auto;
 	  min-height: 0px;
 	  max-height: auto;
 	  height: 100%;
-	  padding: 1em;
+	  /*padding: 1em;*/
 	}
 
 
@@ -79,6 +79,8 @@
 
 			<div class="menu">
 
+
+				<div class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></div>
 				<div class="menu-item" on-tap="toggleDashboard">Dashboard <span>{{test2}}</span></div>
 
 				<div class="menu-item">Start Recording</div>
@@ -117,7 +119,7 @@
 		<div class="side-container">
 			<!--  IDEA: use paper-drawer-panel-->
 
-			<div class="menu">
+			<div class="side menu">
 				<div class="menu-item">Filter by</div>
 				<div class="menu-item"><i>search for</i></div>
 			</div>
