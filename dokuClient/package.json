@@ -1,11 +1,12 @@
 {
   "name": "DokuClient",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": "main.js",
   "dependencies": {
     "pouchdb": "^5.3.2",
     "pouchdb-all-dbs": "^1.0.1",
-    "pouchdb-authentication": "^0.5"
+    "pouchdb-authentication": "^0.5",
+    "worker-pouch": "^1.0.2"
   },
   "scripts": {
     "build": "babel ui.js --out-file bundle.js --source-maps",
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.8.0",
+    "devtron": "^1.1.1",
     "electron-packager": "^7.0",
     "electron-prebuilt": "^1.0.1"
   }

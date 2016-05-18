@@ -159,7 +159,6 @@
 				}
 			},
 			_annotationChanged: function() {
-				console.log(this.annotation);
 				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color;
 				this.$.header.style.color = this.annotation.creatorProfile.color;
 			},
@@ -177,8 +176,6 @@
 				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
 			},
 			computeNameLetters: function (prename, surname) {
-				console.log(this.annotation);
-				console.log('computeNameLetters:', prename, surname);
 				return prename[0] + surname[0];
 			},
 			tap: function () {
