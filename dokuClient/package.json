@@ -1,6 +1,6 @@
 {
   "name": "DokuClient",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "main": "main.js",
   "dependencies": {
     "pouchdb": "^5.3.2",
