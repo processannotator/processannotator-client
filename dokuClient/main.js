@@ -8,6 +8,8 @@ const BrowserWindow = electron.BrowserWindow; // Module to create native browser
 
 
 
+
+
 app.commandLine.appendSwitch('--enable-file-cookies');
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -37,7 +39,7 @@ app.on('ready', function() {
 	mainWindow.loadURL('file://' + __dirname + '/index.html');
 	var session = mainWindow.webContents.session;
 
-	
+
 	ipcMain.on('asynchronous-message', function(event, arg) {
 	  if(arg === 'resetLocalDB') {
 			session.clearStorageData({

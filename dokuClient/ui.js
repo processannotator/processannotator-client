@@ -1,6 +1,7 @@
 /* eslint no-alert:0*/
 'use strict'; /*eslint global-strict:0*/
 
+
 const ipcRenderer = require('electron').ipcRenderer;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
@@ -30,8 +31,8 @@ app.switchProjectDB = function(newProject) {
 	app.annotations = [];
 	console.log('switch to projectDB with name', app.activeProject);
 
-	localProjectDB = new PouchDB(app.activeProject._id);
-	remoteProjectDB = new PouchDB(app.remoteUrl + '/' + app.activeProject._id);
+	localProjectDB = new PouchDB(app.activeProject._id, {adapter: 'worker'});
+	remoteProjectDB = new PouchDB(app.remoteUrl + '/' + app.activeProject._id, {adapter: 'worker'});
 
 	app.savePreferences();
 
@@ -69,10 +70,17 @@ app.switchProjectDB = function(newProject) {
 
 	localProjectDB.changes({live: true, since: 'now', include_docs: true})
 	.on('change', (info) => {
-		app.updateElements({updateFile: true});
+		console.log('change, info:', info);
+		// only update also the file (for the renderer) if it's not an annotation
+		let updateFile = false;
+		if(info.doc.type !== 'annotation') {
+			updateFile = true;
+		}
+		console.log(updateFile);
+		app.updateElements({updateFile: updateFile});
 	})
 	.on('complete', function(info) {
-		// changes() was canceled
+		console.log('complete');
 	}).on('error', function (err) {
 		console.log(err);
 	});
@@ -135,8 +143,7 @@ app.addAnnotation = function({detail: {description='', position={x: 0, y: 0, z: 
 		polygon
 	};
 
-	console.log(annotation);
-
+	console.log('about to add an annotation!');
 	return localProjectDB.put(annotation).then((result) => {
 	})
 	.catch((err) => {
@@ -337,6 +344,20 @@ app.setNewProject = function({projectname, topicname, file, emails}) {
 		});
 };
 
+function annotationWithCreatorProfile(doc) {
+	console.log('doc');
+	if(doc.creator === app.activeProfile.name)
+	return localCachedUserDB.get(doc.creator)
+	.then(profile => {
+		doc.creatorProfile = profile;
+		return doc;
+	}).catch(err => {
+		console.log(err);
+		doc.creatorProfile = {};
+		return doc;
+	});
+}
+
 // Get all annotation of current project.
 // 1. Update localCachedUserDB based in annotation creators (if userDB is available)
 // 2. Use localCachedUserDB to add profile info (color, name) to annotation.
@@ -347,21 +368,9 @@ app.getAnnotations = function() {
 	let updatedCreators = new Set();
 	let annotations;
 
-	function annotationWithCreatorProfile(doc) {
-		return localCachedUserDB.get(doc.creator)
-		.then(profile => {
-			doc.creatorProfile = profile;
-			return doc;
-		}).catch(err => {
-			console.log(err);
-			doc.creatorProfile = {};
-			return doc;
-		});
-	}
 
 	return localProjectDB.allDocs({
 		include_docs: true,
-		attachments: true,
 		startkey: 'annotation',
 		endkey: 'annotation\uffff'
 	})
@@ -429,7 +438,7 @@ app.onAnnotationEdit = function(evt) {
 	// emitted when user edits text in annotationbox and hits enter
 	localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 		doc.description = evt.detail.newAnnotation.description;
-		return localProjectDB.put(doc).then((value) => {app.updateElements({updateFile: false}); });
+		return localProjectDB.put(doc).then((value) => {});
 		// after put into DB, DB change event should be triggered automatically to update
 	});//.then(() => {updateElements()})
 };
