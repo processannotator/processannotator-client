@@ -27,7 +27,9 @@ app.switchProjectDB = function(newProject) {
 
 	// TODO: check if dname is a valid database name for a project
 	app.activeProject = newProject;
+	app.annotations = [];
 	console.log('switch to projectDB with name', app.activeProject);
+
 	localProjectDB = new PouchDB(app.activeProject._id);
 	remoteProjectDB = new PouchDB(app.remoteUrl + '/' + app.activeProject._id);
 
@@ -378,15 +380,15 @@ app.getAnnotations = function() {
 		// And update annotations only from local cache
 		for (let {doc} of annotations) {
 			let updatedAnnotation = userDB.getUser(doc.creator).then((creatorProfile) => {
-				let {color, name, prename} = creatorProfile;
-				doc.creatorProfile = {color, name, prename};
+				let {color, surname, prename} = creatorProfile;
+				doc.creatorProfile = creatorProfile;
 
 				// also update localCachedUserDB if not done yet.
 				if(updatedCreators.has(doc.creator) === false) {
 					updatedCreators.add(doc.creator);
 					localCachedUserDB.get(doc.creator).then((cachedProfile) => {
 						cachedProfile.color = color;
-						cachedProfile.name = name;
+						cachedProfile.surname = surname;
 						cachedProfile.prename = prename;
 						return localCachedUserDB.put(cachedProfile);
 					})
@@ -394,7 +396,7 @@ app.getAnnotations = function() {
 						// No local cache of user info yet, cache it now!
 						if(err.status === 404) {
 							console.log('No local cache of user info yet, cache it now!');
-							return localCachedUserDB.put({_id: doc.creator, color, name, prename});
+							return localCachedUserDB.put({_id: doc.creator, color, surname, prename});
 						} else {
 							console.error(err);
 						}
@@ -621,7 +623,6 @@ app.addEventListener('dom-change', () => {
 
 app.switchProject = function (e) {
 	app.switchProjectDB(e.detail);
-	console.log(e);
 };
 
 app.resetLocalDB = function (e) {

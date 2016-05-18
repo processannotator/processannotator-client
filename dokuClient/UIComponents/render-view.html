@@ -238,7 +238,6 @@
 
 		_annotationsChanged: function() {
 			console.log('_annotationsChanged');
-			console.log(this.annotations);
 			// debug output of annotations
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
@@ -428,7 +427,6 @@
 			let label = new THREE.CSS3DSprite(div);
 
 			if (annotation.cameraPosition !== undefined) {
-				console.log(annotation.cameraPosition);
 				let pointToCam = new THREE.Vector3().subVectors(annotation.cameraPosition, annotation.position);
 				pointToCam.multiplyScalar(0.8);
 				label.position.copy(pointToCam);
@@ -472,11 +470,9 @@
 				default:
 
 			}
-
-			console.log(this.modus.tool)
 		},
 		focusAnnotation: function (annotation) {
-			console.log('focusAnnotation!', annotation._id);
+
 			if(annotation.cameraPosition !== undefined) {
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)
