@@ -478,9 +478,9 @@
 		focusAnnotation: function (annotation) {
 			console.log('focusAnnotation!', annotation._id);
 			if(annotation.cameraPosition !== undefined) {
-				camera.position.copy(annotation.cameraPosition);
-				camera.rotation.copy(annotation.cameraRotation);
-				camera.up.copy(annotation.up);
+				// The resetFrom function was added by me (modified .reset()) to allow
+				// reset from a saved position (eg. stored in the DB).
+				controls.resetFrom(annotation.cameraPosition, annotation.cameraUp);
 			} else {
 				return;
 			}
