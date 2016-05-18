@@ -350,6 +350,26 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	};
 
+	// This was added by Tom Brewe
+	this.resetFrom = function (position, up) {
+		_this.target.copy( _this.target0 );
+		_this.object.position.copy(position );
+		_this.object.up.copy( up );
+
+		_eye.subVectors( _this.object.position, _this.target );
+
+		_this.object.lookAt( _this.target );
+
+		_this.dispatchEvent( changeEvent );
+
+		lastPosition.copy( _this.object.position );
+
+	};
+
+
+
+
+
 	// listeners
 
 	function keydown( event ) {
