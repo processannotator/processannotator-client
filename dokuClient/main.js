@@ -45,6 +45,9 @@ app.on('ready', function() {
 			session.clearStorageData({
 				storages: ['cookies', 'indexdb', 'local storage', 'serviceworkers']
 			}, () => { console.log('session cleared')});
+			mainWindow.webContents.session.clearCache(function(){
+				console.log('session cleared')
+			});
 		}
 	});
 
