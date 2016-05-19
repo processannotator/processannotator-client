@@ -50,6 +50,10 @@
 	var cssRenderer;
 	var render;
 	var animate;
+	
+	function jsonEqual(a,b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+	}
 
 	Polymer({
 		is: "render-view",
@@ -65,10 +69,11 @@
 			}
 		},
 		listeners: {
+			'tap': 'tap',
 			'up': 'toggleTrack',
 			'down': 'toggleTrack',
-			'mousemove': 'mouseMoved',
-			'tap': 'tap'
+			'track': 'track',
+			'mousemove': 'mouseMoved'
 		},
 
 		ready: function() {
@@ -227,11 +232,11 @@
 
 
 					// swap existing mesh with new mesh
-					glScene.add(meshFromFile)
-					glScene.remove(this.fileRepresentation)
-					this.fileRepresentation = meshFromFile
-					this.render()
-					this.animate()
+					glScene.add(meshFromFile);
+					glScene.remove(this.fileRepresentation);
+					this.fileRepresentation = meshFromFile;
+					this.render();
+					this.animate();
 				}
 			);
 		},
@@ -296,8 +301,8 @@
 		},
 
 		toggleTrack: function(e) {
-			this.modus.modelGrabbing = !this.modus.modelGrabbing
-			Polymer.dom(this).classList.toggle('track')
+			this.modus.modelGrabbing = !this.modus.modelGrabbing;
+			Polymer.dom(this).classList.toggle('track');
 		},
 
 		updateMouse: function (mouseEvent) {
@@ -309,13 +314,16 @@
 		},
 
 		mouseMoved: function (e) {
+			this.previousCameraPosition = camera.position.clone();
+			this.previousCameraRotation = camera.rotation.clone();
+			
 			if(this.modus.tool === 'polygon') {
 				this.updateMouse(e)
 				this.raycaster.setFromCamera(this.mouse, camera)
 
 				let intersections = [];
 				if(this.fileRepresentation) {
-					intersections = this.raycaster.intersectObject(this.fileRepresentation)
+					intersections = this.raycaster.intersectObject(this.fileRepresentation);
 				}
 
 				if(intersections.length !== 0){
@@ -338,6 +346,7 @@
 				case 'Enter':
 					if(this.modus.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						// TODO: finish shape and create annotation
+					
 						this.fire('create-annotation', {
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
@@ -345,7 +354,7 @@
 							cameraPosition: camera.position,
 							// cameraRotation: camera.rotation,
 							cameraUp: camera.up
-						})
+						});
 
 						glScene.remove(this.previewPolygon)
 						this.previewPolygon = undefined
@@ -358,30 +367,57 @@
 			}
 
 		},
+		track: function (e) {
+			console.log(e);
+		},
 		tap: function(e) {
-			console.log(this.modus.tool)
+			console.log('previous', this.previousCameraPosition, this.previousCameraRotation);
+			console.log('now', camera.position, camera.rotation);
+			if(jsonEqual(this.previousCameraPosition, camera.position) === false || jsonEqual(this.previousCameraRotation, camera.rotation) == false) {
+				console.log('moved! return!');
+			}
+			this.updateMouse(e.detail.sourceEvent);
+
+			// update the picking ray with the camera and mouse position
+			this.raycaster.setFromCamera(this.mouse, camera);
+
+			// calculate objects intersecting the picking ray
+			// only use the frontmost intersection  -> [0]
+			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
+			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+
 			switch (this.modus.tool) {
+				case 'none':
+					this.fire('create-annotation', {
+						description: 'new polygon...',
+						position: intersection.point,
+						cameraPosition: camera.position,
+						// cameraRotation: camera.rotation,
+						cameraUp: camera.up
+					});
+					break;
 				case 'polygon':
-
-					this.updateMouse(e.detail.sourceEvent)
-
-					// update the picking ray with the camera and mouse position
-					this.raycaster.setFromCamera(this.mouse, camera);
-
-					// calculate objects intersecting the picking ray
-					// only use the frontmost intersection  -> [0]
-					var intersections = this.raycaster.intersectObject(this.fileRepresentation)
-					var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null
-					this.verticesPolygonTool.push(intersection.point)
+					this.verticesPolygonTool.push(intersection.point);
 
 					// create new preview polygon/shape when enough points are available
 					if(this.verticesPolygonTool.length >= 3) {
-							glScene.remove(this.previewPolygon)
-							this.previewPolygon = this.createPolygon(this.verticesPolygonTool, 0x00ff00)
-							glScene.add(this.previewPolygon)
-
+							glScene.remove(this.previewPolygon);
+							this.previewPolygon = this.createPolygon(this.verticesPolygonTool, 0x00ff00);
+							glScene.add(this.previewPolygon);
 					}
-					this.render()
+					
+					// this.previewAnnotation = this.addAnnotationObject({
+					// 	_id: 'previewAnnotation',
+					// 	creatorProfile: {
+					// 		color: "rgb(128, 128, 128)"
+					// 	},
+					// 	description: "new...",
+					// 	position: intersection.point
+					//
+					//
+					// });
+					
+					this.render();
 
 
 				break;
