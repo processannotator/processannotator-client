@@ -49,13 +49,14 @@
 	  /*padding: 1em;*/
 	}
 
+	paper-button.menu-item  {
+	  --paper-button-ink-color: rgb(7, 20, 26);
+	}
+
 
 	#dashboard {
 		min-height:1vh;
 	}
-
-
-
 
 
 	</style>
@@ -81,14 +82,12 @@
 			<div class="main menu">
 
 
-				<div class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></div>
-				<div class="menu-item" on-tap="toggleDashboard">PROJECT</div>
-				<div class="menu-item" on-tap="toggleDashboard">TOPIC</div>
-				<div class="menu-item" on-tap="toggleDashboard">OBJECT</div>
+				<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
+				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
+				<paper-button class="menu-item" on-tap="toggleDashboard">TOPIC</paper-button>
+				<paper-button class="menu-item" on-tap="toggleDashboard">OBJECT</paper-button>
 
-				<div class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</div>
-				<date></date>
-				<div class="menu-item"> </div>
+				<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>
 			</div>
 
 		<div id="workspace">

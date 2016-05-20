@@ -12,7 +12,7 @@ body {
   display: flex;
   flex-direction: column;
   font-family: "SourceSansPro-Light";
-  background: #646464;
+  background-color: rgb(7, 20, 26);
   overflow: hidden;
   -webkit-user-select: none;
 }
@@ -44,6 +44,7 @@ body {
   background-color: none;
   cursor: pointer;
   transition: opacity 0.25s ease-out;
+  text-align: center;
 }
 
 .side-container .menu-item {
@@ -53,13 +54,15 @@ body {
 .main .menu-item {
   font-size: 1.2em;
   font-weight: bold;
+  height: 100%;
+  border-radius: 0px;
 }
+
 
 .menu {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: center;
   font-size: 11px;
   height: 2.9em;
   min-height: 2.9em;
@@ -67,24 +70,27 @@ body {
   background-color: rgb(5, 73, 105);
 }
 
-.menu.sub {
-  background-color: rgb(0, 0, 0);
+.menu.sub, .menu-item.selected {
+  background-color: rgb(7, 20, 26);
+  color: white;
 }
+
 
 .menu.side {
   background-color: rgb(12, 38, 50);
 }
-
 
 .menu-item:hover {
   opacity: 1.0;
 }
 .main-container .menu-item {
   padding-right: 5em;
+  vertical-align: middle;
 }
 .side-container .menu-item {
   padding-right: 5em;
 }
+
 .appname {
   cursor:default;
 }

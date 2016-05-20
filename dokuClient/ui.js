@@ -631,7 +631,7 @@ app.toggleDashboard = function (e) {
 	console.log('toggle dashboard');
 
 	app.$.dashboard.toggle();
-	app.$.dashboard.classList.toggle('selected');
+	app.$.projectMenuItem.classList.toggle('selected');
 	console.log(app.$.dashboard);
 
 };
