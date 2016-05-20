@@ -23,18 +23,20 @@ it's not supposed to actually handle the editing itself, just:
 	<style>
 
 	:host {
-	  background-color: #a6a6a6;
+	  background-color: rgb(12, 38, 50);
 		padding: 0;
+		color: rgb(197, 227, 241);
 	}
 
 	#createProjectBtn {
 		height: 100%;
+		color: rgb(43, 126, 165);
 
 	}
 
 
 	:host .menu {
-		padding-left: 15em;
+		padding-left: 20em;
 	}
 
 		iron-list {
@@ -79,11 +81,11 @@ Polymer({
 			value: function() {
 				return {
 					'entry': [
-						{name: 'slide-from-top-animation', node: this},
+						{name: 'slide-from-left-animation', node: this},
 						{name: 'fade-in-animation', node: this}
 					],
 					'exit': [
-						{name: 'slide-up-animation', node: this},
+						{name: 'slide-left-animation', node: this},
 						{name: 'fade-out-animation', node: this}
 					]
 				}
