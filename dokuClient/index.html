@@ -1,158 +1,63 @@
-<!DOCTYPE html>
-<html>
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
 
+<!doctype html>
+<html lang="en">
 <head>
-	<meta charset="utf-8" name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
-	<title>DokuClient</title>
-	<link href="ui.css" rel="stylesheet">
-	<!-- <script src="bower_components/webcomponentsjs/webcomponents.min.js"></script> -->
-	<script src="node_modules/pouchdb/dist/pouchdb.min.js"></script>
-	<script src="node_modules/pouchdb-authentication/dist/pouchdb.authentication.min.js"></script>
-	<script src="node_modules/pouchdb-all-dbs/dist/pouchdb.all-dbs.min.js"></script>
-	<script src="node_modules/worker-pouch/dist/pouchdb.worker-pouch.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <!-- <link rel="shortcut icon" sizes="32x32" href="../images/app-icon-32.png"> -->
 
-	<link rel="import" href="bower_components/iron-icons/iron-icons.html">
-	<link rel="import" href="bower_components/iron-icons/image-icons.html">
-	<link rel="import" href="bower_components/iron-selector/iron-selector.html">
-	<link rel="import" href="bower_components/iron-list/iron-list.html">
+  <!-- <link rel="manifest" href="/manifest.json"> -->
+	<title>process.annotator</title>
+  <script>
 
-	<link rel="import" href="bower_components/neon-animation/neon-animated-pages.html">
-	<link rel="import" href="bower_components/neon-animation/neon-animatable.html">
-	<link rel="import" href="bower_components/neon-animation/neon-animations.html">
-	<link rel="import" href="bower_components/paper-styles/paper-styles.html">
-	<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
-	<link rel="import" href="bower_components/paper-button/paper-button.html">
-	<link rel="import" href="bower_components/paper-fab/paper-fab.html">
+    // setup Polymer options
+    // window.Polymer = {lazyRegister: true, dom: 'shadow'};
 
-	<link rel="import" href="UIComponents/profile-setup-overlay.html">
-	<link rel="import" href="UIComponents/project-setup-overlay.html">
-	<link rel="import" href="UIComponents/annotation-box.html">
-	<link rel="import" href="UIComponents/render-view.html">
-	<link rel="import" href="UIComponents/dashboard.html">
+    // load webcomponents polyfills
+    (function() {
+      if ('registerElement' in document
+          && 'import' in document.createElement('link')
+          && 'content' in document.createElement('template')) {
+        // browser has web components
+      } else {
+        // polyfill web components
+        var e = document.createElement('script');
+        e.src = '../bower_components/webcomponentsjs/webcomponents-lite.min.js';
+        console.log(document.body);
+        document.body.appendChild(e);
+      }
+    })();
 
-	<style is="custom-style">
-	iron-icon.iron-selected {
-		background-color: white;
-	}
+    // // load pre-caching service worker
+    // if ('serviceWorker' in navigator) {
+    //   window.addEventListener('load', function() {
+    //     navigator.serviceWorker.register('/service-worker.js');
+    //   });
+    // }
 
-	iron-icon:not(.iron-selected):hover {
-		/*--iron-icon-fill-color: blue;*/
-		background-color: rgb(98, 98, 98)
-	}
+  </script>
 
-	#annotationList {
-	  flex: 1 1 auto;
-	  overflow-y: auto;
-	  min-height: 0px;
-	  max-height: auto;
-	  height: 100%;
-	  /*padding: 1em;*/
-	}
+  <link rel="import" href="src/main-app.html">
 
-	paper-button.menu-item  {
-	  --paper-button-ink-color: rgb(7, 20, 26);
-	}
+  <style>
 
 
-	#dashboard {
-		min-height:1vh;
-	}
 
-
-	</style>
+  </style>
 
 </head>
-
-
 <body>
 
-<template is="dom-bind" id="app">
+  <main-app>Hi! Just a moment please :)</main-app>
 
-
-		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
-		</profile-setup-overlay>
-		<project-setup-overlay id="projectSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
-		</project-setup-overlay>
-
-		<!-- TODO: use paper-header-panel for toggling and shit -->
-	<div class="top-container">
-
-		<div class="main-container">
-
-			<div class="main menu">
-
-
-				<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
-				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
-				<paper-button class="menu-item">TOPIC</paper-button>
-				<paper-button class="menu-item">OBJECT</paper-button>
-
-				<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>
-			</div>
-
-		<div id="workspace">
-
-
-			<dash-board id="dashboard" remote-url="[[remoteUrl]]" on-boom="createProject" projects="[[projects]]" on-switch-project-click="switchProject"></dash-board>
-			<div id="objectview">
-				<!-- <div class="tutorial">
-					<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
-				</div> -->
-
-				<render-view id="renderView" annotations="[[annotations]]" on-create-annotation="addAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel">  </render-view>
-
-				<iron-selector id="tool-box" attr-for-selected="name" selected="none">
-					<iron-icon class="tool-box-icon" name="none">click</iron-icon>
-					<iron-icon class="tool-box-icon" name="polygon" src="images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
-					<iron-icon class="tool-box-icon" name="compare" src="images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
-					<iron-icon class="tool-box-icon" name="freehand" src="images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
-					<iron-icon class="tool-box-icon" name="text" src="images/IconTool_BLACK/IconTools_Text_black.svg"></iron-icon>
-				</iron-selector>
-			</div>
-</div>
-
-
-
-
-		</div>
-
-		<div class="side-container">
-			<!--  IDEA: use paper-drawer-panel-->
-
-			<div class="side menu">
-				<div class="menu-item">Filter by</div>
-				<div class="menu-item"><i>search for</i></div>
-			</div>
-
-			<iron-list id="annotationList" items="[[annotations]]" as="item" on-selected-item-changed="annotationSelected" selected-items="{{selectedAnnotation}}" selection-enabled>
-	      <template id="annotationListTemplate">
-					<annotation-box class="listItem" annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
-	      </template>
-	    </iron-list>
-
-		</div>
-
-	</div>
-
-	<div class="session-container">
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-
-		<!-- TODO: create custom web components 'session' and 'timeline' -->
-		<!-- <timeline></timeline> -->
-	</div>
-
-</template>
-
-
-<!-- Loading the main script in the end -->
-<script src="bundle.js" charset="utf-8"></script>
 </body>
-
 </html>

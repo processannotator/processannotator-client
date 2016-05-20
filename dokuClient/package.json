@@ -9,7 +9,7 @@
     "worker-pouch": "^1.0.2"
   },
   "scripts": {
-    "build": "babel ui.js --out-file bundle.js --source-maps",
+    "build": "babel src/main-app.js --out-file src/main-app-bundle.js --source-maps",
     "install": "bower install",
     "start": "npm run build && electron .",
     "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
@@ -21,4 +21,3 @@
     "electron-prebuilt": "^1.1.0"
   }
 }
-  
