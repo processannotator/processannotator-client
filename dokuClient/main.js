@@ -5,7 +5,7 @@ const electron = require('electron');
 const app = electron.app; // Module to control application life.
 const ipcMain = electron.ipcMain; // module for interprocess communication (renderer <-> backend)
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
-
+const {dialog} = require('electron');
 
 
 
@@ -41,19 +41,22 @@ app.on('ready', function() {
 
 
 	ipcMain.on('asynchronous-message', function(event, arg) {
-	  if(arg === 'resetLocalDB') {
+		if(arg === 'resetLocalDB') {
 			session.clearStorageData({
 				storages: ['cookies', 'indexdb', 'local storage', 'serviceworkers']
 			}, () => { console.log('session cleared')});
 			mainWindow.webContents.session.clearCache(function(){
-				console.log('session cleared')
+				console.log('session cleared');
+				dialog.showMessageBox({type: 'info', buttons: [], message: 'Reset succesfull. The application will quit now. Please start manually afterwards.'}, () => {
+					app.quit();
+				});
 			});
 		}
 	});
 
 	ipcMain.on('synchronous-message', function(event, arg) {
-	  console.log(arg);  // prints "ping"
-	  event.returnValue = 'pong';
+		console.log(arg);  // prints "ping"
+		event.returnValue = 'pong';
 	});
 
 	// Open the devtools.

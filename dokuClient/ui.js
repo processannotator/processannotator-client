@@ -76,13 +76,21 @@ app.switchProjectDB = function(newProject) {
 		if(info.doc.type !== 'annotation') {
 			updateFile = true;
 		}
-		console.log(updateFile);
-		app.updateElements({updateFile: updateFile});
+		// Reduce calls to app.updateElements if there are many simultaneous changes!
+		// Therefore only update every 30ms
+		// This would not be valid if we only actually update individual elements from changes,
+		// as we would have to notify updateElements about the actual changed docs. this is not true yet
+		// and may never be, just wanted to note this here in case we ever decide to do so :)
+		app.updateTimeout = setTimeout(() => {
+			app.updateElements({updateFile: updateFile});
+		}, 30);
+
 	})
 	.on('complete', function(info) {
 		console.log('complete');
 	}).on('error', function (err) {
 		console.log(err);
+
 	});
 
 	localProjectDB.get('info').then(info => {
@@ -107,7 +115,10 @@ function completeReset() {
 		return localInfoDB.put(doc);
 	})
 	.then(() => localInfoDB.destroy())
-	.then(() => renderView.annotations = []);
+	.then(() => {
+		renderView.annotations = []
+		alert('Reset succesfull. Please close the application now and restart manually.');
+});
 }
 
 app.addTopic = function() {
@@ -620,7 +631,7 @@ app.toggleDashboard = function (e) {
 	console.log('toggle dashboard');
 
 	app.$.dashboard.toggle();
-	// app.$.objectview.classList.toggle('hidden')
+	app.$.dashboard.classList.toggle('selected');
 	console.log(app.$.dashboard);
 
 };
