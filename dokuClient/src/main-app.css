@@ -1,10 +1,10 @@
 @font-face {
   font-family: "SourceSansPro-Light";
-  src: url("fonts/SourceSansPro-Light.otf.woff2");
+  src: url("../fonts/SourceSansPro-Light.otf.woff2");
 }
 @font-face {
   font-family: "SourceSansPro-Semibold";
-  src: url("fonts/SourceSansPro-Semibold.otf.woff2");
+  src: url("../fonts/SourceSansPro-Semibold.otf.woff2");
 }
 body {
   margin: 0;
@@ -122,7 +122,7 @@ z-index: 1;
 }
 
 
-#objectview > #tool-box {
+#objectview > #toolBox {
   position: absolute;
   top: 50%;
   display: flex;
@@ -137,7 +137,7 @@ z-index: 1;
   cursor: pointer;
 }
 
-#tool-box > * {
+#toolBox > * {
   margin: 0.1em;
 }
 

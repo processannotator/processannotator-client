@@ -1,4 +1,3 @@
-<link rel="import" href="../bower_components/polymer/polymer.html">
 <script src="../libs/three/three.min.js"></script>
 <script src="../libs/three/controls/TrackballControls.js"></script>
 <script src="../libs/three/renderers/CSS3DRenderer.js"></script>
@@ -30,9 +29,11 @@
 
 	:host.polygonCursor {
 		cursor: crosshair;
-
 	}
-		</style>
+
+
+
+</style>
 
 	</template>
 
@@ -50,7 +51,7 @@
 	var cssRenderer;
 	var render;
 	var animate;
-	
+
 	function jsonEqual(a,b) {
     return JSON.stringify(a) === JSON.stringify(b);
 	}
@@ -62,6 +63,10 @@
 			file: {
 				type: Object,
 				observer: '_fileChanged'
+			},
+			tool: {
+				type: 'Object',
+				observer: '_toolChanged'
 			},
 			annotations: {
 				type: Array,
@@ -82,7 +87,7 @@
 			console.log('renderview ready')
 			this.ready = true
 			this.rendering = false
-			document.addEventListener('keydown', this.keydown.bind(this))
+			document.addEventListener('keydown', this.keydown.bind(this));
 		},
 		startRendering: function() {
 			if(this.rendering === false) {
@@ -119,23 +124,13 @@
 
 		attached: function() {
 
-			this.modus = {tool: '', modelGrabbing: false};
-			// the render-view is interested in the state of the tool-box selector
-			// lets add the event listener then
-			var toolBox = Polymer.dom(this.parent).querySelector('#tool-box')
-			if (toolBox) {
-				toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
-				toolBox.addEventListener('iron-select', this.toolChanged.bind(this))
-			} else {
-				console.error('tool-box no found inside renderViews attached function. Maybe use different way to use toolbox?');
-			}
-
+			this.modus = {modelGrabbing: false};
 
 			let width = this.parentNode.getBoundingClientRect().width
 			let height = this.parentNode.getBoundingClientRect().height
-
+			this.standardDistance = 800;
 			camera = new THREE.PerspectiveCamera(50, width / height, 0.01, 10000);
-			camera.position.set(800, 800, 800);
+			camera.position.set(this.standardDistance, this.standardDistance, this.standardDistance);
 
 			glRenderer = new THREE.WebGLRenderer({
 				antialias: true,
@@ -223,11 +218,11 @@
 					})
 					var meshFromFile = new THREE.Mesh(geometry, material);
 
-					var boundingBox = new THREE.Box3().setFromObject(meshFromFile);
-					var maxLength = Math.max(boundingBox.max.x, boundingBox.max.y, boundingBox.max.z);
+					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
+					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
 					// TODO: Save scale factor in DB.
-					meshFromFile.scale.set(800/maxLength, 800/maxLength, 800/maxLength);
-					var height = boundingBox.size().y;
+					meshFromFile.scale.set(800/this.maxLength, 800/this.maxLength, 800/this.maxLength);
+					var height = this.boundingBox.size().y;
 					var pos = glScene.position;
 
 
@@ -316,8 +311,8 @@
 		mouseMoved: function (e) {
 			this.previousCameraPosition = camera.position.clone();
 			this.previousCameraRotation = camera.rotation.clone();
-			
-			if(this.modus.tool === 'polygon') {
+
+			if(this.tool === 'polygon') {
 				this.updateMouse(e)
 				this.raycaster.setFromCamera(this.mouse, camera)
 
@@ -344,9 +339,11 @@
 
 			switch (e.keyIdentifier) {
 				case 'Enter':
-					if(this.modus.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
+					console.log('enter!!!!!');
+					console.log(this.tool);
+					if(this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						// TODO: finish shape and create annotation
-					
+
 						this.fire('create-annotation', {
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
@@ -368,9 +365,10 @@
 
 		},
 		track: function (e) {
-			console.log(e);
+
 		},
 		tap: function(e) {
+
 			console.log('previous', this.previousCameraPosition, this.previousCameraRotation);
 			console.log('now', camera.position, camera.rotation);
 			if(jsonEqual(this.previousCameraPosition, camera.position) === false || jsonEqual(this.previousCameraRotation, camera.rotation) == false) {
@@ -386,7 +384,7 @@
 			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
 			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 
-			switch (this.modus.tool) {
+			switch (this.tool) {
 				case 'none':
 					this.fire('create-annotation', {
 						description: 'new polygon...',
@@ -405,7 +403,7 @@
 							this.previewPolygon = this.createPolygon(this.verticesPolygonTool, 0x00ff00);
 							glScene.add(this.previewPolygon);
 					}
-					
+
 					// this.previewAnnotation = this.addAnnotationObject({
 					// 	_id: 'previewAnnotation',
 					// 	creatorProfile: {
@@ -416,7 +414,7 @@
 					//
 					//
 					// });
-					
+
 					this.render();
 
 
@@ -467,7 +465,9 @@
 
 			if (annotation.cameraPosition !== undefined) {
 				let pointToCam = new THREE.Vector3().subVectors(annotation.cameraPosition, annotation.position);
-				pointToCam.multiplyScalar(0.8);
+				pointToCam.normalize();
+
+				pointToCam.multiplyScalar(this.standardDistance);
 				label.position.copy(pointToCam);
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
@@ -490,19 +490,16 @@
 			return new THREE.Line( geometry, material )
 		},
 
-		toolChanged: function(e) {
+		_toolChanged: function(e) {
 			// this is render-view's event listener on the toolBox
 			// when a different tool is selected, this function is triggered
-
+			console.log('tool changed.');
 			//do some cleanup/inits
 			glScene.remove(this.previewPolygon)
 			this.previewPolygon = undefined
 			this.verticesPolygonTool = []
 
-			// set this.modus.tool to the tool clicked in the box
-			this.modus.tool = e.target.selected
-
-			switch (this.modus.tool) {
+			switch (this.tool) {
 				case 'polygon':
 
 					break;
