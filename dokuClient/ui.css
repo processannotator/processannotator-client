@@ -38,8 +38,21 @@ body {
   height: 100%;
   min-width: 15em;
 }
+
+.menu-item {
+  color: #c8c8c8;
+  background-color: none;
+  cursor: pointer;
+  transition: opacity 0.25s ease-out;
+}
+
 .side-container .menu-item {
   min-width: 2.5em;
+}
+
+.main .menu-item {
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 .menu {
@@ -54,15 +67,15 @@ body {
   background-color: rgb(5, 73, 105);
 }
 
+.menu.sub {
+  background-color: rgb(0, 0, 0);
+}
+
 .menu.side {
   background-color: rgb(12, 38, 50);
 }
 
-.menu-item {
-  color: #c8c8c8;
-  cursor: pointer;
-  transition: opacity 0.25s ease-out;
-}
+
 .menu-item:hover {
   opacity: 1.0;
 }
@@ -99,6 +112,7 @@ z-index: 1;
   /*defaults to not visible:*/
   display: none;
 }
+
 
 #objectview > #tool-box {
   position: absolute;
