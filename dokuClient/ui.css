@@ -43,7 +43,6 @@ body {
   color: #c8c8c8;
   background-color: none;
   cursor: pointer;
-  transition: opacity 0.25s ease-out;
   text-align: center;
 }
 
@@ -52,19 +51,18 @@ body {
 }
 
 .main .menu-item {
-  font-size: 1.2em;
-  font-weight: bold;
+  font-size: 1em;
+  font-family: "SourceSansPro-Semibold";
   height: 100%;
   border-radius: 0px;
 }
-
 
 .menu {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  font-size: 11px;
   height: 2.9em;
+  font-size: 0.7em;
   min-height: 2.9em;
   padding-left: 2em;
   background-color: rgb(5, 73, 105);
@@ -84,7 +82,6 @@ body {
   opacity: 1.0;
 }
 .main-container .menu-item {
-  padding-right: 5em;
   vertical-align: middle;
 }
 .side-container .menu-item {
@@ -93,7 +90,12 @@ body {
 
 .appname {
   cursor:default;
+  margin-right: 5em;
 }
+.appname:nth-child(0) {
+  font-weight: normal;
+}
+
 
 #workspace {
   position: relative;
