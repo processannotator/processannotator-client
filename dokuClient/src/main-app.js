@@ -171,6 +171,7 @@ Polymer({
 			// This would not be valid if we only actually update individual elements from changes,
 			// as we would have to notify updateElements about the actual changed docs. this is not true yet
 			// and may never be, just wanted to note this here in case we ever decide to do so:)
+			clearTimeout(this.updateTimeout);
 			this.updateTimeout = setTimeout(() => {
 				this.updateElements({updateFile: updateFile});
 			}, 30);
