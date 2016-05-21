@@ -17,25 +17,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <!-- <link rel="manifest" href="/manifest.json"> -->
 	<title>process.annotator</title>
+  <script src="bower_components/webcomponentsjs/webcomponents.min.js" charset="utf-8"></script>
+    <script src="bower_components/webcomponentsjs/ShadowDOM.min.js" charset="utf-8"></script>
   <script>
+  
+  // setup Polymer options
+  window.Polymer = {lazyRegister: true, dom: 'shady'};
+  
+  // load webcomponents polyfills
+  // (function() {
+  //   if ('registerElement' in document
+  //   && 'import' in document.createElement('link')
+  //   && 'content' in document.createElement('template')) {
+  //     // browser has web components
+  //   } else {
+  //     // polyfill web components
+  //     var e = document.createElement('script');
+  //     e.src = 'bower_components/webcomponentsjs/webcomponents.min.js';
+  //     console.log(document.body);
+  //     document.body.appendChild(e);
+  //   }
+  // })();
 
-    // setup Polymer options
-    // window.Polymer = {lazyRegister: true, dom: 'shadow'};
-
-    // load webcomponents polyfills
-    (function() {
-      if ('registerElement' in document
-          && 'import' in document.createElement('link')
-          && 'content' in document.createElement('template')) {
-        // browser has web components
-      } else {
-        // polyfill web components
-        var e = document.createElement('script');
-        e.src = '../bower_components/webcomponentsjs/webcomponents-lite.min.js';
-        console.log(document.body);
-        document.body.appendChild(e);
-      }
-    })();
 
     // // load pre-caching service worker
     // if ('serviceWorker' in navigator) {
