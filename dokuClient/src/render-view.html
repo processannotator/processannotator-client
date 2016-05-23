@@ -221,7 +221,7 @@
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
 					// TODO: Save scale factor in DB.
-					meshFromFile.scale.set(800/this.maxLength, 800/this.maxLength, 800/this.maxLength);
+					meshFromFile.scale.set(this.standardDistance/this.maxLength, this.standardDistance/this.maxLength, this.standardDistance/this.maxLength);
 					var height = this.boundingBox.size().y;
 					var pos = glScene.position;
 

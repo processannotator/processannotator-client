@@ -24,6 +24,11 @@ Polymer({
 	properties: {
 		objectTool: {
 			type: 'Object'
+		},
+		selectedAnnotation: {
+			type: 'Object',
+			notify: true,
+			observer: '_selectedAnnotationChanged'
 		}
 
 	},
@@ -217,6 +222,7 @@ Polymer({
 		let annotation = {
 			_id: 'annotation_' + new Date().toISOString(),
 			type: 'annotation',
+			status: 'status',
 			parentProject: this.activeProject._id,
 			parentTopic: this.activeProject.activeTopic,
 			parentObject: this.activeObject_id,
@@ -519,9 +525,12 @@ Polymer({
 			});
 		},
 		onAnnotationEdit: function(evt) {
+
 			// emitted when user edits text in annotationbox and hits enter
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 				doc.description = evt.detail.newAnnotation.description;
+				doc.status = evt.detail.newAnnotation.status;
+
 				return localProjectDB.put(doc).then((value) => {});
 				// after put into DB, DB change event should be triggered automatically to update
 			});//.then(() => {updateElements()})
@@ -631,8 +640,15 @@ Polymer({
 				this.$.annotationList.scrollToIndex(index);
 			}, 500);
 		},
-
-		annotationSelected: function (e) {
+		annotationBoxClicked: function (e) {
+			e.target.classList.toggle('selectedAnnotation');
+			let item = this.$.annotationListTemplate.itemForElement(e.target);
+			this.$.annotationSelector.select(item);
+			
+			console.log(this.selectedAnnotation);
+		},
+		_selectedAnnotationChanged: function (e) {
+			console.log('selected annotation changed');
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;
 			renderView.focusAnnotation(this.selectedAnnotation);
 		},

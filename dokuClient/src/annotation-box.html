@@ -1,32 +1,36 @@
-<link rel="import" href="../bower_components/polymer/polymer.html">
-
+<link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
 <dom-module id="annotation-box">
 
 	<template>
+
+
 		<style>
 
 			:host {
 				display: block;
 				box-sizing: border-box;
-				perspective: 600px;
 				width: auto;
 				height: auto;
 			}
-
-			:host:hover {
-
-}
+			
+			paper-button {
+				border-radius: 0px;
+			}
+			
 
 			#container {
 				display: flex;
 				flex-direction: column;
-				background-color: none;
+				background-color: rgb(7, 20, 26);
 				transition: background-color 0.3s ease-in-out;
 				height: 10em;
 				min-height: 10em;
 				max-height: 15em;
 				/*margin-bottom: 1em;*/
-				border-top: 1px solid rgb(21, 68, 89);
+				
 				cursor: pointer;
 			}
 
@@ -38,13 +42,14 @@
 			}
 
 			#header,
-			#main,
-			#tags,
-			#task,
-			#footer {
+			#main {
 				padding: 0.25em;
 				/*min-width: 100%;
 				width: 100%;*/
+			}
+			
+			#container, #tagsAndStatus {
+				border-top: 1px solid rgb(21, 68, 89);
 			}
 
 			#header {
@@ -83,28 +88,47 @@
 				font-size: 0.8em;
 			}
 
-			#tags_and_tasks {
-				flex: 1 0 0;
+			#tagsAndStatus {
+				flex: 1.5 0 0;
 				display: flex;
 				flex-direction: row;
-				padding: 0.5em;
 				color: rgb(197, 227, 241);
 			}
 
-			#tags_and_tasks > #tags {
-				flex: 2 0 0;
-				vertical-align: middle;
-				/*background-color: #4A4A4A;*/
-			}
-
-			#tags_and_tasks > #task {
+			#tagsAndStatus > #tags, #status {
 				flex: 1 0 0;
-				text-align: center;
+
+			}
+			
+			#tags {
+				border-right: 1px solid rgb(21, 68, 89);
 			}
 
-			#task:hover {
-				cursor: pointer;
+		
+			#statusList {
+				padding: 0;
 			}
+			
+			.comment {
+				color: rgb(5, 73, 105);
+			}
+			
+			.task {
+				color: yellow;
+			}
+			
+			.problem {
+				color: orange;
+			}
+
+			paper-item {
+				font-size: 0.8em;
+			}
+			
+			.dropdown-content > paper-item {
+				background-color:  rgb(7, 20, 26);
+			}
+			
 
 			#footer {
 				flex: 1 0 0;
@@ -113,10 +137,10 @@
 				color: #303030;
 				/*background-color: #696565;*/
 			}
-			.annotationText {
+			#annotationText {
 				cursor: text;
 			}
-			.annotationText:focus {
+		#annotationText:focus {
 				outline: none;
 			}
 
@@ -126,7 +150,7 @@
 		<div id="container" on-tap="tap">
 
 			<div id="header">
-				<div style.backgroundColor="" id="letters_id">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
+				<div id="letters_id">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
 				<div id="profile_name">
 					<span>[[annotation.creatorProfile.prename]]</span>
 					<span>[[annotation.creatorProfile.surname]]</span>
@@ -136,12 +160,31 @@
 			<div id="main">
 				<span>[[annotation.creationDate]]</span>
 				<br>
-				<div contenteditable="true" class="annotationText" on-keydown="keydown">{{annotation.description}}</div>
+				<div contenteditable="true" id="annotationText" on-keydown="keydown">{{annotation.description}}</div>
 			</div>
 
-			<div id="tags_and_tasks">
-				<div id="tags">Tag1, tag2, tag3</div>
-				<div id="task">task</div>
+			<div id="tagsAndStatus">
+				<paper-button id="tags">Tags</paper-button>
+				<paper-button class$="[[annotation.status]]" id="status" dropdown-trigger on-tap="openStatusDropdown">[[annotation.status]]</paper-button>
+				<iron-dropdown always-on-top auto-fit-on-attach id="statusDropdown" horizontal-align="right" vertical-align="top">
+					
+<paper-listbox on-tap="clickedStatusList" attr-for-selected="label" selected="{{annotation.status}}" fallback-selection="[[annotation.status]]" id="statusList" on-iron-select="statusChanged" class="dropdown-content">
+	<paper-item class="comment" label="comment">COMMENT</paper-item>
+	<paper-item class="task" label="task">TASK</paper-item>
+<paper-item class="problem" label="problem">PROBLEM</paper-item>
+</paper-listbox>
+
+				</iron-dropdown>
+
+
+				<!-- <paper-dropdown-menu-light id="status" value={{annotation.status}} label="Status">
+					<paper-listbox class="dropdown-content" id="statusList">
+						<paper-item label="comment">Comment</paper-item>
+						<paper-item label="task">Task</paper-item>
+						<paper-item label="problem">Problem</paper-item>
+					</paper-listbox>
+				</paper-dropdown-menu-light> -->
+				<!-- <paper-button class$="{{status}}" id="status" on-tap="statusChanged">Status</paper-button> -->
 			</div>
 
 
@@ -161,20 +204,28 @@
 					observer: "_annotationChanged"
 				}
 			},
+			attached: function () {
+
+			},
 			_annotationChanged: function() {
+				console.log(this.annotations);
 				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color;
 				this.$.header.style.color = this.annotation.creatorProfile.color;
 			},
 			keydown: function (event) {
+				// FIXME: data binding would be useful here like:
+				//console.log(this.annotation.description);
+				//Doesnt work. maybe because of iron-list?
+				// console.log(this.$.annotationText.innerHTML);
 				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
 
 				if(event.keyIdentifier === 'Enter'){
 					event.preventDefault();
-					this.handleTextChange(event);
+					this.handleEdit(event);
 				}
 			},
-			handleTextChange: function(event, detail, sender) {
+			handleEdit: function(event, detail, sender) {
 				this.annotation.description = event.srcElement.innerHTML;
 				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
 			},
@@ -183,7 +234,18 @@
 			},
 			tap: function () {
 				this.fire('annotation-box-mouse-enter', this.annotation);
-			}
+			},
+			clickedStatusList: function (e) {
+				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
+			},
+			statusChanged: function (e) {
+				this.$.statusDropdown.close();
+				console.log('status changed...');
+
+			},
+			openStatusDropdown: function (e) {
+					this.$.statusDropdown.toggle();
+			},
 
 		});
 	</script>

@@ -9,6 +9,7 @@
 	<link rel="import" href="../bower_components/iron-icons/image-icons.html">
 	<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 	<link rel="import" href="../bower_components/iron-list/iron-list.html">
+	<link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
 
 	<link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
 	<link rel="import" href="../bower_components/neon-animation/neon-animatable.html">
@@ -29,7 +30,7 @@
 
 	<style is="custom-style">
 	iron-icon.iron-selected {
-		background-color: white;
+		background-color: none;
 	}
 
 	iron-icon:not(.iron-selected):hover {
@@ -37,14 +38,7 @@
 		background-color: rgb(98, 98, 98)
 	}
 
-	#annotationList {
-	  flex: 1 1 auto;
-	  overflow-y: auto;
-	  min-height: 0px;
-	  max-height: auto;
-	  height: 100%;
-	  /*padding: 1em;*/
-	}
+
 
 	paper-button.menu-item  {
 	  --paper-button-ink-color: rgb(7, 20, 26);
@@ -58,13 +52,13 @@
 
 	</style>
 
-</head>
 
 
 <body>
 
 <template>
 
+	
 		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
 		</profile-setup-overlay>
 		<project-setup-overlay id="projectSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
@@ -96,7 +90,7 @@
 				<render-view id="renderView" annotations="[[annotations]]" on-create-annotation="addAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}">  </render-view>
 
 
-				<iron-selector id="toolBox" attr-for-selected="name" fallbackSelection="none" selected="none" on-iron-select="toolChanged">
+				<iron-selector id="toolBox" attr-for-selected="name" fallback-selection="none" selected="none" on-iron-select="toolChanged">
 					<iron-icon class="tool-box-icon" name="none">click</iron-icon>
 					<iron-icon class="tool-box-icon" name="polygon" src="../images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
 					<iron-icon class="tool-box-icon" name="compare" src="../images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
@@ -115,21 +109,33 @@
 			<!--  IDEA: use paper-drawer-panel-->
 
 			<div class="side menu">
+				
 				<div class="menu-item">Filter by</div>
 				<div class="menu-item"><i>search for</i></div>
 			</div>
 
-			<iron-list id="annotationList" items="[[annotations]]" as="item" on-selected-item-changed="annotationSelected" selected-items="{{selectedAnnotation}}" selection-enabled>
+
+	<div id="annotationList">
+		<template is="dom-repeat" id="annotationListTemplate"  items="{{annotations}}" as="item">
+			<annotation-box annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-tap="annotationBoxClicked"></annotation-box>
+		</template>
+	</div>
+	<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
+
+
+
+			<!-- <iron-list id="annotationList" items="[[annotations]]" as="item" on-selected-item-changed="annotationSelected" selected-items="{{selectedAnnotation}}" selection-enabled>
 	      <template id="annotationListTemplate">
-					<annotation-box class="listItem" annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
+					<annotation-box annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
 	      </template>
-	    </iron-list>
+	    </iron-list> -->
 
 		</div>
 
 	</div>
 
 	<div class="session-container">
+
 		<div class="session-box"></div>
 		<div class="session-box"></div>
 		<div class="session-box"></div>
