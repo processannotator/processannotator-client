@@ -6,16 +6,36 @@
   font-family: "SourceSansPro-Semibold";
   src: url("../fonts/SourceSansPro-Semibold.otf.woff2");
 }
+
+
 body {
   margin: 0;
-  font-size: 13pt;
   display: flex;
   flex-direction: column;
   font-family: "SourceSansPro-Light";
   background-color: rgb(7, 20, 26);
   overflow: hidden;
   -webkit-user-select: none;
+  font-size:13px;
 }
+
+@media screen and (max-device-width : 1500px)
+{
+  body
+  {
+    font-size:1em;
+  }
+}
+@media screen and (max-device-width : 3000px)
+{
+  body
+  {
+    font-size: 1.4em;
+  }
+}
+
+
+
 .top-container {
   display: flex;
   flex-direction: row;
