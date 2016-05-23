@@ -10,6 +10,7 @@ const {dialog} = require('electron');
 
 
 
+
 app.commandLine.appendSwitch('--enable-file-cookies');
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -27,13 +28,14 @@ app.on('window-all-closed', function() {
 
 
 
-
 app.on('ready', function() {
 
 	mainWindow = new BrowserWindow({
 		width: 1200,
 		height: 800
 	});
+	
+	mainWindow.setAutoHideMenuBar(true);
 
 	// load the index.html of the app.
 	mainWindow.loadURL('file://' + __dirname + '/index.html');
