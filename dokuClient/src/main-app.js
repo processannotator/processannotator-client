@@ -341,7 +341,7 @@ Polymer({
 
 		// Then set the current active profile to the new profile.
 		this.activeProfile = {name: name, password, metadata};
-		// FIXME: will be problematic when doing an offline "signup"
+		// FIXME: will be problematic when doing an offline 'signup'
 		// will need to redo the signup once possible
 
 		// Before trying any network stuff, save preferences with locally created profile.
@@ -636,8 +636,11 @@ Polymer({
 
 		mouseOverAnnotationLabel: function (e) {
 			this.labelHoverTimeout = setTimeout(() => {
-				let index = this.annotations.findIndex((annotation) => annotation._id === e.detail);
-				this.$.annotationList.scrollToIndex(index);
+				let annotationBox = document.getElementById('annotationbox_' + e.detail);
+				annotationBox.scrollIntoView({block: 'end', behavior: 'smooth'});
+
+				// let index = this.annotations.findIndex((annotation) => annotation._id === e.detail);
+				// this.$.annotationList.scrollToIndex(index);
 			}, 500);
 		},
 		annotationBoxClicked: function (e) {
@@ -667,5 +670,5 @@ Polymer({
 
 	//
 	// ipcRenderer.on('asynchronous-reply', function(event, arg) {
-	//   console.log(arg); // prints "pong"
+	//   console.log(arg); // prints 'pong'
 	// });

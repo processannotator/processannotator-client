@@ -127,6 +127,10 @@ body {
   background-color: rgb(12, 38, 50);
 }
 
+#annotationList > annotation-box {
+  /*margin-top: 0.75em;*/
+}
+
 #selectedAnnotation {
   background-color: green;
 }
