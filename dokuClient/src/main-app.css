@@ -16,17 +16,10 @@ body {
   background-color: rgb(7, 20, 26);
   overflow: hidden;
   -webkit-user-select: none;
-  font-size:13px;
+  font-size: 15px;
 }
 
-@media screen and (max-device-width : 1500px)
-{
-  body
-  {
-    font-size:1em;
-  }
-}
-@media screen and (max-device-width : 3000px)
+@media screen and (min-device-width : 1800px)
 {
   body
   {
