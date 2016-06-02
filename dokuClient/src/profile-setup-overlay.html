@@ -40,10 +40,10 @@
         <input class="textInput" placeholder="foo@bar.com" is="iron-input" type="email" autocomplete="email" bind-value="{{email}}">
       </neon-animatable>
 
-      <neon-animatable>
+      <!-- <neon-animatable>
         <span class="instruction">Choose a color:</span>
         <input id="colorInput" on-change="colorChanged" is="iron-input" type="color" bind-value="{{color}}">
-      </neon-animatable>
+      </neon-animatable> -->
 
 
     </neon-animated-pages>
@@ -94,14 +94,14 @@
       this.pageEntryAnimation = 'fade-in-animation';
       this.pageExitAnimation = 'fade-out-animation';
 
-      this.pageNumber = this.pageNumber === 0 ? 4 : (this.pageNumber - 1);
-      if(this.pageNumber === 3) this.buttonText = 'go'
+      this.pageNumber = this.pageNumber === 0 ? 3 : (this.pageNumber - 1);
+      if(this.pageNumber === 2) this.buttonText = 'go'
     },
     onNextClick: function() {
       this.pageEntryAnimation = 'fade-in-animation'
       this.pageExitAnimation = 'fade-out-animation'
 
-      if(this.pageNumber === 2) {
+      if(this.pageNumber === 1) {
         // create finish animation
         this.animationConfig = {
           name: 'scale-down-animation',
@@ -113,7 +113,7 @@
 
       } else {
         this.pageNumber++
-        this.buttonText = (this.pageNumber === 2) ? 'Go!' : 'Continue'
+        this.buttonText = (this.pageNumber === 1) ? 'Go!' : 'Continue'
       }
 
 
@@ -126,7 +126,7 @@
       // do nothing, until last page overwrites this with this.close to close panel after animation
     },
     attached: function() {
-      this.$.colorInput.style.backgroundColor = this.color
+      // this.$.colorInput.style.backgroundColor = this.color;
       this.pageNumber = 0;
       this.fire('attached')
     }
