@@ -530,6 +530,21 @@ Polymer({
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 				doc.description = evt.detail.newAnnotation.description;
 				doc.status = evt.detail.newAnnotation.status;
+				// TODO: get colors from CSS, so it stays in one place?
+				switch (doc.status) {
+					case 'comment':
+						doc.statusColor = 'blue';
+					break;
+					case 'task':
+						doc.statusColor = 'yellow';
+					break;
+							
+					case 'problem':
+						doc.statusColor = 'red';
+					break;
+					default:
+						
+				}
 
 				return localProjectDB.put(doc).then((value) => {});
 				// after put into DB, DB change event should be triggered automatically to update
