@@ -125,7 +125,7 @@ Polymer({
 		this.activeProject = newProject;
 		this.annotations = [];
 		console.log('switch to projectDB with name', this.activeProject);
-
+		console.log('ADAPTER: WORKER MIGHT CAUSE PROBLEMS, TEST!');
 		localProjectDB = new PouchDB(this.activeProject._id, {adapter: 'worker'});
 		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
 
@@ -647,7 +647,7 @@ Polymer({
 			e.target.classList.toggle('selectedAnnotation');
 			let item = this.$.annotationListTemplate.itemForElement(e.target);
 			this.$.annotationSelector.select(item);
-			
+
 			console.log(this.selectedAnnotation);
 		},
 		_selectedAnnotationChanged: function (e) {
