@@ -209,8 +209,8 @@
 			},
 			_annotationChanged: function() {
 				console.log(this.annotations);
-				this.$.letters_id.style.backgroundColor = this.annotation.creatorProfile.color;
-				this.$.header.style.color = this.annotation.creatorProfile.color;
+				this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
+				this.$.header.style.color = this.annotation.statusColor;
 			},
 			keydown: function (event) {
 				// FIXME: data binding would be useful here like:
