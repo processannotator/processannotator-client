@@ -71,6 +71,24 @@ Polymer({
 			this.loadPreferences().then(() => {
 				console.log('Loaded preferences.');
 
+
+				var filters = [{
+					services: ['generic_access']
+				}];
+				console.log('Requesting Bluetooth Device...');
+				navigator.bluetooth.requestDevice({filters: filters})
+				.then(device => {
+					console.log('> Name:             ' + device.name);
+					console.log('> Id:               ' + device.id);
+					console.log('> UUIDs:            ' + device.uuids.join('\n' + ' '.repeat(20)));
+					console.log('> Connected:        ' + device.gatt.connected);
+				})
+				.catch(error => {
+					console.log('Argh! ' + error);
+				});
+
+
+
 				return new Promise((resolve, reject) => {
 					if(this.activeProfile === ''){
 						console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
@@ -538,12 +556,12 @@ Polymer({
 					case 'task':
 						doc.statusColor = 'yellow';
 					break;
-							
+
 					case 'problem':
 						doc.statusColor = 'red';
 					break;
 					default:
-						
+
 				}
 
 				return localProjectDB.put(doc).then((value) => {});
