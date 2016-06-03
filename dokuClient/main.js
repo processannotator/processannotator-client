@@ -11,7 +11,8 @@ const {dialog} = require('electron');
 
 
 
-app.commandLine.appendSwitch('--enable-file-cookies');
+app.commandLine.appendSwitch('enable-file-cookies');
+app.commandLine.appendSwitch('enable-web-bluetooth');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is GCed.
@@ -34,7 +35,24 @@ app.on('ready', function() {
 		width: 1200,
 		height: 800
 	});
-	
+
+	let webContents = mainWindow.webContents;
+
+
+
+  webContents.on('select-bluetooth-device', (event, deviceList, callback) => {
+    event.preventDefault();
+    let result = deviceList.find((device) => {
+      return device.deviceName === 'test'
+    })
+    if (!result) {
+      callback('')
+    } else {
+      callback(result.deviceId)
+    }
+  });
+
+
 	mainWindow.setAutoHideMenuBar(true);
 
 	// load the index.html of the app.
