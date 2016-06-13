@@ -2,6 +2,21 @@
 'use strict'; /*eslint global-strict:0*/
 
 
+var filters = [{
+	services: ['generic_access']
+}];
+console.log('Requesting Bluetooth Device...');
+navigator.bluetooth.requestDevice({filters: filters})
+.then(device => {
+	console.log('> Name:             ' + device.name);
+	console.log('> Id:               ' + device.id);
+	console.log('> UUIDs:            ' + device.uuids.join('\n' + ' '.repeat(20)));
+	console.log('> Connected:        ' + device.gatt.connected);
+})
+.catch(error => {
+	console.log('Argh! ' + error);
+});
+
 const ipcRenderer = require('electron').ipcRenderer;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
@@ -70,22 +85,6 @@ Polymer({
 
 			this.loadPreferences().then(() => {
 				console.log('Loaded preferences.');
-
-
-				var filters = [{
-					services: ['generic_access']
-				}];
-				console.log('Requesting Bluetooth Device...');
-				navigator.bluetooth.requestDevice({filters: filters})
-				.then(device => {
-					console.log('> Name:             ' + device.name);
-					console.log('> Id:               ' + device.id);
-					console.log('> UUIDs:            ' + device.uuids.join('\n' + ' '.repeat(20)));
-					console.log('> Connected:        ' + device.gatt.connected);
-				})
-				.catch(error => {
-					console.log('Argh! ' + error);
-				});
 
 
 
