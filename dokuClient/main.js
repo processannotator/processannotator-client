@@ -1,4 +1,6 @@
 'use strict' /*eslint global-strict:0*/
+var five = require('johnny-five');
+
 
 // require('electron-compile').init() // to compile to ES6/harmony
 const electron = require('electron');
@@ -37,6 +39,8 @@ app.on('ready', function() {
 	});
 
 	let webContents = mainWindow.webContents;
+
+
 
 
 

@@ -1,21 +1,7 @@
 /* eslint no-alert:0*/
 'use strict'; /*eslint global-strict:0*/
+var five = require('johnny-five')
 
-
-var filters = [{
-	services: ['generic_access']
-}];
-console.log('Requesting Bluetooth Device...');
-navigator.bluetooth.requestDevice({filters: filters})
-.then(device => {
-	console.log('> Name:             ' + device.name);
-	console.log('> Id:               ' + device.id);
-	console.log('> UUIDs:            ' + device.uuids.join('\n' + ' '.repeat(20)));
-	console.log('> Connected:        ' + device.gatt.connected);
-})
-.catch(error => {
-	console.log('Argh! ' + error);
-});
 
 const ipcRenderer = require('electron').ipcRenderer;
 const SERVERADDR = '141.20.168.11';
@@ -51,6 +37,26 @@ Polymer({
 	observers: [
 	],
 	attached: function () {
+		document.app = this;
+		var board = new five.Board({
+			repl: false,
+			debug: false
+		});
+
+
+		board.on('ready', function() {
+			let imu = new five.IMU({
+				controller: 'BNO055',
+				enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
+			});
+
+			// Update renderview with new physical rotation data.
+			imu.orientation.on('change', function() {
+				renderView.physicalModelRotation = this.euler;
+			});
+
+})
+
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
