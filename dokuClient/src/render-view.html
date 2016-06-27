@@ -71,6 +71,10 @@
 			annotations: {
 				type: Array,
 				observer: "_annotationsChanged"
+			},
+			physicalModelRotation: {
+				type: Object,
+				observer: "_physicalModelRotationChanged"
 			}
 		},
 		listeners: {
@@ -136,7 +140,7 @@
 				antialias: true,
 				alpha: true
 			});
-			glRenderer.setClearColor(0xe5eef1, 1.0);
+			glRenderer.setClearColor(0x00ff00, 0.0);
 			glRenderer.setSize(width, height);
 
 			// let both renderers/canvases overlap
@@ -152,11 +156,14 @@
 			Polymer.dom(this.root).appendChild(glRenderer.domElement);
 			Polymer.dom(this.root).appendChild(cssRenderer.domElement);
 
-			// create group for text annotations in 3D
-			this.labelGroup = new THREE.Object3D();
-			this.annotationGlGroups = new THREE.Object3D();
-			cssScene.add(this.labelGroup);
-			glScene.add(this.annotationGlGroups);
+			if(this.labelGroup === undefined)
+				this.labelGroup = new THREE.Object3D();
+			if(this.annotationGlGroups === undefined)
+				this.annotationGlGroups = new THREE.Object3D();
+
+
+			//cssScene.add(this.labelGroup);
+			//glScene.add(this.annotationGlGroups);
 			this.resetGroups();
 
 			// setup 3d-controls (rotating the camera with cursor)
@@ -227,9 +234,27 @@
 
 
 					// swap existing mesh with new mesh
-					glScene.add(meshFromFile);
-					glScene.remove(this.fileRepresentation);
+					if(this.fileRepresentation !== undefined)
+						this.mainGroupGL.remove(this.fileRepresentation);
+
 					this.fileRepresentation = meshFromFile;
+					this.mainGroupCSS = new THREE.Object3D();
+					this.mainGroupGL = new THREE.Object3D();
+
+					// create group for text annotations in 3D
+					if(this.labelGroup === undefined)
+						this.labelGroup = new THREE.Object3D();
+					if(this.annotationGlGroups === undefined)
+						this.annotationGlGroups = new THREE.Object3D();
+
+					this.mainGroupCSS.add(this.labelGroup);
+					this.mainGroupGL.add(this.annotationGlGroups);
+					this.mainGroupGL.add(this.fileRepresentation);
+					glScene.add(this.mainGroupGL);
+					cssScene.add(this.mainGroupCSS);
+
+
+
 					this.render();
 					this.animate();
 				}
@@ -249,6 +274,22 @@
 			}
 			this.render();
 		},
+		_physicalModelRotationChanged: function () {
+			// TODO Use quaternion instead of euler
+			this.mainGroupGL.rotation.set(
+				this.physicalModelRotation.roll / (180/Math.PI),
+				this.physicalModelRotation.heading / (180/Math.PI),
+				this.physicalModelRotation.pitch / (180/Math.PI)
+			);
+
+			this.mainGroupCSS.rotation.set(
+				this.physicalModelRotation.roll / (180/Math.PI),
+				this.physicalModelRotation.heading / (180/Math.PI),
+				this.physicalModelRotation.pitch / (180/Math.PI)
+			);
+
+			requestAnimationFrame(this.render.bind(this));
+		},
 
 		addAnnotationObject: function (annotation) {
 			let annotation3DObject = {};
@@ -259,18 +300,31 @@
 			annotation3DObject.label = label;
 
 			// TODO: add arrow, label to a group/structure to be selectable
-			let arrow = this.createArrow(annotation.position, label.position, annotation.statusColor);
+			let arrow = this.createArrow(annotation.position, label.position, annotation.creatorProfile.color);
 			annotationGlGroup.add(arrow);
+
+
+			// HACK:create sphere for testing position!!!!!!!!!!
+			let sph = new THREE.Mesh(
+				new THREE.SphereGeometry(15, 6, 6),
+				new THREE.MeshBasicMaterial({ color: 0xff0000})
+			);
+			sph.position.copy(annotation.position);
+			//glScene.add(sph);
+			annotationGlGroup.add(sph);
+
 			annotation3DObject.arrow = arrow;
 
 			// if annotation has polygon info, create it and add it to the scene
 			if(annotation.polygon !== undefined) {
-				let polygon = this.createPolygon(annotation.polygon, annotation.statusColor)
+				let polygon = this.createPolygon(annotation.polygon, annotation.creatorProfile.color);
 				annotationGlGroup.add(polygon)
 				annotation3DObject.polygon = polygon
 			}
 			this.annotationGlGroups.add(annotationGlGroup);
+			annotation3DObject.glGroup = annotationGlGroup;
 			this.annotation3DObjects.push(annotation3DObject);
+			return annotation3DObject;
 		},
 
 		updateAnnotationVisibility: function () {
@@ -323,8 +377,8 @@
 
 				if(intersections.length !== 0){
 					if(this.modus.modelGrabbing === false)
-						Polymer.dom(this).classList.add('polygonCursor')
-					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z)
+						Polymer.dom(this).classList.add('polygonCursor');
+					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
 					this.render()
 				} else {
 					Polymer.dom(this).classList.remove('polygonCursor')
@@ -336,28 +390,55 @@
 			if (e.defaultPrevented) {
 				return; // Should do nothing if the key event was already consumed.
 			}
-
-			switch (e.keyIdentifier) {
-				case 'Enter':
-					console.log('enter!!!!!');
-					console.log(this.tool);
+			console.log(e);
+			switch (e.which) {
+				case 13: /*Enter*/
+					console.log('pressed enter');
 					if(this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						// TODO: finish shape and create annotation
+
+						var relativeCamPos = camera.position.clone();
+						var relativeRayOrigin = this.raycaster.ray.origin.clone();
+
+						this.mainGroupGL.worldToLocal(relativeCamPos);
+						this.mainGroupGL.worldToLocal(relativeRayOrigin);
 
 						this.fire('create-annotation', {
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
 							position: this.verticesPolygonTool[0],
-							cameraPosition: camera.position,
+							cameraPosition: relativeRayOrigin,
 							// cameraRotation: camera.rotation,
 							cameraUp: camera.up
 						});
-
-						glScene.remove(this.previewPolygon)
+						if(this.previewAnnotation !== undefined) {
+							this.mainGroupGL.remove(this.previewAnnotation.arrow);
+							this.mainGroupGL.remove(this.previewAnnotation.polygon);
+							this.mainGroupCSS.remove(this.previewAnnotation.label);
+							this.previewAnnotation.undefined;
+						}
+						glScene.remove(this.previewPolygon);
 						this.previewPolygon = undefined
 						this.verticesPolygonTool = []
 						console.log('added polygon annotation')
 					}
+					break;
+					case 27 /* Escape */:
+						console.log(this.previewAnnotation);
+						if(this.previewPolygon !== undefined){
+							glScene.remove(this.previewPolygon);
+							this.previewPolygon = undefined;
+						}
+
+						if(this.previewAnnotation !== undefined) {
+							console.log('remove preview annotation');
+							this.annotationGlGroups.remove(this.previewAnnotation.glGroup);
+							this.labelGroup.remove(this.previewAnnotation.label);
+							this.previewAnnotation = undefined;
+						}
+
+						this.verticesPolygonTool = [];
+						requestAnimationFrame(this.render.bind(this));
 					break;
 				default:
 
@@ -369,33 +450,43 @@
 		},
 		tap: function(e) {
 
-			console.log('previous', this.previousCameraPosition, this.previousCameraRotation);
-			console.log('now', camera.position, camera.rotation);
 			if(jsonEqual(this.previousCameraPosition, camera.position) === false || jsonEqual(this.previousCameraRotation, camera.rotation) == false) {
 				console.log('moved! return!');
 			}
 			this.updateMouse(e.detail.sourceEvent);
 
 			// update the picking ray with the camera and mouse position
+			this.fileRepresentation.updateMatrixWorld()
 			this.raycaster.setFromCamera(this.mouse, camera);
 
 			// calculate objects intersecting the picking ray
 			// only use the frontmost intersection  -> [0]
 			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
+
+			// Transform point from world coordinates (which intersect gives)
+			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
 			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+			this.mainGroupGL.worldToLocal(intersection.point);
+			var relativeCamPos = camera.position.clone();
+			var relativeRayOrigin = this.raycaster.ray.origin.clone();
+
+			this.mainGroupGL.worldToLocal(relativeCamPos);
+			this.mainGroupGL.worldToLocal(relativeRayOrigin);
 
 			switch (this.tool) {
 				case 'none':
 					this.fire('create-annotation', {
 						description: 'new polygon...',
-						position: intersection.point,
-						cameraPosition: camera.position,
+						position: intersection.point.clone(),
+						cameraPosition: relativeRayOrigin,
 						// cameraRotation: camera.rotation,
 						cameraUp: camera.up
 					});
 					break;
 				case 'polygon':
-					this.verticesPolygonTool.push(intersection.point);
+
+
+					this.verticesPolygonTool.push(intersection.point.clone());
 
 					// create new preview polygon/shape when enough points are available
 					if(this.verticesPolygonTool.length >= 3) {
@@ -404,16 +495,19 @@
 							glScene.add(this.previewPolygon);
 					}
 
-					// this.previewAnnotation = this.addAnnotationObject({
-					// 	_id: 'previewAnnotation',
-					// 	creatorProfile: {
-					// 		color: "rgb(128, 128, 128)"
-					// 	},
-					// 	description: "new...",
-					// 	position: intersection.point
-					//
-					//
-					// });
+					if(this.previewAnnotation === undefined) {
+						this.previewAnnotation = this.addAnnotationObject({
+							_id: 'previewAnnotation',
+							creatorProfile: {
+								color: "rgb(128, 128, 128)"
+							},
+							description: "Press Enter to edit/create. Esc to cancel.",
+							position: intersection.point.clone(),
+							cameraPosition: relativeCamPos,
+							cameraUp: camera.up
+						});
+					}
+
 
 					this.render();
 
@@ -425,6 +519,7 @@
 
 		},
 		createPolygon: function (vertices, color) {
+
 			// IDEA: move to helper object?
 			let polygon = new THREE.Geometry()
 			polygon.vertices = vertices
@@ -434,8 +529,9 @@
 				polygon.faces.push( new THREE.Face3( 0, i, i+1 ) )
 			}
 
-			polygon.computeBoundingSphere()
-
+			// polygon.computeBoundingSphere();
+			// polygon.computeBoundingBox();
+			//
 				return new THREE.Mesh(
 					polygon,
 					new THREE.MeshBasicMaterial( {
@@ -443,6 +539,15 @@
 						side: THREE.DoubleSide
 					} )
 				)
+
+				// let sphere = new THREE.Mesh(
+				// 	new THREE.SphereGeometry( 20, 6, 6 ),
+				// 	new THREE.MeshBasicMaterial( {color: 0xff0000} )
+				// );
+				// sphere.position.set(vertices[0]);
+
+				//return sphere;
+
 		},
 
 		createLabel: function (annotation, multFactor) {
@@ -452,7 +557,7 @@
 			div.style.fontSize = '40px';
 			div.style.padding = "0.35em";
 			div.style.background = "rgb(255, 255, 255)";
-			div.style.border = annotation.statusColor + " solid 0.125em";
+			div.style.border = annotation.creatorProfile.color + " solid 0.125em";
 			div.style.transition = "opacity 0.5s";
 			div.innerHTML = annotation.description;
 			div.addEventListener('mouseover', (e) => {
@@ -465,9 +570,8 @@
 
 			if (annotation.cameraPosition !== undefined) {
 				let pointToCam = new THREE.Vector3().subVectors(annotation.cameraPosition, annotation.position);
-				pointToCam.normalize();
+				pointToCam.multiplyScalar(0.75);
 
-				pointToCam.multiplyScalar(this.standardDistance);
 				label.position.copy(pointToCam);
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
