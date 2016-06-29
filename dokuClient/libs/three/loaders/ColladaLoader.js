@@ -79,13 +79,25 @@ THREE.ColladaLoader = function () {
 
 							if ( failCallback ) {
 
-								failCallback();
+								failCallback( { type: 'error', url: url } );
 
 							} else {
 
 								console.error( "ColladaLoader: Empty or non-existing file (" + url + ")" );
 
 							}
+
+						}
+
+					}else{
+
+						if( failCallback ){
+
+							failCallback( { type: 'error', url: url } );
+
+						}else{
+
+							console.error( 'ColladaLoader: Couldn\'t load "' + url + '" (' + request.status + ')' );
 
 						}
 
@@ -1170,6 +1182,13 @@ THREE.ColladaLoader = function () {
 				if ( num_materials > 1 ) {
 
 					material = new THREE.MultiMaterial( used_materials_array );
+					
+					for ( j = 0; j < geom.faces.length; j ++ ) {
+
+						var face = geom.faces[ j ];
+						face.materialIndex = used_materials[ face.daeMaterial ]
+
+					}
 
 				}
 
@@ -1258,7 +1277,6 @@ THREE.ColladaLoader = function () {
 				var intensity = lparams.intensity;
 				var distance = lparams.distance;
 				var angle = lparams.falloff_angle;
-				var exponent; // Intentionally undefined, don't know what this is yet
 
 				switch ( lparams.technique ) {
 
@@ -1275,7 +1293,7 @@ THREE.ColladaLoader = function () {
 
 					case 'spot':
 
-						light = new THREE.SpotLight( color, intensity, distance, angle, exponent );
+						light = new THREE.SpotLight( color, intensity, distance, angle );
 						light.position.set(0, 0, 1);
 						break;
 

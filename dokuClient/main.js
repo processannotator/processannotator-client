@@ -1,20 +1,16 @@
 'use strict' /*eslint global-strict:0*/
-var five = require('johnny-five');
 
 
-// require('electron-compile').init() // to compile to ES6/harmony
 const electron = require('electron');
 const app = electron.app; // Module to control application life.
 const ipcMain = electron.ipcMain; // module for interprocess communication (renderer <-> backend)
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
-const {dialog} = require('electron');
-
-
+const dialog = electron.dialog;
 
 
 
 app.commandLine.appendSwitch('enable-file-cookies');
-app.commandLine.appendSwitch('enable-web-bluetooth');
+//app.commandLine.appendSwitch('enable-web-bluetooth');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is GCed.

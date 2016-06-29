@@ -133,7 +133,7 @@ body {
   position: relative;
   min-height: 50vh;
   flex: 1 1 auto;
-  background-color: #f5f5f5;
+  background-color: #e7e6e6;
 }
 
 /*Both childs of workspace (Dashboard an Objectview) have same base properties */
