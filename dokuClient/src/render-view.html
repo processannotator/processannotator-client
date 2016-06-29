@@ -102,6 +102,9 @@
 		},
 		animate: function () {
 			requestAnimationFrame(this.animate.bind(this));
+			this.light.position.copy(camera.position);
+			this.spotLight.position.copy(camera.position);
+
 			controls.update();
 		},
 		render: function() {
@@ -140,8 +143,12 @@
 				antialias: true,
 				alpha: true
 			});
+			glRenderer.shadowMap.enabled = true;
+			glRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 			glRenderer.setClearColor(0x00ff00, 0.0);
 			glRenderer.setSize(width, height);
+
+
 
 			// let both renderers/canvases overlap
 			glRenderer.domElement.style.position = 'absolute';
@@ -150,6 +157,28 @@
 			// cssRenderer is used for font rendering
 			cssRenderer = new THREE.CSS3DRenderer();
 			cssRenderer.setSize(width, height);
+
+
+			this.meshMaterial = new THREE.MeshStandardMaterial({
+				side: THREE.DoubleSide,
+				color: 0x787878,
+				roughness: 0.75,
+				metalness: 0.05
+			})
+
+			this.light = new THREE.PointLight( 0xffffff, 1.5, 0 );
+			this.spotLight = new THREE.SpotLight( 0xffdddd, 1, 0, 0.6, 0.7 );
+			this.spotLight.castShadow = true;
+
+			this.spotLight.shadow.mapSize.width = 1024;
+			this.spotLight.shadow.mapSize.height = 1024;
+
+			this.spotLight.shadow.camera.near = 0;
+			this.spotLight.shadow.camera.far = 4000;
+			this.spotLight.shadow.camera.fov = 30;
+
+			glScene.add(this.light);
+			glScene.add(this.spotLight);
 
 			glRenderer.domElement.id = 'glRenderer';
 			cssRenderer.domElement.id = 'cssRenderer';
@@ -220,10 +249,9 @@
 			var filepath = URL.createObjectURL(this.file)
 			loader.load(filepath,
 				geometry  => {
-					var material = new THREE.MeshNormalMaterial({
-						side: THREE.DoubleSide
-					})
-					var meshFromFile = new THREE.Mesh(geometry, material);
+					var meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
+					meshFromFile.receiveShadow = true;
+					meshFromFile.castShadow = true;
 
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
@@ -366,18 +394,22 @@
 			this.previousCameraPosition = camera.position.clone();
 			this.previousCameraRotation = camera.rotation.clone();
 
+
+
 			if(this.tool === 'polygon') {
-				this.updateMouse(e)
-				this.raycaster.setFromCamera(this.mouse, camera)
+				this.updateMouse(e);
+
 
 				let intersections = [];
 				if(this.fileRepresentation) {
+					this.raycaster.setFromCamera(this.mouse, camera);
 					intersections = this.raycaster.intersectObject(this.fileRepresentation);
 				}
 
 				if(intersections.length !== 0){
 					if(this.modus.modelGrabbing === false)
 						Polymer.dom(this).classList.add('polygonCursor');
+					this.spotLight.target = this.pointerSphere;
 					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
 					this.render()
 				} else {
@@ -453,23 +485,24 @@
 			if(jsonEqual(this.previousCameraPosition, camera.position) === false || jsonEqual(this.previousCameraRotation, camera.rotation) == false) {
 				console.log('moved! return!');
 			}
+
+			// Update values for: this.mouse
 			this.updateMouse(e.detail.sourceEvent);
 
 			// update the picking ray with the camera and mouse position
 			this.fileRepresentation.updateMatrixWorld()
 			this.raycaster.setFromCamera(this.mouse, camera);
 
-			// calculate objects intersecting the picking ray
-			// only use the frontmost intersection  -> [0]
+			// Calculate objects intersecting the picking ray
+			// only use the first/frontmost intersection  -> [0]
 			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
-
-			// Transform point from world coordinates (which intersect gives)
-			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
 			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+			// Transform intersection point from world coordinates
+			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
 			this.mainGroupGL.worldToLocal(intersection.point);
+
 			var relativeCamPos = camera.position.clone();
 			var relativeRayOrigin = this.raycaster.ray.origin.clone();
-
 			this.mainGroupGL.worldToLocal(relativeCamPos);
 			this.mainGroupGL.worldToLocal(relativeRayOrigin);
 
@@ -495,6 +528,7 @@
 							glScene.add(this.previewPolygon);
 					}
 
+					// And show a temporary preview annotation if first tap.
 					if(this.previewAnnotation === undefined) {
 						this.previewAnnotation = this.addAnnotationObject({
 							_id: 'previewAnnotation',
@@ -508,21 +542,18 @@
 						});
 					}
 
-
 					this.render();
-
-
 				break;
 				default:
-
 			}
 
 		},
+
 		createPolygon: function (vertices, color) {
 
 			// IDEA: move to helper object?
-			let polygon = new THREE.Geometry()
-			polygon.vertices = vertices
+			let polygon = new THREE.Geometry();
+			polygon.vertices = vertices;
 
 			// calculate faces of preview polygon
 			for (var i = 1; i < polygon.vertices.length - 1; i++) {
@@ -560,18 +591,17 @@
 			div.style.border = annotation.creatorProfile.color + " solid 0.125em";
 			div.style.transition = "opacity 0.5s";
 			div.innerHTML = annotation.description;
-			div.addEventListener('mouseover', (e) => {
+			div.addEventListener('mouseover', () => {
 				this.fire('label-over', annotation._id);
 			});
-			div.addEventListener('mouseout', (e) => {
+			div.addEventListener('mouseout', () => {
 				this.fire('label-out', annotation._id);
 			});
 			let label = new THREE.CSS3DSprite(div);
 
 			if (annotation.cameraPosition !== undefined) {
 				let pointToCam = new THREE.Vector3().subVectors(annotation.cameraPosition, annotation.position);
-				pointToCam.multiplyScalar(0.75);
-
+				pointToCam.multiplyScalar(0.5);
 				label.position.copy(pointToCam);
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
