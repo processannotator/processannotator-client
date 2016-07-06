@@ -143,11 +143,8 @@
 				antialias: true,
 				alpha: true
 			});
-			glRenderer.shadowMap.enabled = true;
-			glRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 			glRenderer.setClearColor(0x00ff00, 0.0);
 			glRenderer.setSize(width, height);
-
 
 
 			// let both renderers/canvases overlap
@@ -166,16 +163,28 @@
 				metalness: 0.05
 			})
 
-			this.light = new THREE.PointLight( 0xffffff, 1.5, 0 );
-			this.spotLight = new THREE.SpotLight( 0xffdddd, 1, 0, 0.6, 0.7 );
-			this.spotLight.castShadow = true;
+			this.light = new THREE.PointLight( 0xffffff, 1.2, 0 );
+			this.spotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 1, 2.0 );
 
-			this.spotLight.shadow.mapSize.width = 1024;
-			this.spotLight.shadow.mapSize.height = 1024;
+			// Add physical pen model
+			this.penGroupGL = new THREE.Object3D();
+			glScene.add(this.penGroupGL);
+			let penGeometry = new THREE.BoxBufferGeometry( 5, 5, 300 );
+			let penMaterial = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
+			this.physicalPenSpotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 0.3, 2.0 );
 
-			this.spotLight.shadow.camera.near = 0;
-			this.spotLight.shadow.camera.far = 4000;
-			this.spotLight.shadow.camera.fov = 30;
+
+			this.physicalPenModel.position.set(800, 800, 800);
+			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
+			this.penGroupGL.add( this.physicalPenModel );
+			this.penGroupGL.add( this.physicalPenSpotLight );
+
+			let center = new THREE.Vector3(0, 0, 0);
+			this.penGroupGL.worldToLocal(center);
+
+			this.physicalPenModel.lookAt(center);
+			this.physicalPenSpotLight.lookAt(center);
 
 			glScene.add(this.light);
 			glScene.add(this.spotLight);
@@ -250,8 +259,6 @@
 			loader.load(filepath,
 				geometry  => {
 					var meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
-					meshFromFile.receiveShadow = true;
-					meshFromFile.castShadow = true;
 
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
@@ -269,6 +276,7 @@
 					this.mainGroupCSS = new THREE.Object3D();
 					this.mainGroupGL = new THREE.Object3D();
 
+
 					// create group for text annotations in 3D
 					if(this.labelGroup === undefined)
 						this.labelGroup = new THREE.Object3D();
@@ -279,6 +287,7 @@
 					this.mainGroupGL.add(this.annotationGlGroups);
 					this.mainGroupGL.add(this.fileRepresentation);
 					glScene.add(this.mainGroupGL);
+					glScene.add(this.penGroupGL);
 					cssScene.add(this.mainGroupCSS);
 
 
@@ -304,17 +313,24 @@
 		},
 		_physicalModelRotationChanged: function () {
 			// TODO Use quaternion instead of euler
-			this.mainGroupGL.rotation.set(
+			// this.mainGroupGL.rotation.set(
+			// 	this.physicalModelRotation.roll / (180/Math.PI),
+			// 	this.physicalModelRotation.heading / (180/Math.PI),
+			// 	this.physicalModelRotation.pitch / (180/Math.PI)
+			// );
+
+			// this.mainGroupCSS.rotation.set(
+			// 	this.physicalModelRotation.roll / (180/Math.PI),
+			// 	this.physicalModelRotation.heading / (180/Math.PI),
+			// 	this.physicalModelRotation.pitch / (180/Math.PI)
+			// );
+			//
+			this.penGroupGL.rotation.set(
 				this.physicalModelRotation.roll / (180/Math.PI),
 				this.physicalModelRotation.heading / (180/Math.PI),
 				this.physicalModelRotation.pitch / (180/Math.PI)
 			);
 
-			this.mainGroupCSS.rotation.set(
-				this.physicalModelRotation.roll / (180/Math.PI),
-				this.physicalModelRotation.heading / (180/Math.PI),
-				this.physicalModelRotation.pitch / (180/Math.PI)
-			);
 
 			requestAnimationFrame(this.render.bind(this));
 		},
