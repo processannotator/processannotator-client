@@ -504,14 +504,13 @@ Polymer({
 				// And update annotations only from local cache
 				for (let {doc} of annotations) {
 					let updatedAnnotation = userDB.getUser(doc.creator).then((creatorProfile) => {
-						let {color, surname, prename} = creatorProfile;
+						let {surname, prename} = creatorProfile;
 						doc.creatorProfile = creatorProfile;
 
 						// also update localCachedUserDB if not done yet.
 						if(updatedCreators.has(doc.creator) === false) {
 							updatedCreators.add(doc.creator);
 							localCachedUserDB.get(doc.creator).then((cachedProfile) => {
-								cachedProfile.color = color;
 								cachedProfile.surname = surname;
 								cachedProfile.prename = prename;
 								return localCachedUserDB.put(cachedProfile);
@@ -520,7 +519,7 @@ Polymer({
 								// No local cache of user info yet, cache it now!
 								if(err.status === 404) {
 									console.log('No local cache of user info yet, cache it now!');
-									return localCachedUserDB.put({_id: doc.creator, color, surname, prename});
+									return localCachedUserDB.put({_id: doc.creator, surname, prename});
 								} else {
 									console.error(err);
 								}
