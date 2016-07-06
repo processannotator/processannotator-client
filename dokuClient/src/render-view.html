@@ -42,6 +42,7 @@
 
 	// FIXME: shouldnt those global variables better reside inside the element
 	// vis this.glRenderer = ...
+	
 	var glScene = new THREE.Scene();
 	var cssScene = new THREE.Scene();
 	var camera;
@@ -344,7 +345,7 @@
 			annotation3DObject.label = label;
 
 			// TODO: add arrow, label to a group/structure to be selectable
-			let arrow = this.createArrow(annotation.position, label.position, annotation.creatorProfile.color);
+			let arrow = this.createArrow(annotation.position, label.position, annotation.statusColor);
 			annotationGlGroup.add(arrow);
 
 
@@ -548,9 +549,6 @@
 					if(this.previewAnnotation === undefined) {
 						this.previewAnnotation = this.addAnnotationObject({
 							_id: 'previewAnnotation',
-							creatorProfile: {
-								color: "rgb(128, 128, 128)"
-							},
 							description: "Press Enter to edit/create. Esc to cancel.",
 							position: intersection.point.clone(),
 							cameraPosition: relativeCamPos,
@@ -604,7 +602,7 @@
 			div.style.fontSize = '40px';
 			div.style.padding = "0.35em";
 			div.style.background = "rgb(255, 255, 255)";
-			div.style.border = annotation.creatorProfile.color + " solid 0.125em";
+			div.style.border = annotation.statusColor + " solid 0.125em";
 			div.style.transition = "opacity 0.5s";
 			div.innerHTML = annotation.description;
 			div.addEventListener('mouseover', () => {
