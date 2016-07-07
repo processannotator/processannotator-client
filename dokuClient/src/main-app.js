@@ -156,7 +156,7 @@ Polymer({
 
 		function boardFailed(f) {
 			self.board = undefined;
-			self.sensorstatus = '(error)';
+			self.sensorstatus = '(disconnected or error)';
 		}
 
 		this.board.on('fail', boardFailed);
