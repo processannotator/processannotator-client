@@ -168,6 +168,8 @@ Polymer({
 		let localDeleteDB = new PouchDB(project._id);
 		console.log('really about to delete', project);
 		return localDeleteDB.destroy().then(() => {
+			// FIXME: Ok, the following is obviously not going to work
+			// because the user is no couchdb admin, handle this with nodejs
 			let remoteDeleteDB = new PouchDB(this.remoteUrl + '/' + project._id);
 		 return remoteDeleteDB.destroy();
 	 }).then((result) => {
