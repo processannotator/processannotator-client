@@ -4,6 +4,7 @@ var five = require('johnny-five')
 
 
 const ipcRenderer = require('electron').ipcRenderer;
+const {dialog} = require('electron').remote;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
 
@@ -162,10 +163,24 @@ Polymer({
 		this.board.on('fail', boardFailed);
 		this.boardConnectionTimeout = setTimeout(boardFailed, 5000);
 	},
+	
+	deleteProjectDB: function (project) {
+		let localDeleteDB = new PouchDB(project._id);
+		console.log('really about to delete', project);
+		return localDeleteDB.destroy().then(() => {
+			let remoteDeleteDB = new PouchDB(this.remoteUrl + '/' + project._id);
+		 return remoteDeleteDB.destroy();
+	 }).then((result) => {
+		 console.log(result);
+	 }).catch((err) => {
+		 alert(err);
+		 console.log(err);
+	 });
+	
+	},
 
 	switchProjectDB: function(newProject) {
 
-		console.log('switch project DB');
 
 		// TODO: check if dname is a valid database name for a project
 		this.activeProject = newProject;
@@ -652,7 +667,7 @@ Polymer({
 		//
 		// };
 
-		createProject: function() {
+		handleCreateProject: function() {
 			let projectOverlay = document.querySelector('#projectSetupOverlay');
 			projectOverlay.addEventListener('iron-overlay-closed', (e) => {
 
@@ -682,8 +697,23 @@ Polymer({
 			console.log(this.$.dashboard);
 
 		},
-		switchProject: function (e) {
+		handleSwitchProject: function (e) {
 			this.switchProjectDB(e.detail);
+		},
+		handleDeleteProject: function (e) {
+			console.log(e.detail);
+			dialog.showMessageBox({
+				type: 'info',
+				buttons: ['cancel', 'delete local and remote project files'],
+				defaultId: 0,
+				title: 'Delete Project',
+				message: 'Are you sure you want to delete the project, including all annotations, files by all users inside \'' + e.detail.name + '\'? This will delete local and files on the server and can not be reversed.',
+				cancelId: 0
+			}, (response) => {
+				console.log('response', response);
+				console.log('going to delete??', e.detail);
+				if(response === 1) this.deleteProjectDB(e.detail);
+			});
 		},
 
 		resetLocalDB: function (e) {
