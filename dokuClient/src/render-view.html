@@ -42,7 +42,7 @@
 
 	// FIXME: shouldnt those global variables better reside inside the element
 	// vis this.glRenderer = ...
-	
+
 	var glScene = new THREE.Scene();
 	var cssScene = new THREE.Scene();
 	var camera;
@@ -136,12 +136,12 @@
 
 			let width = this.parentNode.getBoundingClientRect().width
 			let height = this.parentNode.getBoundingClientRect().height
-			this.standardDistance = 800;
-			camera = new THREE.PerspectiveCamera(50, width / height, 0.01, 10000);
+			this.standardDistance = 500;
+			camera = new THREE.PerspectiveCamera(50, width / height, this.standardDistance / 10, this.standardDistance * 10);
 			camera.position.set(this.standardDistance, this.standardDistance, this.standardDistance);
 
 			glRenderer = new THREE.WebGLRenderer({
-				antialias: true,
+				antialias: false,
 				alpha: true
 			});
 			glRenderer.setClearColor(0x00ff00, 0.0);
@@ -170,13 +170,13 @@
 			// Add physical pen model
 			this.penGroupGL = new THREE.Object3D();
 			glScene.add(this.penGroupGL);
-			let penGeometry = new THREE.BoxBufferGeometry( 5, 5, 300 );
+			let penGeometry = new THREE.BoxBufferGeometry( this.standardDistance/10, this.standardDistance/10, this.standardDistance/3 );
 			let penMaterial = new THREE.MeshBasicMaterial( {color: 0xffff00} );
 			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
 			this.physicalPenSpotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 0.3, 2.0 );
 
 
-			this.physicalPenModel.position.set(800, 800, 800);
+			this.physicalPenModel.position.set(this.standardDistance, this.standardDistance, this.standardDistance);
 			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
 			this.penGroupGL.add( this.physicalPenModel );
 			this.penGroupGL.add( this.physicalPenSpotLight );
@@ -217,7 +217,7 @@
 			controls.keys = [65, 83, 68];
 
 			// add cursor pointer to 3D scene
-			var sphereGeometry = new THREE.SphereGeometry( 5, 6, 6 );
+			var sphereGeometry = new THREE.SphereGeometry( 0.01, 6, 6 );
 			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
 			glScene.add(this.pointerSphere);
@@ -351,7 +351,7 @@
 
 			// HACK:create sphere for testing position!!!!!!!!!!
 			let sph = new THREE.Mesh(
-				new THREE.SphereGeometry(15, 6, 6),
+				new THREE.SphereGeometry(0.02, 6, 6),
 				new THREE.MeshBasicMaterial({ color: 0xff0000})
 			);
 			sph.position.copy(annotation.position);
@@ -408,8 +408,8 @@
 		},
 
 		mouseMoved: function (e) {
-			this.previousCameraPosition = camera.position.clone();
-			this.previousCameraRotation = camera.rotation.clone();
+			this.previousCameraPosition = controls.object.position.clone();
+			this.previousCameraRotation = controls.object.rotation.clone();
 
 
 
@@ -446,17 +446,12 @@
 					if(this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						// TODO: finish shape and create annotation
 
-						var relativeCamPos = camera.position.clone();
-						var relativeRayOrigin = this.raycaster.ray.origin.clone();
-
-						this.mainGroupGL.worldToLocal(relativeCamPos);
-						this.mainGroupGL.worldToLocal(relativeRayOrigin);
 
 						this.fire('create-annotation', {
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
 							position: this.verticesPolygonTool[0],
-							cameraPosition: relativeRayOrigin,
+							cameraPosition: controls.object.position.clone(),
 							// cameraRotation: camera.rotation,
 							cameraUp: camera.up
 						});
@@ -518,23 +513,18 @@
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
 			this.mainGroupGL.worldToLocal(intersection.point);
 
-			var relativeCamPos = camera.position.clone();
-			var relativeRayOrigin = this.raycaster.ray.origin.clone();
-			this.mainGroupGL.worldToLocal(relativeCamPos);
-			this.mainGroupGL.worldToLocal(relativeRayOrigin);
 
 			switch (this.tool) {
 				case 'none':
 					this.fire('create-annotation', {
 						description: 'new polygon...',
 						position: intersection.point.clone(),
-						cameraPosition: relativeRayOrigin,
+						cameraPosition: controls.object.position.clone(),
 						// cameraRotation: camera.rotation,
 						cameraUp: camera.up
 					});
 					break;
 				case 'polygon':
-
 
 					this.verticesPolygonTool.push(intersection.point.clone());
 
@@ -551,7 +541,7 @@
 							_id: 'previewAnnotation',
 							description: "Press Enter to edit/create. Esc to cancel.",
 							position: intersection.point.clone(),
-							cameraPosition: relativeCamPos,
+							cameraPosition: controls.object.position.clone(),
 							cameraUp: camera.up
 						});
 					}
@@ -599,7 +589,7 @@
 			let div = document.createElement('div');
 			let textElement = document.createElement('span');
 			div.style.opacity = '0.85';
-			div.style.fontSize = '40px';
+			div.style.fontSize = '30px';
 			div.style.padding = "0.35em";
 			div.style.background = "rgb(255, 255, 255)";
 			div.style.border = annotation.statusColor + " solid 0.125em";
@@ -614,9 +604,10 @@
 			let label = new THREE.CSS3DSprite(div);
 
 			if (annotation.cameraPosition !== undefined) {
-				let pointToCam = new THREE.Vector3().subVectors(annotation.cameraPosition, annotation.position);
-				pointToCam.multiplyScalar(0.5);
-				label.position.copy(pointToCam);
+				// Convert x,y,z object into Vector3 object.
+				let camPos = new THREE.Vector3(annotation.cameraPosition.x, annotation.cameraPosition.y, annotation.cameraPosition.z);
+				label.position.copy(annotation.cameraPosition).multiplyScalar(0.6);
+
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
 				label.position.multiplyScalar(multFactor);
