@@ -38,24 +38,6 @@ Polymer({
 	],
 	attached: function () {
 		document.app = this;
-		var board = new five.Board({
-			repl: false,
-			debug: false
-		});
-
-
-		board.on('ready', function() {
-			let imu = new five.IMU({
-				controller: 'BNO055',
-				enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
-			});
-
-			// Update renderview with new physical rotation data.
-			imu.orientation.on('change', function() {
-				renderView.physicalModelRotation = this.euler;
-			});
-
-})
 
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
@@ -138,6 +120,47 @@ Polymer({
 			window.addEventListener('keyup', this.keyUp.bind(this));
 
 
+	},
+	connectSensors: function () {
+		let self = this;
+
+		// If board already initialized, remove board and reset status message.
+		if(this.board) {
+			this.board = undefined;
+			self.sensorstatus = '';
+			return;
+		}
+
+		self.sensorstatus = '(connecting…)';
+
+		this.board = new five.Board({
+			repl: false,
+			debug: true,
+			timeout: 5
+		});
+
+		this.board.on('ready', function() {
+			console.log('board is ready');
+			clearTimout(this.cancelBoardConnectionTimeout);
+			let imu = new five.IMU({
+				controller: 'BNO055',
+				enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
+			});
+			self.sensorstatus = '(connected)';
+
+			// Update renderview with new physical rotation data.
+			imu.orientation.on('change', function() {
+				renderView.physicalModelRotation = this.euler;
+			});
+		});
+
+		function boardFailed(f) {
+			self.board = undefined;
+			self.sensorstatus = '(error)';
+		}
+
+		this.board.on('fail', boardFailed);
+		this.boardConnectionTimeout = setTimeout(boardFailed, 5000);
 	},
 
 	switchProjectDB: function(newProject) {
