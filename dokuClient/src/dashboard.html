@@ -55,13 +55,18 @@ it's not supposed to actually handle the editing itself, just:
 	</div>
 
 		<h1>Switch</h1>
-		<iron-selector selected="0" on-iron-select="projectSelect">
+		
 			<template id="projectList" is="dom-repeat" items="{{projects}}" as="project">
-				<paper-button>
-					{{project.name}}
-				</paper-button>
+				<paper-item>
+					<paper-button on-tap="projectSelectClick">
+						{{project.name}}
+					</paper-button>
+					<paper-button on-tap="deleteProjectClick">
+						X
+					</paper-button>
+				</paper-item>
+
 			</template>
-		</iron-selector>
 
 
 
@@ -118,9 +123,12 @@ Polymer({
 		console.log('click');
 		this.fire('boom');
 	},
-	projectSelect: function(e) {
-		var item = this.$.projectList.itemForElement(e.detail.item);
-		this.fire('switch-project-click', item);
+	deleteProjectClick: function (e) {
+		this.fire('delete-project-click', e.model.project);
+	},
+	
+	projectSelectClick: function(e) {
+		this.fire('switch-project-click', e.model.project);
 	}
 });
 
