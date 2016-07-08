@@ -135,13 +135,23 @@ Polymer({
 
 		this.board = new five.Board({
 			repl: false,
-			debug: true,
-			timeout: 5
+			debug: true
 		});
+
+		function boardFailed(f) {
+			log
+			self.board = undefined;
+			self.sensorstatus = '(disconnected or error)';
+		}
+
+		self.boardConnectionTimeout = setTimeout(() => {
+			console.log('timeout');
+			boardFailed();
+		}, 10000);
 
 		this.board.on('ready', function() {
 			console.log('board is ready');
-			clearTimout(this.cancelBoardConnectionTimeout);
+			clearTimeout(self.boardConnectionTimeout);
 			let imu = new five.IMU({
 				controller: 'BNO055',
 				enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
@@ -154,13 +164,10 @@ Polymer({
 			});
 		});
 
-		function boardFailed(f) {
-			self.board = undefined;
-			self.sensorstatus = '(disconnected or error)';
-		}
+
 
 		this.board.on('fail', boardFailed);
-		this.boardConnectionTimeout = setTimeout(boardFailed, 5000);
+
 	},
 
 	switchProjectDB: function(newProject) {
