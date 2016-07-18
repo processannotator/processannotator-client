@@ -1,7 +1,5 @@
 /* eslint no-alert:0*/
 'use strict'; /*eslint global-strict:0*/
-var five = require('johnny-five')
-
 
 const ipcRenderer = require('electron').ipcRenderer;
 const {dialog} = require('electron').remote;
@@ -124,50 +122,58 @@ Polymer({
 	},
 	connectSensors: function () {
 		let self = this;
+		self.sensorstatus = '(Sensor readouts not implemented in master branch yet)';
+		// Sample implementation using johnny five below:
+
+
+		
 
 		// If board already initialized, remove board and reset status message.
-		if(this.board) {
-			this.board = undefined;
-			self.sensorstatus = '';
-			return;
-		}
-
-		self.sensorstatus = '(connecting…)';
-
-		this.board = new five.Board({
-			repl: false,
-			debug: true
-		});
-
-		function boardFailed(f) {
-			log
-			self.board = undefined;
-			self.sensorstatus = '(disconnected or error)';
-		}
-
-		self.boardConnectionTimeout = setTimeout(() => {
-			console.log('timeout');
-			boardFailed();
-		}, 10000);
-
-		this.board.on('ready', function() {
-			console.log('board is ready');
-			clearTimeout(self.boardConnectionTimeout);
-			let imu = new five.IMU({
-				controller: 'BNO055',
-				enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
-			});
-			self.sensorstatus = '(connected)';
-
-			// Update renderview with new physical rotation data.
-			imu.orientation.on('change', function() {
-				renderView.physicalModelRotation = this.euler;
-			});
-		});
-
-
-
-		this.board.on('fail', boardFailed);
+		// if(this.board) {
+		// 	this.board = undefined;
+		// 	self.sensorstatus = '';
+		// 	return;
+		// }
+		//
+		
+		//
+		// this.board = new five.Board({
+		// 	repl: false,
+		// 	debug: true
+		// });
+		//
+		// function boardFailed(f) {
+		// 	log
+		// 	self.board = undefined;
+		// 	self.sensorstatus = '(disconnected or error)';
+		// }
+		//
+		// self.boardConnectionTimeout = setTimeout(() => {
+		// 	console.log('timeout');
+		// 	boardFailed();
+		// }, 10000);
+		//
+		// this.board.on('ready', function() {
+		// 	console.log('board is ready');
+		// 	clearTimeout(self.boardConnectionTimeout);
+		// 	let imu = new five.IMU({
+		// 		controller: 'BNO055',
+		// 		enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
+		// 	});
+		// 	self.sensorstatus = '(connected)';
+		//
+		// 	// Update renderview with new physical rotation data.
+		// 	imu.orientation.on('change', function() {
+		// 		renderView.physicalModelRotation = this.euler;
+		// 	});
+		// });
+		//
+		//
+		//
+		// this.board.on('fail', boardFailed);
+		
+		
+		
 
 	},
 	
