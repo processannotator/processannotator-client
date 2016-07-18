@@ -3,13 +3,11 @@
   "version": "0.2.0",
   "main": "main.js",
   "dependencies": {
-    "johnny-five": "^0.9.57",
     "npm": "^3.9.6",
     "pouchdb": "^5.3.2",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.1",
-    "worker-pouch": "^1.0.2",
-    "johnny-five": "^0.9.57"
+    "worker-pouch": "^1.0.2"
   },
   "scripts": {
     "build": "babel src/main-app.js --out-file src/main-app-bundle.js --source-maps",
@@ -20,8 +18,8 @@
   "devDependencies": {
     "babel-cli": "^6.8.0",
     "devtron": "^1.1.1",
-    "electron-packager": "^7.0.3",
-    "electron-prebuilt": "^0.37.8",
+    "electron-packager": "^7.3.0",
+    "electron-prebuilt": "^1.2.7",
     "electron-rebuild": "^1.1.5"
   }
 }
