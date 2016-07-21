@@ -34,7 +34,7 @@ To disallow anonymous users to delete other users and only to add own docs, add 
 }
 ```
 
-Finally Copy systemd service processannotator.service into `/etc/systemd/system/` and enable + start it. Before doing this, make sure the pathes (especially to the recent node version match!)
+Finally Copy systemd service processannotator.service from [this repo](https://raw.githubusercontent.com/nylki/ProjectAnnotator/master/systemd/system/processannotator.service) into `/etc/systemd/system/` and enable + start it. Before doing this, make sure the pathes (especially to the recent node version match!)
 ```
 sudo cp systemd/system/processannotator.service /etc/systemd/system/processannotator.service
 sudo systemctl enable processannotator
