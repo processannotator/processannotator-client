@@ -26,7 +26,7 @@ sudo firewall-cmd --zone=FedoraServer --add-forward-port=port=80:proto=tcp:topor
 
 To disallow anonymous users to delete other users and only to add own docs, add following design document to _users db:
 
-```
+```.json
 {
   "_id": "_design/no_anonymous_delete",
   "language": "javascript",
