@@ -8,13 +8,16 @@ var WebSocketServer = require('ws').Server
 
 let nano = require('nano')('http://' + config.admin + ':' + config.adminpassword + '@localhost:5984');
 let users = nano.use('_users');
+let info = nano.use('info');
+
+
 let auth;
 
 // Check for new users: if they got the dev key, add the role 'testuser'.
 var listenForNewUsers = function () {
   console.log('Listening for new users...');
 
-  var feed = users.follow({since: 'now', include_docs: true, filter: isNewUser, inactivity_ms: 10000});
+  let feed = users.follow({since: 'now', include_docs: true, filter: isNewUser, inactivity_ms: 10000});
   feed.on('change', function (change) {
     console.log('user change:', change.doc);
 
@@ -52,18 +55,12 @@ var listenForNewUsers = function () {
   feed.follow();
   process.nextTick(function () {
   });
-
-  function isNewUser(doc, req) {
-    // Filter out deleted users and the admin.
-    return (doc._deleted === undefined && doc._id !== ('org.couchdb.user:' + config.admin));
-  }
-
+  
   function getRequestedProjects(doc) {
     // Filter if projects in its "projects" field, has any new projects that don't
     // exist yet. If so, create a DB for it.
 
     return new Promise((resolve, reject) => {
-      let requestedProjects = [];
       if(doc.projects && doc.projects.length !== 0) {
         nano.db.list(function(err, dbs) {
           resolve( doc.projects.filter((project) => !dbs.includes(project) ) );
@@ -72,16 +69,68 @@ var listenForNewUsers = function () {
     });
   }
 
-  function isDesignDoc(doc, req) {
-    return doc._id.startsWith('_design');
-  }
+};
 
-  function isValidTestUser(doc, req) {
-    // filter out invalid users (that include no valid testKey)
-    return (doc.testkey !== undefined && doc.testkey === 'testuserkey');
+// Check for requests to delete projects, by observing the `info` db and checking its projectsInfo.projects array
+var listenForInfoChanges = function () {
+  console.log('Listening for changes in the info DB...');
+  console.log('In the testing phase every user of group testuser can delete databases by removing an entry in the info document');
+
+  let feed = info.follow({since: 'now', include_docs: true, inactivity_ms: 10000});
+  feed.on('change', function (change) {
+    console.log('DEBUG:');
+    console.log('Change on info db');
+    console.log(change);
+    
+    // Skip design docs
+    if(isDesignDoc(change.doc)) {
+      return;
+    }
+
+    getRemovedProjects(change.doc.projectsInfo.projects).then(removedProjects => {
+      if(removedProjects === undefined || removedProjects.length === 0) return;
+      console.log('Destroy', removedProjects, 'upon user action.');
+      removedProjects.forEach(nano.db.destroy);
+    });
+    
+  });
+
+  feed.follow();
+  process.nextTick(function () {});
+  
+  function getRemovedProjects(updatedProjectList) {
+    // Get the project DBs that should get deleted by comparing the
+    return new Promise((resolve, reject) => {
+      if(updatedProjectList !== undefined && updatedProjectList.length !== 0) {
+        nano.db.list(function(err, dbs) {
+          resolve( dbs.filter((existingProject) => !updatedProjectList.includes(existingProject) ) );
+        });
+      }
+    });
   }
 
 };
+
+
+
+function isDesignDoc(doc, req) {
+  return doc._id.startsWith('_design');
+}
+
+function isValidTestUser(doc, req) {
+  // filter out invalid users (that include no valid testKey)
+  return (doc.testkey !== undefined && doc.testkey === 'testuserkey');
+}
+
+function isNewUser(doc, req) {
+  // Filter out deleted users and the admin.
+  return (doc._deleted === undefined && doc._id !== ('org.couchdb.user:' + config.admin));
+}
+
+
+
+
+
 
 var createDB = function (projectname) {
   return new Promise((resolve, reject) => {
@@ -152,3 +201,4 @@ var createDB = function (projectname) {
 
 
 listenForNewUsers();
+listenForInfoChanges();
