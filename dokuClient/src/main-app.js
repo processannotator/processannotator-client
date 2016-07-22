@@ -178,20 +178,27 @@ Polymer({
 	},
 	
 	deleteProjectDB: function (project) {
-		let localDeleteDB = new PouchDB(project._id);
-		console.log('really about to delete', project);
-		return localDeleteDB.destroy().then(() => {
-			// FIXME: Ok, the following is obviously not going to work
-			// because the user is no couchdb admin, handle this with nodejs
-			let remoteDeleteDB = new PouchDB(this.remoteUrl + '/' + project._id);
-		 return remoteDeleteDB.destroy();
-	 }).then((result) => {
-		 console.log(result);
-	 }).catch((err) => {
-		 alert(err);
-		 console.log(err);
-	 });
-	
+
+		// HACK: Only in small testing phase, any user can delete any project DB by
+		// modifying the array projectsInfo.projects of the `info` db
+		// In the future only allow db members to delete their project db, by modifying a users projects array.
+		
+		return localInfoDB.get('projectsInfo').then((doc) => {
+			let index = doc.projects.indexOf(project._id);
+			if(index === -1) {
+				throw new Error('User tried to delete', project._id, 'but a DB with that name is not listed in the `info` db inside projectsInfo.projects. Perhaps the info DB wasnt properly created?')
+			} else {
+				doc.projects.splice(index, 1);
+				return localInfoDB.put(doc);
+			}
+			
+		}).then((doc) => {
+			console.log('deleted', project._id);
+		}).catch((err) => {
+			console.error('something went wrong deleting', project._id);
+			console.error(err);
+		});
+		
 	},
 
 	switchProjectDB: function(newProject) {
