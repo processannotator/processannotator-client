@@ -38,13 +38,6 @@
 		background-color: rgb(98, 98, 98)
 	}
 
-
-
-	paper-button.menu-item  {
-	  --paper-button-ink-color: rgb(7, 20, 26);
-	}
-
-
 	#dashboard {
 		min-height:1vh;
 	}
@@ -72,8 +65,8 @@
 			<div class="main menu">
 				<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
 				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
-				<paper-button class="menu-item">TOPIC</paper-button>
-				<paper-button class="menu-item">OBJECT</paper-button>
+				<paper-button disabled class="menu-item">TOPIC</paper-button>
+				<paper-button disabled class="menu-item">OBJECT</paper-button>
 				<paper-button class="menu-item" on-tap="connectSensors">CONNECT SENSORS {{sensorstatus}}</paper-button>
 
 				<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>

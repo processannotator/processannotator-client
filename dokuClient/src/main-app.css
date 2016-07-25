@@ -59,16 +59,23 @@ body {
   text-align: center;
 }
 
-.side-container .menu-item {
+
+.side-container > .menu-item {
   min-width: 2.5em;
 }
 
-.main .menu-item {
+.main > .menu-item {
+  --paper-button-ink-color: rgb(7, 20, 26);
   font-size: 1em;
   font-family: "SourceSansPro-Semibold";
   height: 100%;
   border-radius: 0px;
 }
+
+.main > .menu-item[disabled] {
+  background: none;
+}
+
 
 .menu {
   display: flex;
@@ -91,9 +98,7 @@ body {
   background-color: rgb(12, 38, 50);
 }
 
-.menu-item:hover {
-  opacity: 1.0;
-}
+
 .main-container .menu-item {
   vertical-align: middle;
 }
