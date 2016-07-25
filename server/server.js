@@ -55,7 +55,7 @@ var listenForNewUsers = function () {
   feed.follow();
   process.nextTick(function () {
   });
-  
+
   function getRequestedProjects(doc) {
     // Filter if projects in its "projects" field, has any new projects that don't
     // exist yet. If so, create a DB for it.
@@ -76,28 +76,28 @@ var listenForInfoChanges = function () {
   console.log('Listening for changes in the info DB...');
   console.log('In the testing phase every user of group testuser can delete databases by removing an entry in the info document');
 
-  let feed = info.follow({since: 'now', include_docs: true, inactivity_ms: 10000});
+  let feed = info.follow({since: 'now', include_docs: true, filter: isProjectsInfo, inactivity_ms: 10000});
   feed.on('change', function (change) {
     console.log('DEBUG:');
     console.log('Change on info db');
     console.log(change);
-    
+
     // Skip design docs
     if(isDesignDoc(change.doc)) {
       return;
     }
 
-    getRemovedProjects(change.doc.projectsInfo.projects).then(removedProjects => {
+    getRemovedProjects(change.doc.projects).then(removedProjects => {
       if(removedProjects === undefined || removedProjects.length === 0) return;
       console.log('Destroy', removedProjects, 'upon user action.');
       removedProjects.forEach(nano.db.destroy);
     });
-    
+
   });
 
   feed.follow();
   process.nextTick(function () {});
-  
+
   function getRemovedProjects(updatedProjectList) {
     // Get the project DBs that should get deleted by comparing the
     return new Promise((resolve, reject) => {
@@ -125,6 +125,10 @@ function isValidTestUser(doc, req) {
 function isNewUser(doc, req) {
   // Filter out deleted users and the admin.
   return (doc._deleted === undefined && doc._id !== ('org.couchdb.user:' + config.admin));
+}
+
+function isProjectsInfo(doc, req) {
+  return doc._deleted === projectsInfo;
 }
 
 
