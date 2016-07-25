@@ -76,6 +76,10 @@
 			physicalModelRotation: {
 				type: Object,
 				observer: "_physicalModelRotationChanged"
+			},
+			physicalPenRotation: {
+				type: Object,
+				observer: "_physicalPenRotationChanged"
 			}
 		},
 		listeners: {
@@ -314,22 +318,28 @@
 		},
 		_physicalModelRotationChanged: function () {
 			// TODO Use quaternion instead of euler
-			// this.mainGroupGL.rotation.set(
-			// 	this.physicalModelRotation.roll / (180/Math.PI),
-			// 	this.physicalModelRotation.heading / (180/Math.PI),
-			// 	this.physicalModelRotation.pitch / (180/Math.PI)
-			// );
-
-			// this.mainGroupCSS.rotation.set(
-			// 	this.physicalModelRotation.roll / (180/Math.PI),
-			// 	this.physicalModelRotation.heading / (180/Math.PI),
-			// 	this.physicalModelRotation.pitch / (180/Math.PI)
-			// );
-			//
-			this.penGroupGL.rotation.set(
+			this.mainGroupGL.rotation.set(
 				this.physicalModelRotation.roll / (180/Math.PI),
 				this.physicalModelRotation.heading / (180/Math.PI),
 				this.physicalModelRotation.pitch / (180/Math.PI)
+			);
+
+			this.mainGroupCSS.rotation.set(
+				this.physicalModelRotation.roll / (180/Math.PI),
+				this.physicalModelRotation.heading / (180/Math.PI),
+				this.physicalModelRotation.pitch / (180/Math.PI)
+			);
+
+
+			requestAnimationFrame(this.render.bind(this));
+		},
+
+		_physicalPenRotationChanged: function () {
+			// TODO Use quaternion instead of euler
+			this.penGroupGL.rotation.set(
+				this.physicalPenRotation.roll / (180/Math.PI),
+				this.physicalPenRotation.heading / (180/Math.PI),
+				this.physicalPenRotation.pitch / (180/Math.PI)
 			);
 
 

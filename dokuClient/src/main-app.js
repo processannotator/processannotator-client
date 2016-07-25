@@ -126,8 +126,11 @@ Polymer({
 		// Sample implementation using johnny five below:
 
 
+		// set for model: renderView.physicalModelRotation = this.euler;
+		// or for pen: 	renderView.physicalPenRotation = this.euler;
 
 
+		// example for model:
 		// If board already initialized, remove board and reset status message.
 		// if(this.board) {
 		// 	this.board = undefined;
