@@ -80,5 +80,3 @@ If you want to distribute the app, run:
 npm run package
 // this creates distributable binaries
 ```
-
-
