@@ -117,7 +117,7 @@ var listenForInfoChanges = function () {
     getRemovedProjects(change.doc.projects).then(removedProjects => {
       if(removedProjects === undefined || removedProjects.length === 0) return;
       console.log('Destroy', removedProjects, 'upon user action.');
-      removedProjects.forEach(nano.db.destroy);
+      //removedProjects.forEach(nano.db.destroy);
     });
 
   });
@@ -126,10 +126,13 @@ var listenForInfoChanges = function () {
   process.nextTick(function () {});
 
   function getRemovedProjects(updatedProjectList) {
+
     // Get the project DBs that should get deleted by comparing the
     return new Promise((resolve, reject) => {
       if(updatedProjectList !== undefined && updatedProjectList.length !== 0) {
         nano.db.list(function(err, dbs) {
+          console.log('checking ', dbs);
+          console.log('against', updatedProjectList);
           resolve( dbs.filter((existingProject) => !updatedProjectList.includes(existingProject) ) );
         });
       }
