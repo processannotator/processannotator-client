@@ -105,9 +105,6 @@ var listenForInfoChanges = function () {
 
   let feed = info.follow({since: 'now', include_docs: true, filter: isProjectsInfo, inactivity_ms: 10000});
   feed.on('change', function (change) {
-    console.log('DEBUG:');
-    console.log('Change on info db');
-    console.log(change);
 
     // Skip design docs
     if(isDesignDoc(change.doc)) {
@@ -117,7 +114,7 @@ var listenForInfoChanges = function () {
     getRemovedProjects(change.doc.projects).then(removedProjects => {
       if(removedProjects === undefined || removedProjects.length === 0) return;
       console.log('Destroy', removedProjects, 'upon user action.');
-      //removedProjects.forEach(nano.db.destroy);
+      removedProjects.forEach(nano.db.destroy);
     });
 
   });
@@ -131,8 +128,6 @@ var listenForInfoChanges = function () {
     return new Promise((resolve, reject) => {
       if(updatedProjectList !== undefined && updatedProjectList.length !== 0) {
 
-
-
         nano.db.list(function(err, dbs) {
 
           // only have _ids in array for comparison with nano.db.list
@@ -140,10 +135,6 @@ var listenForInfoChanges = function () {
 
           // Filter out dbs besides 'project_', such as '_users' and 'info'
           dbs = dbs.filter(dbname => dbname.startsWith('project_'));
-
-          console.log('checking ', dbs);
-          console.log('against', updatedProjectList);
-
 
           resolve( dbs.filter((dbname) => dbname.startsWith('project_') && !updatedProjectList.includes(dbname) ) );
         });
