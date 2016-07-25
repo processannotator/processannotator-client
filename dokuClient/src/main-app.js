@@ -126,7 +126,7 @@ Polymer({
 		// Sample implementation using johnny five below:
 
 
-		
+
 
 		// If board already initialized, remove board and reset status message.
 		// if(this.board) {
@@ -135,7 +135,7 @@ Polymer({
 		// 	return;
 		// }
 		//
-		
+
 		//
 		// this.board = new five.Board({
 		// 	repl: false,
@@ -171,34 +171,42 @@ Polymer({
 		//
 		//
 		// this.board.on('fail', boardFailed);
-		
-		
-		
+
+
+
 
 	},
-	
+
 	deleteProjectDB: function (project) {
 
 		// HACK: Only in small testing phase, any user can delete any project DB by
 		// modifying the array projectsInfo.projects of the `info` db
 		// In the future only allow db members to delete their project db, by modifying a users projects array.
-		
+		console.log('about to delete', project);
 		return localInfoDB.get('projectsInfo').then((doc) => {
-			let index = doc.projects.indexOf(project._id);
-			if(index === -1) {
+
+			// Get index
+			let index;
+			for (var i = 0; i < doc.projects.length; i++) {
+				if(doc.projects[i]._id === project._id){
+					index = i;
+				}
+			}
+
+			if(index === undefined) {
 				throw new Error('User tried to delete', project._id, 'but a DB with that name is not listed in the `info` db inside projectsInfo.projects. Perhaps the info DB wasnt properly created?')
 			} else {
 				doc.projects.splice(index, 1);
 				return localInfoDB.put(doc);
 			}
-			
+
 		}).then((doc) => {
 			console.log('deleted', project._id);
 		}).catch((err) => {
 			console.error('something went wrong deleting', project._id);
 			console.error(err);
 		});
-		
+
 	},
 
 	switchProjectDB: function(newProject) {

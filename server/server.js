@@ -20,12 +20,13 @@ var init = function () {
 
   nano.db.create('info', function(err, body) {
     if (!err) {
-      info = nano.use('info');
       info.insert({ _id: 'projectsInfo', projects: [] }, function(err_, body_) {
         if (err_) console.log(err);
       });
     }
   });
+
+  info = nano.use('info');
 
   // To disallow anonymous users to delete other users and only to add own docs,
   // add following design document to _users db:
