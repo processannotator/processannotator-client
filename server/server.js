@@ -131,13 +131,21 @@ var listenForInfoChanges = function () {
     return new Promise((resolve, reject) => {
       if(updatedProjectList !== undefined && updatedProjectList.length !== 0) {
 
-        // only have _ids in array for comparison with nano.db.list
-        updatedProjectList = updatedProjectList.map((project) => project._id);
+
 
         nano.db.list(function(err, dbs) {
+
+          // only have _ids in array for comparison with nano.db.list
+          updatedProjectList = updatedProjectList.map((project) => project._id);
+
+          // Filter out dbs besides 'project_', such as '_users' and 'info'
+          dbs = dbs.filter(dbname => dbname.startsWith('project_'));
+
           console.log('checking ', dbs);
           console.log('against', updatedProjectList);
-          resolve( dbs.filter((existingProject) => !updatedProjectList.includes(existingProject) ) );
+
+
+          resolve( dbs.filter((dbname) => dbname.startsWith('project_') && !updatedProjectList.includes(dbname) ) );
         });
       }
     });
