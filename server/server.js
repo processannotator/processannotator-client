@@ -128,7 +128,7 @@ function isNewUser(doc, req) {
 }
 
 function isProjectsInfo(doc, req) {
-  return doc._deleted === projectsInfo;
+  return doc._id === projectsInfo;
 }
 
 
