@@ -8,10 +8,36 @@ var WebSocketServer = require('ws').Server
 
 let nano = require('nano')('http://' + config.admin + ':' + config.adminpassword + '@localhost:5984');
 let users = nano.use('_users');
-let info = nano.use('info');
+let info;
 
 
 let auth;
+
+
+// Init design functions and the info DB
+// Wont do anything if they exist already
+var init = function () {
+
+  nano.db.create('info', function(err, body) {
+    if (!err) {
+      info = nano.use('info');
+      info.insert({ _id: 'projectsInfo', projects: [] }, function(err_, body_) {
+        if (err_) console.log(err);
+      });
+    }
+  });
+
+  // To disallow anonymous users to delete other users and only to add own docs,
+  // add following design document to _users db:
+  users.insert({
+    _id: "_design/no_anonymous_delete",
+    language: "javascript",
+    validate_doc_update: "function(newDoc, oldDoc, userCtx, secObj){ \n    if('_admin' in userCtx.roles) return; // skip anonymous in Admin Party case;\n    if(!userCtx.name && newDoc._deleted){\n      throw({'forbidden': 'auth first before delete something'});\n    }\n}"
+  }, function (err, body) {
+      if(err_) console.log(err);
+  });
+
+};
 
 // Check for new users: if they got the dev key, add the role 'testuser'.
 var listenForNewUsers = function () {
@@ -203,6 +229,6 @@ var createDB = function (projectname) {
   });
 
 
-
+init();
 listenForNewUsers();
 listenForInfoChanges();
