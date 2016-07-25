@@ -35,7 +35,7 @@ var init = function () {
     language: "javascript",
     validate_doc_update: "function(newDoc, oldDoc, userCtx, secObj){ \n    if('_admin' in userCtx.roles) return; // skip anonymous in Admin Party case;\n    if(!userCtx.name && newDoc._deleted){\n      throw({'forbidden': 'auth first before delete something'});\n    }\n}"
   }, function (err, body) {
-      if (err_.statusCode && err_.statusCode !== 409) console.log(err);
+      if (err.statusCode && err.statusCode !== 409) console.log(err);
   });
 
 };
