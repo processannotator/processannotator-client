@@ -1,3 +1,3 @@
 exports.test = function () {
-  console.log('tested require. successfully!')
+  console.log('tested require. successfullyboring!!')
 }
