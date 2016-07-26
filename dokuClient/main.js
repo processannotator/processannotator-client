@@ -40,19 +40,6 @@ app.on('ready', function() {
 
 
 
-  webContents.on('select-bluetooth-device', (event, deviceList, callback) => {
-    event.preventDefault();
-    let result = deviceList.find((device) => {
-      return device.deviceName === 'test'
-    })
-    if (!result) {
-      callback('')
-    } else {
-      callback(result.deviceId)
-    }
-  });
-
-
 	mainWindow.setAutoHideMenuBar(true);
 
 	// load the index.html of the app.
