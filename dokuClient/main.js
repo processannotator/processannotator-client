@@ -37,9 +37,6 @@ app.on('ready', function() {
 	let webContents = mainWindow.webContents;
 
 
-
-
-
 	mainWindow.setAutoHideMenuBar(true);
 
 	// load the index.html of the app.

@@ -13,9 +13,6 @@ var ws; //websocket connection
 
 var annotationElements = new Map();
 
-// DOM elements
-var imageContainer;
-var renderView;
 
 Polymer({
 
@@ -41,20 +38,14 @@ Polymer({
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
-		console.log(this.remoteUrl);
 
-			imageContainer = document.querySelector('.object-view');
-			renderView = document.querySelector('render-view');
+			this.renderView = document.querySelector('render-view');
 
-			// This is only a temporary DB, will be replaced once switchDB(dbname) is called soon.
 			localInfoDB = new PouchDB('info');
 			remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
 			localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
 			localInfoDB.changes({live: true, since: 'now'})
-			.on('change', (info) => {
-				console.log('local info DB changed!!');
-				return this.updateProjectList();
-			})
+			.on('change', (info) => this.updateProjectList())
 			.on('error', function (err) {
 				console.log(err);
 			});
@@ -72,7 +63,6 @@ Polymer({
 
 			this.loadPreferences().then(() => {
 				console.log('Loaded preferences.');
-
 
 
 				return new Promise((resolve, reject) => {
@@ -101,17 +91,14 @@ Polymer({
 				console.log(this.activeProject);
 				if(this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
 					this.projectOpened = false;
-					console.log('NO ACTIVE PROFILE YET!');
+					console.log('no active profile yet!');
 				} else {
-					console.log('loaded a project, show the renderview');
+					console.log('loaded a project, show the this.renderView');
 					this.projectOpened = true;
 					return this.switchProjectDB(this.activeProject);
 				}
 
-
 			}).then(() => {
-
-				console.log('continue');
 				this.updateElements({updateFile: true});
 			});
 
@@ -126,8 +113,8 @@ Polymer({
 		// Sample implementation using johnny five below:
 
 
-		// set for model: renderView.physicalModelRotation = this.euler;
-		// or for pen: 	renderView.physicalPenRotation = this.euler;
+		// set for model: this.renderView.physicalModelRotation = this.euler;
+		// or for pen: 	this.renderView.physicalPenRotation = this.euler;
 
 
 		// example for model:
@@ -165,9 +152,9 @@ Polymer({
 		// 	});
 		// 	self.sensorstatus = '(connected)';
 		//
-		// 	// Update renderview with new physical rotation data.
+		// 	// Update this.renderView with new physical rotation data.
 		// 	imu.orientation.on('change', function() {
-		// 		renderView.physicalModelRotation = this.euler;
+		// 		this.renderView.physicalModelRotation = this.euler;
 		// 	});
 		// });
 		//
@@ -182,7 +169,7 @@ Polymer({
 
 	deleteProjectDB: function (project) {
 
-		// HACK: Only in small testing phase, any user can delete any project DB by
+		// HACK: Only in testing phase, any user can delete any project DB by
 		// modifying the array projectsInfo.projects of the `info` db
 		// In the future only allow db members to delete their project db, by modifying a users projects array.
 		console.log('about to delete', project);
@@ -219,7 +206,6 @@ Polymer({
 		this.activeProject = newProject;
 		this.annotations = [];
 		console.log('switch to projectDB with name', this.activeProject);
-		console.log('ADAPTER: WORKER MIGHT CAUSE PROBLEMS, TEST!');
 		localProjectDB = new PouchDB(this.activeProject._id, {adapter: 'worker'});
 		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
 
@@ -276,15 +262,10 @@ Polymer({
 			}, 30);
 
 		})
-		.on('complete', function(info) {
-			console.log('complete');
-		}).on('error', function (err) {
-			console.log(err);
-
-		});
+		.on('complete', function(info) {})
+		.on('error', function (err) {console.log(err)});
 
 		localProjectDB.get('info').then(info => {
-			console.log('info', info);
 			this.activeProject.activeTopic = info.activeTopic;
 
 			this.updateElements({updateFile: true});
@@ -309,7 +290,7 @@ Polymer({
 		});
 	},
 
-	// this is an event handler, triggering on enter-key event in renderview
+	// this is an event handler, triggering on enter-key event in this.renderView
 	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[]}}) {
 		console.log('about to add annotation to', this.activeProject._id);
 
@@ -330,12 +311,9 @@ Polymer({
 			polygon
 		};
 
-		console.log('about to add an annotation!');
-		return localProjectDB.put(annotation).then((result) => {
-		})
-		.catch((err) => {
-			console.log(err);
-		});
+		return localProjectDB.put(annotation)
+		.then((result) => {})
+		.catch((err) => { console.log(err)});
 	},
 
 	deleteAnnotation: function (annotation) {
@@ -355,7 +333,6 @@ Polymer({
 
 		return localInfoDB.get('_local/lastSession')
 		.then((preferences) => {
-			console.log('preferences loaded?');
 			if(preferences !== undefined) {
 				console.log('setting active profile, project and topic from local preferences');
 				console.log(preferences);
@@ -412,11 +389,9 @@ Polymer({
 
 	},
 	savePreferences: function() {
-		console.log('saving preferences...');
-		// _local/lastSession should exist because loadPreferences creates it.
 
+		// _local/lastSession should exist because loadPreferences creates it.
 		return localInfoDB.get('_local/lastSession').then(doc => {
-			console.log('getting lastSession for saving:', doc);
 			doc.activeProfile = this.activeProfile;
 			doc.activeProject = this.activeProject;
 			return localInfoDB.put(doc);
@@ -425,7 +400,7 @@ Polymer({
 			console.log('saved preferences.', result);
 		})
 		.catch((err) => {
-			console.log('error in saving prefs');
+			console.log('error in saving preferences');
 			console.log(err);
 		});
 
@@ -458,7 +433,7 @@ Polymer({
 			console.log('signing up');
 			return userDB.signup( name, password, {metadata} );
 		})
-		.then((response) => userDB.login(name, password))
+		.then((response) => { return userDB.login(name, password)})
 		.then((response) => {
 			console.log('succesfully created user and logged in.', response);
 			return userDB.getUser(name);
@@ -505,19 +480,19 @@ Polymer({
 		userDB.getUser(this.activeProfile.name).then((response) => {
 			// Save intend of user to create new DB into it's 'projects' field.
 			// This field will get read on the server, which decices wether to create a
-			// DB for it.
-
-
-
+			// DB for it!
 
 			response.projects.push(newProjectDescription._id);
+
 			return userDB.putUser(
 				this.activeProfile.name,
 				{metadata: {projects: response.projects}}
 			);
+
 		}).then(() => {
 			this.projectOpened = true;
 			localInfoDB.get('projectsInfo').then((doc) => {
+				// Also add an entry in our projectsInfo DB that a new DB was created.
 				doc.projects.push(newProjectDescription);
 				return localInfoDB.put(doc);
 			}).catch((err) => {
@@ -526,7 +501,9 @@ Polymer({
 				}
 			});
 
+			// Finally adding the new project to our app scope, notifying all listeners
 			this.push('projects', newProjectDescription);
+
 			// independently of internet connection and remote DB already create local DB
 			// and add first topic with object/file
 			return new PouchDB(newProjectDescription._id).bulkDocs(
@@ -614,7 +591,8 @@ Polymer({
 						console.log('try to get from localCache');
 						// Try to get creatorProfile from cache instead.
 						console.log(doc.creator);
-						return localCachedUserDB.get(doc.creator).then((creatorProfile) => {
+						return localCachedUserDB.get(doc.creator)
+						.then((creatorProfile) => {
 							console.log(creatorProfile);
 							doc.creatorProfile = creatorProfile;
 							return doc;
@@ -666,9 +644,11 @@ Polymer({
 
 			if((options.updateFile && options.updateFile === true)) {
 				localProjectDB.get('info')
-				.then((doc) => localProjectDB.getAttachment(doc.activeTopic, 'file'))
+				.then((doc) => {
+					return localProjectDB.getAttachment(doc.activeTopic, 'file')
+				})
 				.then(blob => {
-					renderView.file = blob;
+					this.renderView.file = blob;
 					return Promise.resolve();
 				})
 				.catch((err) => {
@@ -681,8 +661,8 @@ Polymer({
 			});
 		},
 		handleResize: function(event) {
-			if(renderView) {
-				renderView.resize();
+			if(this.renderView) {
+				this.renderView.resize();
 			}
 		},
 		keyUp: function(evt) {
@@ -726,7 +706,7 @@ Polymer({
 					projectname: projectOverlay.projectname,
 					topicname: projectOverlay.topicname,
 					file: projectOverlay.file,
-					emails: ['bla']
+					emails: ['test@test.test']
 				});
 
 			});
@@ -740,19 +720,18 @@ Polymer({
 				console.log(err);
 			});
 		},
-		toggleDashboard: function (e) {
-			console.log('toggle dashboard');
 
+		toggleDashboard: function (e) {
 			this.$.dashboard.toggle();
 			this.$.projectMenuItem.classList.toggle('selected');
-			console.log(this.$.dashboard);
+		},
 
-		},
 		handleSwitchProject: function (e) {
-			this.switchProjectDB(e.detail);
+			return this.switchProjectDB(e.detail);
 		},
+
 		handleDeleteProject: function (e) {
-			console.log(e.detail);
+
 			dialog.showMessageBox({
 				type: 'info',
 				buttons: ['cancel', 'delete local and remote project files'],
@@ -761,7 +740,6 @@ Polymer({
 				message: 'Are you sure you want to delete the project, including all annotations, files by all users inside \'' + e.detail.name + '\'? This will delete local and files on the server and can not be reversed.',
 				cancelId: 0
 			}, (response) => {
-				console.log('response', response);
 				console.log('going to delete??', e.detail);
 				if(response === 1) this.deleteProjectDB(e.detail);
 			});
@@ -788,13 +766,10 @@ Polymer({
 			e.target.classList.toggle('selectedAnnotation');
 			let item = this.$.annotationListTemplate.itemForElement(e.target);
 			this.$.annotationSelector.select(item);
-
-			console.log(this.selectedAnnotation);
 		},
 		_selectedAnnotationChanged: function (e) {
-			console.log('selected annotation changed');
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;
-			renderView.focusAnnotation(this.selectedAnnotation);
+			this.renderView.focusAnnotation(this.selectedAnnotation);
 		},
 		toolChanged: function (e) {
 			this.objectTool = this.$.toolBox.selected;
@@ -804,12 +779,3 @@ Polymer({
 
 
 	});
-
-	/////////////////////////////////////////////
-	// OLD STUFF down there. maybe useful later!?
-	/////////////////////////////////////////////
-
-	//
-	// ipcRenderer.on('asynchronous-reply', function(event, arg) {
-	//   console.log(arg); // prints 'pong'
-	// });
