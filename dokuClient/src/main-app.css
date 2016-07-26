@@ -66,7 +66,7 @@ body {
 
 .main > .menu-item {
   --paper-button-ink-color: rgb(7, 20, 26);
-  font-size: 1.5em;
+  font-size: 1.3em;
   font-family: "SourceSansPro-Semibold";
   height: 100%;
   border-radius: 0px;
