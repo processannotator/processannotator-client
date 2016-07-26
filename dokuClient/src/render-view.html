@@ -365,7 +365,6 @@
 				new THREE.MeshBasicMaterial({ color: 0xff0000})
 			);
 			sph.position.copy(annotation.position);
-			//glScene.add(sph);
 			annotationGlGroup.add(sph);
 
 			annotation3DObject.arrow = arrow;
@@ -485,7 +484,7 @@
 						}
 
 						if(this.previewAnnotation !== undefined) {
-							console.log('remove preview annotation');
+							// Remove preview annotation
 							this.annotationGlGroups.remove(this.previewAnnotation.glGroup);
 							this.labelGroup.remove(this.previewAnnotation.label);
 							this.previewAnnotation = undefined;
@@ -525,7 +524,9 @@
 
 
 			switch (this.tool) {
+
 				case 'none':
+
 					this.fire('create-annotation', {
 						description: 'new polygon...',
 						position: intersection.point.clone(),
@@ -534,6 +535,7 @@
 						cameraUp: camera.up
 					});
 					break;
+
 				case 'polygon':
 
 					this.verticesPolygonTool.push(intersection.point.clone());
@@ -574,24 +576,10 @@
 				polygon.faces.push( new THREE.Face3( 0, i, i+1 ) )
 			}
 
-			// polygon.computeBoundingSphere();
-			// polygon.computeBoundingBox();
-			//
 				return new THREE.Mesh(
 					polygon,
-					new THREE.MeshBasicMaterial( {
-						color: color,
-						side: THREE.DoubleSide
-					} )
-				)
-
-				// let sphere = new THREE.Mesh(
-				// 	new THREE.SphereGeometry( 20, 6, 6 ),
-				// 	new THREE.MeshBasicMaterial( {color: 0xff0000} )
-				// );
-				// sphere.position.set(vertices[0]);
-
-				//return sphere;
+					new THREE.MeshBasicMaterial( {color: color, side: THREE.DoubleSide})
+				);
 
 		},
 
