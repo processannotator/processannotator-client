@@ -2,6 +2,10 @@
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+<link href="../bower_components/iron-icons/iron-icons.html" rel="import">
+
 <dom-module id="annotation-box">
 
 	<template>
@@ -11,15 +15,32 @@
 
 			:host {
 				display: block;
+				position: relative;
 				box-sizing: border-box;
 				width: auto;
 				height: auto;
 			}
-			
+
 			paper-button {
 				border-radius: 0px;
 			}
-			
+
+			#deleteBtn {
+				color: rgba(207, 0, 0, 0.62);
+				position: absolute;
+				top: 50%;
+				left: 85%;
+
+			}
+
+			#deleteBtn.hidden {
+				display: none;
+			}
+
+
+
+
+
 
 			#container {
 				display: flex;
@@ -30,7 +51,7 @@
 				min-height: 10em;
 				max-height: 15em;
 				/*margin-bottom: 1em;*/
-				
+
 				cursor: pointer;
 			}
 
@@ -47,7 +68,7 @@
 				/*min-width: 100%;
 				width: 100%;*/
 			}
-			
+
 			#container, #tagsAndStatus {
 				border-top: 1px solid rgb(21, 68, 89);
 			}
@@ -99,24 +120,24 @@
 				flex: 1 0 0;
 
 			}
-			
+
 			#tags {
 				border-right: 1px solid rgb(21, 68, 89);
 			}
 
-		
+
 			#statusList {
 				padding: 0;
 			}
-			
+
 			.comment {
 				color: rgb(5, 73, 105);
 			}
-			
+
 			.task {
 				color: yellow;
 			}
-			
+
 			.problem {
 				color: orange;
 			}
@@ -124,11 +145,11 @@
 			paper-item {
 				font-size: 0.8em;
 			}
-			
+
 			.dropdown-content > paper-item {
 				background-color:  rgb(7, 20, 26);
 			}
-			
+
 
 			#footer {
 				flex: 1 0 0;
@@ -162,12 +183,12 @@
 				<br>
 				<div contenteditable="true" id="annotationText" on-keydown="keydown">{{annotation.description}}</div>
 			</div>
-
+			<paper-icon-button id="deleteBtn" class="hidden" icon="delete" on-tap="handleDelete"></paper-icon-button>
 			<div id="tagsAndStatus">
 				<paper-button id="tags">Tags</paper-button>
 				<paper-button class$="[[annotation.status]]" id="status" dropdown-trigger on-tap="openStatusDropdown">[[annotation.status]]</paper-button>
 				<iron-dropdown always-on-top auto-fit-on-attach id="statusDropdown" horizontal-align="right" vertical-align="top">
-					
+
 <paper-listbox on-tap="clickedStatusList" attr-for-selected="label" selected="{{annotation.status}}" fallback-selection="[[annotation.status]]" id="statusList" on-iron-select="statusChanged" class="dropdown-content">
 	<paper-item class="comment" label="comment">COMMENT</paper-item>
 	<paper-item class="task" label="task">TASK</paper-item>
@@ -198,6 +219,10 @@
 	<script>
 		Polymer({
 			is: "annotation-box",
+			listeners: {
+				mouseenter: 'mouseEnter',
+		    mouseleave: 'mouseLeave'
+			},
 			properties: {
 				annotation: {
 					type: Object,
@@ -229,6 +254,9 @@
 				this.annotation.description = event.srcElement.innerHTML;
 				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
 			},
+			handleDelete: function (event, detail, sender) {
+				this.fire('annotation-deleted-by-user', this.annotation);
+			},
 			computeNameLetters: function (prename, surname) {
 				return prename[0] + surname[0];
 			},
@@ -246,6 +274,14 @@
 			openStatusDropdown: function (e) {
 					this.$.statusDropdown.toggle();
 			},
+			mouseEnter: function (e) {
+				this.$.deleteBtn.classList.toggle('hidden');
+			},
+
+			mouseLeave: function (e) {
+				this.$.deleteBtn.classList.toggle('hidden');
+			}
+
 
 		});
 	</script>

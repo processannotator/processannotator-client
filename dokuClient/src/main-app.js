@@ -337,6 +337,17 @@ Polymer({
 			console.log(err);
 		});
 	},
+
+	deleteAnnotation: function (annotation) {
+
+		return localProjectDB.remove(annotation).then((result) => {
+			console.log('deleted', annotation._id);
+		}).catch((err) => {
+			console.error('error deleting', id);
+			console.error(err);
+		});
+	},
+
 	login: function(user, password) {
 		return userDB.login(user, password);
 	},
@@ -643,6 +654,13 @@ Polymer({
 				// after put into DB, DB change event should be triggered automatically to update
 			});//.then(() => {updateElements()})
 		},
+
+		onAnnotationDelete: function(evt) {
+
+			return this.deleteAnnotation(evt.detail);
+
+		},
+
 		updateElements: function(options) {
 			if(localProjectDB === undefined) return;
 
