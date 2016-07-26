@@ -3,7 +3,6 @@
   "version": "0.2.0",
   "main": "main.js",
   "dependencies": {
-    "npm": "^3.9.6",
     "pouchdb": "^5.3.2",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.1",
