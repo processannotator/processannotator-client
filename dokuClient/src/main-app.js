@@ -8,8 +8,6 @@ const PORT = '80';
 
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
-var ws; //websocket connection
-// require('./test').test();
 
 var annotationElements = new Map();
 
@@ -29,15 +27,15 @@ Polymer({
 		}
 
 	},
-
 	observers: [
 	],
+	
 	attached: function () {
 		document.app = this;
 
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
-		this.cachedUserDB = false;
+		this.hasCachedUserDB = false;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
 
 			this.renderView = document.querySelector('render-view');
@@ -45,12 +43,9 @@ Polymer({
 			localInfoDB = new PouchDB('info');
 			remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
 			localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
-			localInfoDB.changes({live: true, since: 'now'})
-			.on('change', (info) => this.updateProjectList())
-			.on('error', function (err) {
-				console.log(err);
-			});
-
+			localInfoDB.changes( {live: true, since: 'now'} )
+			.on('change', this.updateProjectList)
+			.on('error', err => console.log);
 
 			this.updateProjectList();
 			// Contains public user info (color, name) and is used for offline situations
@@ -58,14 +53,7 @@ Polymer({
 			localCachedUserDB = new PouchDB('localCachedUserDB');
 			userDB = new PouchDB(this.remoteUrl + '/_users');
 
-			// this.initWebsockets()
-			// .then(() => console.log('websocket succesfully connected'))
-			// .catch(err => console.error(err));
-
 			this.loadPreferences().then(() => {
-				console.log('Loaded preferences.');
-
-
 				return new Promise((resolve, reject) => {
 					if(this.activeProfile === ''){
 						console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
@@ -90,11 +78,10 @@ Polymer({
 			}).then(() => {
 				console.log('ok, loaded or created the active profile. Now check if there is an active project');
 				console.log(this.activeProject);
-				if(this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
+				if( this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
 					this.projectOpened = false;
 					console.log('no active profile yet!');
 				} else {
-					console.log('loaded a project, show the this.renderView');
 					this.projectOpened = true;
 					return this.switchProjectDB(this.activeProject);
 				}
@@ -106,8 +93,8 @@ Polymer({
 			window.addEventListener('resize', this.handleResize.bind(this));
 			window.addEventListener('keyup', this.keyUp.bind(this));
 
-
 	},
+	
 	connectSensors: function () {
 		let self = this;
 		self.sensorstatus = '(Sensor readouts not implemented in master branch yet)';
@@ -173,10 +160,8 @@ Polymer({
 		// HACK: Only in testing phase, any user can delete any project DB by
 		// modifying the array projectsInfo.projects of the `info` db
 		// In the future only allow db members to delete their project db, by modifying a users projects array.
-		console.log('about to delete', project);
 		return localInfoDB.get('projectsInfo').then((doc) => {
 
-			// Get index
 			let index;
 			for (var i = 0; i < doc.projects.length; i++) {
 				if(doc.projects[i]._id === project._id){
@@ -185,15 +170,13 @@ Polymer({
 			}
 
 			if(index === undefined) {
-				throw new Error('User tried to delete', project._id, 'but a DB with that name is not listed in the `info` db inside projectsInfo.projects. Perhaps the info DB wasnt properly created?')
+				throw new Error('User tried to delete', project._id, 'but a DB with that name is not listed in the `info` db inside projectsInfo.projects. Perhaps the info DB wasnt properly created?');
 			} else {
 				doc.projects.splice(index, 1);
 				return localInfoDB.put(doc);
 			}
-
-		}).then((doc) => {
-			console.log('deleted', project._id);
-		}).catch((err) => {
+		})
+		.catch((err) => {
 			console.error('something went wrong deleting', project._id);
 			console.error(err);
 		});
@@ -201,15 +184,13 @@ Polymer({
 	},
 
 	switchProjectDB: function(newProject) {
+		console.log('switch to projectDB with name', this.activeProject);
 
 		// Reset check wether remote user db got cached, to allow for updatingthe cached
 		// when a project is switched
-		this.cachedUserDB = false;
-
-		// TODO: check if dname is a valid database name for a project
+		this.hasCachedUserDB = false;
 		this.activeProject = newProject;
 		this.annotations = [];
-		console.log('switch to projectDB with name', this.activeProject);
 		localProjectDB = new PouchDB(this.activeProject._id, {adapter: 'worker'});
 		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
 
@@ -249,7 +230,6 @@ Polymer({
 
 		localProjectDB.changes({live: true, since: 'now', include_docs: true})
 		.on('change', (info) => {
-			console.log('change, info:', info);
 			// only update also the file (for the renderer) if it's not an annotation
 			let updateFile = false;
 			if(info.doc.type !== 'annotation') {
@@ -258,8 +238,7 @@ Polymer({
 			// Reduce calls to this.updateElements if there are many simultaneous changes!
 			// Therefore only update every 30ms
 			// This would not be valid if we only actually update individual elements from changes,
-			// as we would have to notify updateElements about the actual changed docs. this is not true yet
-			// and may never be, just wanted to note this here in case we ever decide to do so:)
+			// as we would have to notify updateElements about the actual changed docs. this is not true yet and may never be, just wanted to note this here in case we ever decide to do so:)
 			clearTimeout(this.updateTimeout);
 			this.updateTimeout = setTimeout(() => {
 				this.updateElements({updateFile: updateFile});
@@ -295,7 +274,6 @@ Polymer({
 
 	// this is an event handler, triggering on enter-key event in this.renderView
 	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[]}}) {
-		console.log('about to add annotation to', this.activeProject._id);
 
 		let annotation = {
 			_id: 'annotation_' + new Date().toISOString(),
@@ -314,16 +292,13 @@ Polymer({
 			polygon
 		};
 
-		return localProjectDB.put(annotation)
-		.then((result) => {})
-		.catch((err) => { console.log(err)});
+		return localProjectDB.put(annotation).catch(err => console.log);
 	},
 
 	deleteAnnotation: function (annotation) {
 
-		return localProjectDB.remove(annotation).then((result) => {
-			console.log('deleted', annotation._id);
-		}).catch((err) => {
+		return localProjectDB.remove(annotation)
+		.catch((err) => {
 			console.error('error deleting', id);
 			console.error(err);
 		});
@@ -336,20 +311,16 @@ Polymer({
 
 		return localInfoDB.get('_local/lastSession')
 		.then((preferences) => {
+			
 			if(preferences !== undefined) {
-				console.log('setting active profile, project and topic from local preferences');
 				console.log(preferences);
 				this.preferences = preferences;
 				this.activeProfile = preferences.activeProfile;
 				this.activeProject = preferences.activeProject;
-			}
-			if (preferences === undefined) {
-				throw	new Error('preferences missing, this error shouldnt hthisen at all!');
-				// because if preferences is undefined, it should have thrown an error before!
+			} else {
+				throw	new Error('No preferences loaded.');
 			}
 
-			// try to login to profile thats saved in preferences info from remote server
-			// to get up-to-date profile info and save it later
 			return this.login(preferences.activeProfile.name, preferences.activeProfile.password);
 		})
 		.then(response => {
@@ -399,12 +370,11 @@ Polymer({
 			doc.activeProject = this.activeProject;
 			return localInfoDB.put(doc);
 		})
-		.then((result) => {
+		.then( result => {
 			console.log('saved preferences.', result);
 		})
-		.catch((err) => {
-			console.log('error in saving preferences');
-			console.log(err);
+		.catch( err => {
+			console.log('error in saving preferences', err);
 		});
 
 	},
@@ -433,18 +403,17 @@ Polymer({
 			// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
 			metadata.testkey = 'testuserkey';
 			metadata.projects = [];
-			console.log('signing up');
 			return userDB.signup( name, password, {metadata} );
 		})
-		.then((response) => { return userDB.login(name, password)})
-		.then((response) => {
+		.then( response => { return userDB.login(name, password) })
+		.then( response => {
 			console.log('succesfully created user and logged in.', response);
 			return userDB.getUser(name);
 		})
-		.then((response) => {
+		.then( response => {
 			this.activeProfile = Object.assign(this.activeProfile, response);
 		})
-		.catch(err => console.error(err));
+		.catch(err => console.error);
 	},
 	setNewProject: function({projectname, topicname, file, emails}) {
 		// Assumes current activeProfile as the creator.
@@ -459,18 +428,6 @@ Polymer({
 			return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_$()+/-]/g, '$');
 		}
 
-		function annotationWithCreatorProfile(doc) {
-			if(doc.creator === this.activeProfile.name)
-			return localCachedUserDB.get(doc.creator)
-			.then(profile => {
-				doc.creatorProfile = profile;
-				return doc;
-			}).catch(err => {
-				console.log(err);
-				doc.creatorProfile = {};
-				return doc;
-			});
-		}
 
 		let topicID = 'topic_' + topicname;
 		let newProjectDescription = {
@@ -491,13 +448,15 @@ Polymer({
 				{metadata: {projects: response.projects}}
 			);
 
-		}).then(() => {
+		})
+		.then(() => {
 			this.projectOpened = true;
+			// Also add an entry in our projectsInfo DB that a new DB was created:
 			localInfoDB.get('projectsInfo').then((doc) => {
-				// Also add an entry in our projectsInfo DB that a new DB was created.
 				doc.projects.push(newProjectDescription);
 				return localInfoDB.put(doc);
-			}).catch((err) => {
+			})
+			.catch((err) => {
 				if(err.status === 404) {
 					return localInfoDB.put({_id: 'projectsInfo', projects: [newProjectDescription]});
 				}
@@ -545,7 +504,7 @@ Polymer({
 
 			// FUTURE TODO: implement timed queue to automaically do things like updating
 			// the user db cache etc. every once in a while (like every 10 minutes)
-			if(this.cachedUserDB === true) {
+			if(this.hasCachedUserDB === true) {
 				return;
 			}
 
@@ -556,15 +515,12 @@ Polymer({
 				userNames.add(annotation.doc.creator);
 				userIDs.add('org.couchdb.user:' + annotation.doc.creator);
 			}
-			console.log(userIDs);
 
 			return userDB.allDocs({
 				// might use a server side filter here
 				keys: [...userIDs],
 				include_docs: true
 			}).then((result) => {
-				console.log('\n\n\n');
-				console.log(result);
 				let userDocs = result.rows.map(({doc, id}) => {
 					// to be compatible with pouchdb-authentication
 					// user the user name as id instead of long id:
@@ -614,9 +570,7 @@ Polymer({
 
 
 			}).then((result) => {
-				this.cachedUserDB = true;
-				console.log('updated localCachedUserDB');
-				console.log(result);
+				this.hasCachedUserDB = true;
 			}).catch((err) => {
 				console.error(err);
 			});
@@ -697,9 +651,7 @@ Polymer({
 		},
 
 		onAnnotationDelete: function(evt) {
-
 			return this.deleteAnnotation(evt.detail);
-
 		},
 
 		updateElements: function(options) {
@@ -708,7 +660,7 @@ Polymer({
 			if((options.updateFile && options.updateFile === true)) {
 				localProjectDB.get('info')
 				.then((doc) => {
-					return localProjectDB.getAttachment(doc.activeTopic, 'file')
+					return localProjectDB.getAttachment(doc.activeTopic, 'file');
 				})
 				.then(blob => {
 					this.renderView.file = blob;
@@ -723,43 +675,20 @@ Polymer({
 				this.annotations = annotations;
 			});
 		},
+		
 		handleResize: function(event) {
 			if(this.renderView) {
 				this.renderView.resize();
 			}
 		},
+		
+		
 		keyUp: function(evt) {
 			// if(evt.keyCode === 189){
 			// 	console.log('complete reset');
 			// 	completeReset();
 			// }
 		},
-
-		// this.initWebsockets: function() {
-		// 	return new Promise((resolve, reject) => {
-		//
-		// 		ws = new WebSocket('ws://' + SERVERADDR + ':7000', ['protocolbla']);
-		//
-		// 		ws.onopen: function (event) {
-		// 			resolve(ws);
-		// 		};
-		//
-		// 		ws.onmessage: function (event) {
-		// 			let msg = JSON.parse(event.data);
-		// 			switch (msg.type) {
-		// 				case '':
-		// 				let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg});
-		//
-		// 				console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!');
-		// 				this.dispatchEvent(e);
-		// 				break;
-		// 				default:
-		// 				console.log('unknown websockets event:', msg);
-		// 			}
-		// 		};
-		// 	});
-		//
-		// };
 
 		handleCreateProject: function() {
 			let projectOverlay = document.querySelector('#projectSetupOverlay');
