@@ -6,6 +6,7 @@
     "pouchdb": "^5.3.2",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.1",
+    "pouchdb-upsert": "^2.0.2",
     "worker-pouch": "^1.0.2"
   },
   "scripts": {
