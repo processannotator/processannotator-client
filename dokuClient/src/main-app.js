@@ -77,7 +77,7 @@ Polymer({
 								surname: profileOverlay.surname,
 								color: profileOverlay.color,
 								email: profileOverlay.email
-							}).then((result) => resolve(this.activeProfile));
+							}).then((result) => { resolve(this.activeProfile) });
 						});
 						profileOverlay.open();
 
@@ -99,7 +99,7 @@ Polymer({
 				}
 
 			}).then(() => {
-				this.updateElements({updateFile: true});
+				return this.updateElements({updateFile: true});
 			});
 
 			window.addEventListener('resize', this.handleResize.bind(this));
@@ -267,8 +267,7 @@ Polymer({
 
 		localProjectDB.get('info').then(info => {
 			this.activeProject.activeTopic = info.activeTopic;
-
-			this.updateElements({updateFile: true});
+			return this.updateElements({updateFile: true});
 		});
 
 		// TODO: this.switchTopic().then(() => {
@@ -457,7 +456,6 @@ Polymer({
 		}
 
 		function annotationWithCreatorProfile(doc) {
-			console.log('doc');
 			if(doc.creator === this.activeProfile.name)
 			return localCachedUserDB.get(doc.creator)
 			.then(profile => {
@@ -524,7 +522,7 @@ Polymer({
 			})
 			.then((result) => {
 				this.activeProject.activeTopic = topicID;
-				this.updateElements({updateFile: true});
+				return this.updateElements({updateFile: true});
 			})
 			.catch(function (err) {
 				console.log('something went wrong creating the new project db');
@@ -532,15 +530,97 @@ Polymer({
 			});
 		},
 
+		// Updates the cachedUserDB based on users in a list of annotations
+		updateCachedUserDB: function (annotations) {
+
+			let userIDs = new Set();
+			let userNames = new Set();
+			console.log('\n\n\n');
+			for (let annotation of annotations) {
+				userNames.add(annotation.doc.creator);
+				userIDs.add('org.couchdb.user:' + annotation.doc.creator);
+			}
+
+			return userDB.allDocs({
+				// might use a server side filter here
+				keys: [...userIDs],
+				include_docs: true
+			}).then((result) => {
+				console.log('\n\n\n');
+				console.log(result);
+				let userDocs = result.rows.map(({doc, id}) => {
+					// to be compatible with pouchdb-authentication
+					// user the user name as id instead of long id:
+					doc._id = id.split('org.couchdb.user:')[1];
+					return doc;
+				});
+				return userDocs;
+
+			}).then((userDocs) => {
+
+				return localCachedUserDB.allDocs({
+					keys: [...userNames],
+					include_docs: true
+
+				}).then((cachedUserDocs) => {
+					cachedUserDocs = cachedUserDocs.rows;
+					let updatedUserDocs = [];
+					// Update only if changes are there
+					// And set _rev if exists in a cached doc to update
+					let profileChanged = false;
+
+					for (var i = 0; i < cachedUserDocs.length; i++) {
+						// compare surname, name, color, etc. for changes
+						console.log(userDocs[i]);
+						for (let prop in userDocs[i]) {
+							console.log('prop:', prop);
+							console.log('compare', userDocs[i][prop], cachedUserDocs[i].doc[prop]);
+							if((prop !== '_id' && prop !== 'doc' && prop !== '_rev') && ((cachedUserDocs[i].doc.hasOwnProperty(prop) === false) || (userDocs[i][prop] !== cachedUserDocs[i].doc[prop])) ){
+								profileChanged = true;
+								break;
+							}
+						}
+
+
+					// If no change found, dont add the userdoc to the bulk update list
+					if(profileChanged === true) {
+						console.log('changed user');
+						let revision = cachedUserDocs[i].doc._rev;
+						if(revision !== undefined) userDocs[i]._rev = revision;
+						updatedUserDocs.push(userDocs[i]);
+					} else {
+						console.log('no changes found!');
+					}
+
+				}
+
+
+					return localCachedUserDB.bulkDocs(updatedUserDocs);
+				});
+
+
+			}).then((result) => {
+				console.log('updated localCachedUserDB');
+				console.log(result);
+			}).catch((err) => {
+				console.error(err);
+			});
+
+		},
+
 		// Get all annotation of current project.
 		// 1. Update localCachedUserDB based in annotation creators (if userDB is available)
 		// 2. Use localCachedUserDB to add profile info (color, name) to annotation.
 		// 3. return updated annotations.
 		getAnnotations: function() {
+
+
+
 			if(localProjectDB === undefined) return false;
 			let creators = new Set();
 			let updatedCreators = new Set();
 			let annotations;
+
 
 
 			return localProjectDB.allDocs({
@@ -550,6 +630,20 @@ Polymer({
 			})
 			.then(result => {
 				annotations = result.rows;
+				//
+				//
+				//
+				//
+				//
+				//
+				// Use our new update function here:
+				this.updateCachedUserDB(annotations);
+				//
+				//
+				//
+				//
+				//
+				//
 				let promiseUserUpdates = [];
 				let updatedAnnotations = [];
 				// now fetch the profile of the annotation creator and try to get it from userDB
@@ -562,6 +656,7 @@ Polymer({
 				// HACK! This is inefficient. In future update localCachedUserDB periodically (try every 10 mins?)
 				// And update annotations only from local cache
 				for (let {doc} of annotations) {
+
 					let updatedAnnotation = userDB.getUser(doc.creator).then((creatorProfile) => {
 						let {surname, prename} = creatorProfile;
 						doc.creatorProfile = creatorProfile;
@@ -593,7 +688,6 @@ Polymer({
 						console.log(doc.creator);
 						return localCachedUserDB.get(doc.creator)
 						.then((creatorProfile) => {
-							console.log(creatorProfile);
 							doc.creatorProfile = creatorProfile;
 							return doc;
 						})
