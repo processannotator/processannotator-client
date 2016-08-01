@@ -663,9 +663,12 @@ Polymer({
 
 					updatedAnnotations.push(updatedAnnotation);
 				}
+
 				return Promise.all(updatedAnnotations);
 			});
 		},
+
+
 		onAnnotationEdit: function(evt) {
 
 			// emitted when user edits text in annotationbox and hits enter
@@ -682,7 +685,7 @@ Polymer({
 					break;
 
 					case 'problem':
-						doc.statusColor = 'red';
+						doc.statusColor = 'orange';
 					break;
 					default:
 
