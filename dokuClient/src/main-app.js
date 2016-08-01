@@ -37,6 +37,7 @@ Polymer({
 
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
+		this.cachedUserDB = false;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
 
 			this.renderView = document.querySelector('render-view');
@@ -201,6 +202,9 @@ Polymer({
 
 	switchProjectDB: function(newProject) {
 
+		// Reset check wether remote user db got cached, to allow for updatingthe cached
+		// when a project is switched
+		this.cachedUserDB = false;
 
 		// TODO: check if dname is a valid database name for a project
 		this.activeProject = newProject;
@@ -531,15 +535,28 @@ Polymer({
 		},
 
 		// Updates the cachedUserDB based on users in a list of annotations
+		// This is a bit of a crazy method, as there seems to be no working _users replication
+		// for public_fields, therefore bulk fetching user docs, comparing with a local cached
+		// db and updating the local db on changes.
+		//
+		// So, If identical user doc/info/public_fields already in cache
+		// -> dont cache again as it is expensive (network traffic)
 		updateCachedUserDB: function (annotations) {
+
+			// FUTURE TODO: implement timed queue to automaically do things like updating
+			// the user db cache etc. every once in a while (like every 10 minutes)
+			if(this.cachedUserDB === true) {
+				return;
+			}
 
 			let userIDs = new Set();
 			let userNames = new Set();
-			console.log('\n\n\n');
+
 			for (let annotation of annotations) {
 				userNames.add(annotation.doc.creator);
 				userIDs.add('org.couchdb.user:' + annotation.doc.creator);
 			}
+			console.log(userIDs);
 
 			return userDB.allDocs({
 				// might use a server side filter here
@@ -565,41 +582,39 @@ Polymer({
 				}).then((cachedUserDocs) => {
 					cachedUserDocs = cachedUserDocs.rows;
 					let updatedUserDocs = [];
-					// Update only if changes are there
-					// And set _rev if exists in a cached doc to update
-					let profileChanged = false;
+					let hasProfileChanged = false;
+					let isNewProfile = false;
 
-					for (var i = 0; i < cachedUserDocs.length; i++) {
-						// compare surname, name, color, etc. for changes
-						console.log(userDocs[i]);
-						for (let prop in userDocs[i]) {
-							console.log('prop:', prop);
-							console.log('compare', userDocs[i][prop], cachedUserDocs[i].doc[prop]);
-							if((prop !== '_id' && prop !== 'doc' && prop !== '_rev') && ((cachedUserDocs[i].doc.hasOwnProperty(prop) === false) || (userDocs[i][prop] !== cachedUserDocs[i].doc[prop])) ){
-								profileChanged = true;
-								break;
+					for (var i = 0; i < userDocs.length; i++) {
+
+						if((cachedUserDocs[i].error && cachedUserDocs[i].error === 'not_found')) {
+							// If user has never been cached before, mark as profile change
+							hasProfileChanged = isNewProfile = true;
+						} else {
+							// compare surname, name, color, etc. for changes
+							for (let prop in userDocs[i]) {
+								if( ((prop !== '_id' && prop !== 'doc' && prop !== '_rev') && ((cachedUserDocs[i].doc.hasOwnProperty(prop) === false) || (userDocs[i][prop] !== cachedUserDocs[i].doc[prop]))) ){
+									hasProfileChanged = true;
+									break;
+								}
 							}
 						}
 
-
-					// If no change found, dont add the userdoc to the bulk update list
-					if(profileChanged === true) {
-						console.log('changed user');
-						let revision = cachedUserDocs[i].doc._rev;
-						if(revision !== undefined) userDocs[i]._rev = revision;
-						updatedUserDocs.push(userDocs[i]);
-					} else {
-						console.log('no changes found!');
+						// If no change found, dont add the userdoc to the bulk update list
+						if(hasProfileChanged === true) {
+							// Use existing _rev if already not a newly cached profile
+							if(isNewProfile === false && cachedUserDocs[i].doc && cachedUserDocs[i].doc._rev !== undefined) {
+								userDocs[i]._rev = cachedUserDocs[i].doc._rev;
+							}
+							updatedUserDocs.push(userDocs[i]);
+						}
 					}
-
-				}
-
-
 					return localCachedUserDB.bulkDocs(updatedUserDocs);
 				});
 
 
 			}).then((result) => {
+				this.cachedUserDB = true;
 				console.log('updated localCachedUserDB');
 				console.log(result);
 			}).catch((err) => {
@@ -614,14 +629,10 @@ Polymer({
 		// 3. return updated annotations.
 		getAnnotations: function() {
 
-
-
 			if(localProjectDB === undefined) return false;
 			let creators = new Set();
 			let updatedCreators = new Set();
 			let annotations;
-
-
 
 			return localProjectDB.allDocs({
 				include_docs: true,
@@ -630,71 +641,26 @@ Polymer({
 			})
 			.then(result => {
 				annotations = result.rows;
-				//
-				//
-				//
-				//
-				//
-				//
-				// Use our new update function here:
-				this.updateCachedUserDB(annotations);
-				//
-				//
-				//
-				//
-				//
-				//
+				return this.updateCachedUserDB(annotations);
+			})
+			.then(() => {
+
 				let promiseUserUpdates = [];
 				let updatedAnnotations = [];
-				// now fetch the profile of the annotation creator and try to get it from userDB
-				// to update the localCachedUserDB.
-				// Collect all creator names and fetch them from localCachedUserDB
-				// for (let {doc: {creator}} of annotations) {
-				// 	creators.add(creator);
-				// }
-				// TODO:
-				// HACK! This is inefficient. In future update localCachedUserDB periodically (try every 10 mins?)
-				// And update annotations only from local cache
+
+				// Annotate/augment all annotation objects with a .creatorProfile field
+				// fetched from localCachedUserDB
 				for (let {doc} of annotations) {
 
-					let updatedAnnotation = userDB.getUser(doc.creator).then((creatorProfile) => {
-						let {surname, prename} = creatorProfile;
+					let updatedAnnotation = localCachedUserDB.get(doc.creator)
+					.then((creatorProfile) => {
 						doc.creatorProfile = creatorProfile;
-
-						// also update localCachedUserDB if not done yet.
-						if(updatedCreators.has(doc.creator) === false) {
-							updatedCreators.add(doc.creator);
-							localCachedUserDB.get(doc.creator).then((cachedProfile) => {
-								cachedProfile.surname = surname;
-								cachedProfile.prename = prename;
-								return localCachedUserDB.put(cachedProfile);
-							})
-							.catch((err) => {
-								// No local cache of user info yet, cache it now!
-								if(err.status === 404) {
-									console.log('No local cache of user info yet, cache it now!');
-									return localCachedUserDB.put({_id: doc.creator, surname, prename});
-								} else {
-									console.error(err);
-								}
-							});
-						}
 						return doc;
 					})
-					.catch((err) => {
-						console.log(err);
-						console.log('try to get from localCache');
-						// Try to get creatorProfile from cache instead.
-						console.log(doc.creator);
-						return localCachedUserDB.get(doc.creator)
-						.then((creatorProfile) => {
-							doc.creatorProfile = creatorProfile;
-							return doc;
-						})
-						.catch((err_) => {
-							console.error(err_);
-						});
+					.catch((err_) => {
+						console.error(err_);
 					});
+
 					updatedAnnotations.push(updatedAnnotation);
 				}
 				return Promise.all(updatedAnnotations);
