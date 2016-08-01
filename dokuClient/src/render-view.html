@@ -468,12 +468,12 @@
 							this.mainGroupGL.remove(this.previewAnnotation.arrow);
 							this.mainGroupGL.remove(this.previewAnnotation.polygon);
 							this.mainGroupCSS.remove(this.previewAnnotation.label);
-							this.previewAnnotation.undefined;
+							this.previewAnnotation = undefined;
 						}
 						glScene.remove(this.previewPolygon);
-						this.previewPolygon = undefined
-						this.verticesPolygonTool = []
-						console.log('added polygon annotation')
+						this.previewPolygon = undefined;
+						this.verticesPolygonTool = [];
+						console.log('added polygon annotation');
 					}
 					break;
 					case 27 /* Escape */:
@@ -502,7 +502,7 @@
 
 		},
 		tap: function(e) {
-
+			console.log('tap');
 			if(jsonEqual(this.previousCameraPosition, camera.position) === false || jsonEqual(this.previousCameraRotation, camera.rotation) == false) {
 				console.log('moved! return!');
 			}
