@@ -679,7 +679,7 @@ Polymer({
 		updateProjectList: function () {
 			return localInfoDB.get('projectsInfo').then((doc) => {
 				this.set('projects', doc.projects);
-			}).catch((err) => console.log;);
+			}).catch((err) => console.log);
 		},
 
 		toggleDashboard: function (e) {
