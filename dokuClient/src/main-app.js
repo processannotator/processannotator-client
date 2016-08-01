@@ -196,36 +196,11 @@ Polymer({
 
 		this.savePreferences();
 
-		// perhaps also on change localInfoDB to rebuildAnnotation elements?
 		sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 			live: true,
 			retry: true
-		}).on('change', function(info) {
-			// console.log('sync change!!');
-			// console.log(info);
-			// // TODO: implement function that only updates elements that changed
-			// this.updateElements(info.change.docs);
-
-		}).on('paused', (info) => {
-			console.log('sync pause', info);
-
-			// replication paused (e.g. user went offline)
-		}).on('active', () => {
-			console.log('sync active');
-
-			// replicate resumed (e.g. user went back online)
-		}).on('denied', info => {
-			console.log('sync denied');
-
-			// a document failed to replicate, e.g. due to permissions
-		}).on('complete', info => {
-			console.log('sync complete');
-			console.log(info);
-
-			// handle complete
 		}).on('error', err => {
-			console.log('sync error');
-			// handle error
+			console.log('sync error', err);
 		});
 
 		localProjectDB.changes({live: true, since: 'now', include_docs: true})
@@ -517,10 +492,10 @@ Polymer({
 			}
 
 			return userDB.allDocs({
-				// might use a server side filter here
 				keys: [...userIDs],
 				include_docs: true
-			}).then((result) => {
+			})
+			.then((result) => {
 				let userDocs = result.rows.map(({doc, id}) => {
 					// to be compatible with pouchdb-authentication
 					// user the user name as id instead of long id:
@@ -529,13 +504,15 @@ Polymer({
 				});
 				return userDocs;
 
-			}).then((userDocs) => {
+			})
+			.then((userDocs) => {
 
 				return localCachedUserDB.allDocs({
 					keys: [...userNames],
 					include_docs: true
 
-				}).then((cachedUserDocs) => {
+				})
+				.then((cachedUserDocs) => {
 					cachedUserDocs = cachedUserDocs.rows;
 					let updatedUserDocs = [];
 					let hasProfileChanged = false;
@@ -567,13 +544,11 @@ Polymer({
 					}
 					return localCachedUserDB.bulkDocs(updatedUserDocs);
 				});
-
-
-			}).then((result) => {
+			})
+			.then((result) => {
 				this.hasCachedUserDB = true;
-			}).catch((err) => {
-				console.error(err);
-			});
+			})
+			.catch((err) => console.error);
 
 		},
 
@@ -593,7 +568,7 @@ Polymer({
 				startkey: 'annotation',
 				endkey: 'annotation\uffff'
 			})
-			.then(result => {
+			.then((result) => {
 				annotations = result.rows;
 				return this.updateCachedUserDB(annotations);
 			})
@@ -611,9 +586,7 @@ Polymer({
 						doc.creatorProfile = creatorProfile;
 						return doc;
 					})
-					.catch((err_) => {
-						console.error(err_);
-					});
+					.catch(err_ => console.error);
 
 					updatedAnnotations.push(updatedAnnotation);
 				}
@@ -662,13 +635,11 @@ Polymer({
 				.then((doc) => {
 					return localProjectDB.getAttachment(doc.activeTopic, 'file');
 				})
-				.then(blob => {
+				.then((blob) => {
 					this.renderView.file = blob;
 					return Promise.resolve();
 				})
-				.catch((err) => {
-					console.log(err);
-				});
+				.catch((err) => console.log);
 			}
 
 			this.getAnnotations().then(annotations => {
@@ -708,9 +679,7 @@ Polymer({
 		updateProjectList: function () {
 			return localInfoDB.get('projectsInfo').then((doc) => {
 				this.set('projects', doc.projects);
-			}).catch((err) => {
-				console.log(err);
-			});
+			}).catch((err) => console.log;);
 		},
 
 		toggleDashboard: function (e) {
@@ -749,9 +718,6 @@ Polymer({
 			this.labelHoverTimeout = setTimeout(() => {
 				let annotationBox = document.getElementById('annotationbox_' + e.detail);
 				annotationBox.scrollIntoView({block: 'end', behavior: 'smooth'});
-
-				// let index = this.annotations.findIndex((annotation) => annotation._id === e.detail);
-				// this.$.annotationList.scrollToIndex(index);
 			}, 500);
 		},
 		annotationBoxClicked: function (e) {
