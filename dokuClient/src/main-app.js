@@ -9,13 +9,11 @@ const PORT = '80';
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
 
-var annotationElements = new Map();
-
 
 Polymer({
-
+	
 	is: 'main-app',
-
+	
 	properties: {
 		objectTool: {
 			type: 'Object'
@@ -25,86 +23,86 @@ Polymer({
 			notify: true,
 			observer: '_selectedAnnotationChanged'
 		}
-
+		
 	},
 	observers: [
 	],
 	
 	attached: function () {
 		document.app = this;
-
+		
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.hasCachedUserDB = false;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
-
-			this.renderView = document.querySelector('render-view');
-
-			localInfoDB = new PouchDB('info');
-			remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
-			localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
-			localInfoDB.changes( {live: true, since: 'now'} )
-			.on('change', this.updateProjectList)
-			.on('error', err => console.log);
-
-			this.updateProjectList();
-			// Contains public user info (color, name) and is used for offline situations
-			// and to reduce traffic.
-			localCachedUserDB = new PouchDB('localCachedUserDB');
-			userDB = new PouchDB(this.remoteUrl + '/_users');
-
-			this.loadPreferences().then(() => {
-				return new Promise((resolve, reject) => {
-					if(this.activeProfile === ''){
-						console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
-
-						let profileOverlay = document.querySelector('#profileSetupOverlay');
-
-						profileOverlay.addEventListener('iron-overlay-closed', (e) => {
-							this.setNewProfile({
-								prename: profileOverlay.prename,
-								surname: profileOverlay.surname,
-								color: profileOverlay.color,
-								email: profileOverlay.email
-							}).then((result) => { resolve(this.activeProfile) });
-						});
-						profileOverlay.open();
-
-					} else if(this.activeProfile !== undefined) {
-						resolve(this.activeProfile);
-					}
-				});
-
-			}).then(() => {
-				console.log('ok, loaded or created the active profile. Now check if there is an active project');
-				console.log(this.activeProject);
-				if( this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
-					this.projectOpened = false;
-					console.log('no active profile yet!');
-				} else {
-					this.projectOpened = true;
-					return this.switchProjectDB(this.activeProject);
+		
+		this.renderView = document.querySelector('render-view');
+		
+		localInfoDB = new PouchDB('info');
+		remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
+		localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
+		localInfoDB.changes( {live: true, since: 'now'} )
+		.on('change', this.updateProjectList)
+		.on('error', err => console.log);
+		
+		this.updateProjectList();
+		// Contains public user info (color, name) and is used for offline situations
+		// and to reduce traffic.
+		localCachedUserDB = new PouchDB('localCachedUserDB');
+		userDB = new PouchDB(this.remoteUrl + '/_users');
+		
+		this.loadPreferences().then(() => {
+			return new Promise((resolve, reject) => {
+				if(this.activeProfile === ''){
+					console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
+					
+					let profileOverlay = document.querySelector('#profileSetupOverlay');
+					
+					profileOverlay.addEventListener('iron-overlay-closed', (e) => {
+						this.setNewProfile({
+							prename: profileOverlay.prename,
+							surname: profileOverlay.surname,
+							color: profileOverlay.color,
+							email: profileOverlay.email
+						}).then((result) => { resolve(this.activeProfile) });
+					});
+					profileOverlay.open();
+					
+				} else if(this.activeProfile !== undefined) {
+					resolve(this.activeProfile);
 				}
-
-			}).then(() => {
-				return this.updateElements({updateFile: true});
 			});
-
-			window.addEventListener('resize', this.handleResize.bind(this));
-			window.addEventListener('keyup', this.keyUp.bind(this));
-
+			
+		}).then(() => {
+			console.log('ok, loaded or created the active profile. Now check if there is an active project');
+			console.log(this.activeProject);
+			if( this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
+				this.projectOpened = false;
+				console.log('no active profile yet!');
+			} else {
+				this.projectOpened = true;
+				return this.switchProjectDB(this.activeProject);
+			}
+			
+		}).then(() => {
+			return this.updateElements({updateFile: true});
+		});
+		
+		window.addEventListener('resize', this.handleResize.bind(this));
+		window.addEventListener('keyup', this.keyUp.bind(this));
+		
 	},
 	
 	connectSensors: function () {
 		let self = this;
 		self.sensorstatus = '(Sensor readouts not implemented in master branch yet)';
 		// Sample implementation using johnny five below:
-
-
+		
+		
 		// set for model: this.renderView.physicalModelRotation = this.euler;
 		// or for pen: 	this.renderView.physicalPenRotation = this.euler;
-
-
+		
+		
 		// example for model:
 		// If board already initialized, remove board and reset status message.
 		// if(this.board) {
@@ -113,7 +111,7 @@ Polymer({
 		// 	return;
 		// }
 		//
-
+		
 		//
 		// this.board = new five.Board({
 		// 	repl: false,
@@ -149,26 +147,26 @@ Polymer({
 		//
 		//
 		// this.board.on('fail', boardFailed);
-
-
-
-
+		
+		
+		
+		
 	},
-
+	
 	deleteProjectDB: function (project) {
-
+		
 		// HACK: Only in testing phase, any user can delete any project DB by
 		// modifying the array projectsInfo.projects of the `info` db
 		// In the future only allow db members to delete their project db, by modifying a users projects array.
 		return localInfoDB.get('projectsInfo').then((doc) => {
-
+			
 			let index;
 			for (var i = 0; i < doc.projects.length; i++) {
 				if(doc.projects[i]._id === project._id){
 					index = i;
 				}
 			}
-
+			
 			if(index === undefined) {
 				throw new Error('User tried to delete', project._id, 'but a DB with that name is not listed in the `info` db inside projectsInfo.projects. Perhaps the info DB wasnt properly created?');
 			} else {
@@ -180,12 +178,12 @@ Polymer({
 			console.error('something went wrong deleting', project._id);
 			console.error(err);
 		});
-
+		
 	},
-
+	
 	switchProjectDB: function(newProject) {
 		console.log('switch to projectDB with name', this.activeProject);
-
+		
 		// Reset check wether remote user db got cached, to allow for updatingthe cached
 		// when a project is switched
 		this.hasCachedUserDB = false;
@@ -193,16 +191,16 @@ Polymer({
 		this.annotations = [];
 		localProjectDB = new PouchDB(this.activeProject._id, {adapter: 'worker'});
 		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
-
+		
 		this.savePreferences();
-
+		
 		sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 			live: true,
 			retry: true
 		}).on('error', err => {
 			console.log('sync error', err);
 		});
-
+		
 		localProjectDB.changes({live: true, since: 'now', include_docs: true})
 		.on('change', (info) => {
 			// only update also the file (for the renderer) if it's not an annotation
@@ -218,20 +216,20 @@ Polymer({
 			this.updateTimeout = setTimeout(() => {
 				this.updateElements({updateFile: updateFile});
 			}, 30);
-
+			
 		})
 		.on('complete', function(info) {})
 		.on('error', function (err) {console.log(err)});
-
+		
 		localProjectDB.get('info').then(info => {
 			this.activeProject.activeTopic = info.activeTopic;
 			return this.updateElements({updateFile: true});
 		});
-
+		
 		// TODO: this.switchTopic().then(() => {
 		//  this.updateElements
 		// })
-
+		
 		return sync;
 	},
 	addTopic: function() {
@@ -246,10 +244,10 @@ Polymer({
 			description: 'a description to a topic'
 		});
 	},
-
+	
 	// this is an event handler, triggering on enter-key event in this.renderView
 	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[]}}) {
-
+		
 		let annotation = {
 			_id: 'annotation_' + new Date().toISOString(),
 			type: 'annotation',
@@ -266,24 +264,24 @@ Polymer({
 			position,
 			polygon
 		};
-
+		
 		return localProjectDB.put(annotation).catch(err => console.log);
 	},
-
+	
 	deleteAnnotation: function (annotation) {
-
+		
 		return localProjectDB.remove(annotation)
 		.catch((err) => {
 			console.error('error deleting', id);
 			console.error(err);
 		});
 	},
-
+	
 	login: function(user, password) {
 		return userDB.login(user, password);
 	},
 	loadPreferences: function() {
-
+		
 		return localInfoDB.get('_local/lastSession')
 		.then((preferences) => {
 			
@@ -295,7 +293,7 @@ Polymer({
 			} else {
 				throw	new Error('No preferences loaded.');
 			}
-
+			
 			return this.login(preferences.activeProfile.name, preferences.activeProfile.password);
 		})
 		.then(response => {
@@ -333,12 +331,12 @@ Polymer({
 				console.error('possible no internet connection, just use offline data for now', err);
 				return this.preferences;
 			}
-
+			
 		});
-
+		
 	},
 	savePreferences: function() {
-
+		
 		// _local/lastSession should exist because loadPreferences creates it.
 		return localInfoDB.get('_local/lastSession').then(doc => {
 			doc.activeProfile = this.activeProfile;
@@ -351,10 +349,10 @@ Polymer({
 		.catch( err => {
 			console.log('error in saving preferences', err);
 		});
-
+		
 	},
 	setNewProfile: function({prename, surname, email, color}) {
-
+		
 		let metadata = {
 			surname: surname,
 			prename: prename,
@@ -362,16 +360,16 @@ Polymer({
 			color: color,
 			creationDate: new Date().toISOString()
 		};
-
+		
 		let name = metadata.prename + metadata.surname;
 		// TODO: this is only a testing password for all users
 		let password = 'thisisasupersecrettestingpassworduntilthebeta';
-
+		
 		// Then set the current active profile to the new profile.
 		this.activeProfile = {name: name, password, metadata};
 		// FIXME: will be problematic when doing an offline 'signup'
 		// will need to redo the signup once possible
-
+		
 		// Before trying any network stuff, save preferences with locally created profile.
 		return this.savePreferences()
 		.then(() => {
@@ -395,34 +393,34 @@ Polymer({
 		// We will create a new db for the project.
 		// However, only server admins are allowed to create db's in couchdb,
 		// so we are sending a message via websockets to let the server create the DB.
-
+		
 		// FIXME: create some kind of queue in the preferences to send out the request
 		// at a later time when the server is offline.
-
+		
 		function normalizeCouchDBName(name) {
 			return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_$()+/-]/g, '$');
 		}
-
-
+		
+		
 		let topicID = 'topic_' + topicname;
 		let newProjectDescription = {
 			_id: 'project_' + (Date.now()) + '_' + normalizeCouchDBName(projectname),
 			name: projectname,
 			activeTopic: topicID
 		};
-
+		
 		userDB.getUser(this.activeProfile.name).then((response) => {
 			// Save intend of user to create new DB into it's 'projects' field.
 			// This field will get read on the server, which decices wether to create a
 			// DB for it!
-
+			
 			response.projects.push(newProjectDescription._id);
-
+			
 			return userDB.putUser(
 				this.activeProfile.name,
 				{metadata: {projects: response.projects}}
 			);
-
+			
 		})
 		.then(() => {
 			this.projectOpened = true;
@@ -436,10 +434,10 @@ Polymer({
 					return localInfoDB.put({_id: 'projectsInfo', projects: [newProjectDescription]});
 				}
 			});
-
+			
 			// Finally adding the new project to our app scope, notifying all listeners
 			this.push('projects', newProjectDescription);
-
+			
 			// independently of internet connection and remote DB already create local DB
 			// and add first topic with object/file
 			return new PouchDB(newProjectDescription._id).bulkDocs(
@@ -467,7 +465,7 @@ Polymer({
 				console.log(err);
 			});
 		},
-
+		
 		// Updates the cachedUserDB based on users in a list of annotations
 		// This is a bit of a crazy method, as there seems to be no working _users replication
 		// for public_fields, therefore bulk fetching user docs, comparing with a local cached
@@ -476,21 +474,21 @@ Polymer({
 		// So, If identical user doc/info/public_fields already in cache
 		// -> dont cache again as it is expensive (network traffic)
 		updateCachedUserDB: function (annotations) {
-
+			
 			// FUTURE TODO: implement timed queue to automaically do things like updating
 			// the user db cache etc. every once in a while (like every 10 minutes)
 			if(this.hasCachedUserDB === true) {
 				return;
 			}
-
+			
 			let userIDs = new Set();
 			let userNames = new Set();
-
+			
 			for (let annotation of annotations) {
 				userNames.add(annotation.doc.creator);
 				userIDs.add('org.couchdb.user:' + annotation.doc.creator);
 			}
-
+			
 			return userDB.allDocs({
 				keys: [...userIDs],
 				include_docs: true
@@ -503,23 +501,23 @@ Polymer({
 					return doc;
 				});
 				return userDocs;
-
+				
 			})
 			.then((userDocs) => {
-
+				
 				return localCachedUserDB.allDocs({
 					keys: [...userNames],
 					include_docs: true
-
+					
 				})
 				.then((cachedUserDocs) => {
 					cachedUserDocs = cachedUserDocs.rows;
 					let updatedUserDocs = [];
 					let hasProfileChanged = false;
 					let isNewProfile = false;
-
+					
 					for (var i = 0; i < userDocs.length; i++) {
-
+						
 						if((cachedUserDocs[i].error && cachedUserDocs[i].error === 'not_found')) {
 							// If user has never been cached before, mark as profile change
 							hasProfileChanged = isNewProfile = true;
@@ -532,7 +530,7 @@ Polymer({
 								}
 							}
 						}
-
+						
 						// If no change found, dont add the userdoc to the bulk update list
 						if(hasProfileChanged === true) {
 							// Use existing _rev if already not a newly cached profile
@@ -549,20 +547,20 @@ Polymer({
 				this.hasCachedUserDB = true;
 			})
 			.catch((err) => console.error);
-
+			
 		},
-
+		
 		// Get all annotation of current project.
 		// 1. Update localCachedUserDB based in annotation creators (if userDB is available)
 		// 2. Use localCachedUserDB to add profile info (color, name) to annotation.
 		// 3. return updated annotations.
 		getAnnotations: function() {
-
+			
 			if(localProjectDB === undefined) return false;
 			let creators = new Set();
 			let updatedCreators = new Set();
 			let annotations;
-
+			
 			return localProjectDB.allDocs({
 				include_docs: true,
 				startkey: 'annotation',
@@ -573,31 +571,31 @@ Polymer({
 				return this.updateCachedUserDB(annotations);
 			})
 			.then(() => {
-
+				
 				let promiseUserUpdates = [];
 				let updatedAnnotations = [];
-
+				
 				// Annotate/augment all annotation objects with a .creatorProfile field
 				// fetched from localCachedUserDB
 				for (let {doc} of annotations) {
-
+					
 					let updatedAnnotation = localCachedUserDB.get(doc.creator)
 					.then((creatorProfile) => {
 						doc.creatorProfile = creatorProfile;
 						return doc;
 					})
 					.catch(err_ => console.error);
-
+					
 					updatedAnnotations.push(updatedAnnotation);
 				}
-
+				
 				return Promise.all(updatedAnnotations);
 			});
 		},
-
-
+		
+		
 		onAnnotationEdit: function(evt) {
-
+			
 			// emitted when user edits text in annotationbox and hits enter
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 				doc.description = evt.detail.newAnnotation.description;
@@ -605,31 +603,31 @@ Polymer({
 				// TODO: get colors from CSS, so it stays in one place?
 				switch (doc.status) {
 					case 'comment':
-						doc.statusColor = 'blue';
+					doc.statusColor = 'blue';
 					break;
 					case 'task':
-						doc.statusColor = 'yellow';
+					doc.statusColor = 'yellow';
 					break;
-
+					
 					case 'problem':
-						doc.statusColor = 'orange';
+					doc.statusColor = 'orange';
 					break;
 					default:
-
+					
 				}
-
+				
 				return localProjectDB.put(doc).then((value) => {});
 				// after put into DB, DB change event should be triggered automatically to update
 			});//.then(() => {updateElements()})
 		},
-
+		
 		onAnnotationDelete: function(evt) {
 			return this.deleteAnnotation(evt.detail);
 		},
-
+		
 		updateElements: function(options) {
 			if(localProjectDB === undefined) return;
-
+			
 			if((options.updateFile && options.updateFile === true)) {
 				localProjectDB.get('info')
 				.then((doc) => {
@@ -641,7 +639,7 @@ Polymer({
 				})
 				.catch((err) => console.log);
 			}
-
+			
 			this.getAnnotations().then(annotations => {
 				this.annotations = annotations;
 			});
@@ -660,39 +658,39 @@ Polymer({
 			// 	completeReset();
 			// }
 		},
-
+		
 		handleCreateProject: function() {
 			let projectOverlay = document.querySelector('#projectSetupOverlay');
 			projectOverlay.addEventListener('iron-overlay-closed', (e) => {
-
+				
 				this.setNewProject({
 					projectname: projectOverlay.projectname,
 					topicname: projectOverlay.topicname,
 					file: projectOverlay.file,
 					emails: ['test@test.test']
 				});
-
+				
 			});
 			projectOverlay.open();
 		},
-
+		
 		updateProjectList: function () {
 			return localInfoDB.get('projectsInfo').then((doc) => {
 				this.set('projects', doc.projects);
 			}).catch((err) => console.log);
 		},
-
+		
 		toggleDashboard: function (e) {
 			this.$.dashboard.toggle();
 			this.$.projectMenuItem.classList.toggle('selected');
 		},
-
+		
 		handleSwitchProject: function (e) {
 			return this.switchProjectDB(e.detail);
 		},
-
+		
 		handleDeleteProject: function (e) {
-
+			
 			dialog.showMessageBox({
 				type: 'info',
 				buttons: ['cancel', 'delete local and remote project files'],
@@ -705,15 +703,15 @@ Polymer({
 				if(response === 1) this.deleteProjectDB(e.detail);
 			});
 		},
-
+		
 		resetLocalDB: function (e) {
 			ipcRenderer.send('asynchronous-message', 'resetLocalDB');
 		},
-
+		
 		mouseOutAnnotationLabel: function (e) {
 			clearTimeout(this.labelHoverTimeout);
 		},
-
+		
 		mouseOverAnnotationLabel: function (e) {
 			this.labelHoverTimeout = setTimeout(() => {
 				let annotationBox = document.getElementById('annotationbox_' + e.detail);
@@ -733,7 +731,7 @@ Polymer({
 			this.objectTool = this.$.toolBox.selected;
 			console.log(this.objectTool);
 		}
-
-
-
+		
+		
+		
 	});
