@@ -708,7 +708,7 @@ Polymer({
 			if((options.updateFile && options.updateFile === true)) {
 				localProjectDB.get('info')
 				.then((doc) => {
-					return localProjectDB.getAttachment(doc.activeTopic, 'file')
+					return localProjectDB.getAttachment(doc.activeTopic, 'file');
 				})
 				.then(blob => {
 					this.renderView.file = blob;
