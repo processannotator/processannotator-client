@@ -25,7 +25,7 @@ var init = function () {
         if (!err_) {
           info = nano.use('info');
           info.insert({ _id: 'projectsInfo', projects: [] }, function(err__, body_) {
-            if (err__.statusCode && err__.statusCode !== 409) console.log(err__);
+            if (err__ && err__.statusCode && err__.statusCode !== 409) console.log(err__);
             listenForInfoChanges();
           });
         }
