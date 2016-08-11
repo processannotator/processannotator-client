@@ -3,8 +3,8 @@
 var fs = require('fs');
 var config = JSON.parse(fs.readFileSync(__dirname + '/config.json', 'utf8'));
 
-var WebSocketServer = require('ws').Server
-, wss = new WebSocketServer({ port: 7000 });
+// var WebSocketServer = require('ws').Server
+// var wss = new WebSocketServer({ port: 7000 });
 
 let nano = require('nano')('http://' + config.admin + ':' + config.adminpassword + '@localhost:5984');
 let users = nano.use('_users');
@@ -17,6 +17,16 @@ let auth;
 // Init design functions and the info DB
 // Wont do anything if they exist already
 var init = function () {
+
+  nano.db.get('info', function(err, body) {
+  if (!err) {
+    console.log(body);
+    return;
+  } else {
+    console.log(err);
+    return;
+  }
+});
 
   nano.db.create('info', function(err, body) {
     if (!err) {
@@ -166,9 +176,6 @@ function isProjectsInfo(doc, req) {
 
 
 
-
-
-
 var createDB = function (projectname) {
   return new Promise((resolve, reject) => {
 
@@ -204,36 +211,36 @@ var createDB = function (projectname) {
   });
 };
 
-  wss.on('connection', function connection(ws) {
-    console.log('new connection');
-
-    ws.on('close', function closing() {
-      console.log('disconnected');
-    });
-    ws.on('message', function incoming(rawmessage) {
-      console.log('received: %s', rawmessage);
-      let message = JSON.parse(rawmessage);
-
-      // handle different messages
-      switch (message.type) {
-        // case 'createDB':
-        // let response = {type: 'createDB', projectname: message.projectname};
-        //
-        // createDB(message).then(result => {
-        //   response.successful = true;
-        //   ws.send(JSON.stringify(response));
-        // }).catch(err => {
-        //   response.successful = false;
-        //   ws.send(JSON.stringify(response));
-        // });
-        // break;
-        default:
-
-      }
-    });
-
-
-  });
+  // wss.on('connection', function connection(ws) {
+  //   console.log('new connection');
+  //
+  //   ws.on('close', function closing() {
+  //     console.log('disconnected');
+  //   });
+  //   ws.on('message', function incoming(rawmessage) {
+  //     console.log('received: %s', rawmessage);
+  //     let message = JSON.parse(rawmessage);
+  //
+  //     // handle different messages
+  //     switch (message.type) {
+  //       // case 'createDB':
+  //       // let response = {type: 'createDB', projectname: message.projectname};
+  //       //
+  //       // createDB(message).then(result => {
+  //       //   response.successful = true;
+  //       //   ws.send(JSON.stringify(response));
+  //       // }).catch(err => {
+  //       //   response.successful = false;
+  //       //   ws.send(JSON.stringify(response));
+  //       // });
+  //       // break;
+  //       default:
+  //
+  //     }
+  //   });
+  //
+  //
+  // });
 
 
 init();
