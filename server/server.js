@@ -21,7 +21,8 @@ var init = function () {
     // Create info DB if it doesn't exist yet
     if (err && err.statusCode === 404) {
       nano.db.create('info', function(err_) {
-        if (!err) {
+
+        if (!err_) {
           info = nano.use('info');
           info.insert({ _id: 'projectsInfo', projects: [] }, function(err__, body_) {
             if (err__.statusCode && err__.statusCode !== 409) console.log(err__);
