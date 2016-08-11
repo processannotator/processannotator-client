@@ -15,26 +15,23 @@ let auth;
 
 
 // Init design functions and the info DB
-// Wont do anything if they exist already
 var init = function () {
 
   nano.db.get('info', function(err, body) {
-  if (!err) {
-    console.log(body);
-    return;
-  } else {
-    console.log(err);
-    return;
-  }
-});
-
-  nano.db.create('info', function(err, body) {
-    if (!err) {
-      info.insert({ _id: 'projectsInfo', projects: [] }, function(err_, body_) {
-        if (err_.statusCode && err_.statusCode !== 409) console.log(err);
+    // Create info DB if it doesn't exist yet
+    if (err && err.statusCode === 404) {
+      nano.db.create('info', function(err_) {
+        if (!err) {
+          info = nano.use('info');
+          info.insert({ _id: 'projectsInfo', projects: [] }, function(err__, body_) {
+            if (err__.statusCode && err__.statusCode !== 409) console.log(err__);
+          });
+        }
       });
     }
   });
+
+
 
   info = nano.use('info');
 
