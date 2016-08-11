@@ -25,15 +25,19 @@ var init = function () {
           info = nano.use('info');
           info.insert({ _id: 'projectsInfo', projects: [] }, function(err__, body_) {
             if (err__.statusCode && err__.statusCode !== 409) console.log(err__);
+            listenForInfoChanges();
           });
         }
       });
+    } else {
+      info = nano.use('info');
+      listenForInfoChanges();
     }
   });
 
 
 
-  info = nano.use('info');
+
 
   // To disallow anonymous users to delete other users and only to add own docs,
   // add following design document to _users db:
@@ -242,4 +246,3 @@ var createDB = function (projectname) {
 
 init();
 listenForNewUsers();
-listenForInfoChanges();
