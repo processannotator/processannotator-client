@@ -1,58 +1,56 @@
 
-	<script src="../bower_components/webcomponentsjs/webcomponents.min.js"></script>
+<script src="../bower_components/webcomponentsjs/webcomponents.min.js"></script>
 
-	<script src="../node_modules/pouchdb/dist/pouchdb.min.js"></script>
-	<script src="../node_modules/pouchdb-authentication/dist/pouchdb.authentication.min.js"></script>
-	<script src="../node_modules/pouchdb-all-dbs/dist/pouchdb.all-dbs.min.js"></script>
-	<script src="../node_modules/worker-pouch/dist/pouchdb.worker-pouch.min.js"></script>
-	<script src="../node_modules/pouchdb-upsert/dist/pouchdb.upsert.min.js"></script>
-
-
-	<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
-	<link rel="import" href="../bower_components/iron-icons/image-icons.html">
-	<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
-	<link rel="import" href="../bower_components/iron-list/iron-list.html">
-	<link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
-
-	<link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
-	<link rel="import" href="../bower_components/neon-animation/neon-animatable.html">
-	<link rel="import" href="../bower_components/neon-animation/neon-animations.html">
-	<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
-	<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
-	<link rel="import" href="../bower_components/paper-button/paper-button.html">
-	<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
-
-  <link href="main-app.css" rel="stylesheet">
-	<link rel="import" href="profile-setup-overlay.html">
-	<link rel="import" href="project-setup-overlay.html">
-	<link rel="import" href="annotation-box.html">
-	<link rel="import" href="render-view.html">
-	<link rel="import" href="dashboard.html">
-
-  <dom-module id="main-app">
-
-	<style is="custom-style">
-	iron-icon.iron-selected {
-		background-color: none;
-	}
-
-	iron-icon:not(.iron-selected):hover {
-		/*--iron-icon-fill-color: blue;*/
-		background-color: rgb(98, 98, 98)
-	}
-
-	#dashboard {
-		min-height:1vh;
-	}
+<script src="../node_modules/pouchdb/dist/pouchdb.min.js"></script>
+<script src="../node_modules/pouchdb-authentication/dist/pouchdb.authentication.min.js"></script>
+<script src="../node_modules/pouchdb-all-dbs/dist/pouchdb.all-dbs.min.js"></script>
+<script src="../node_modules/worker-pouch/dist/pouchdb.worker-pouch.min.js"></script>
+<script src="../node_modules/pouchdb-upsert/dist/pouchdb.upsert.min.js"></script>
 
 
-	</style>
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
+
+<link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animatable.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animations.html">
+<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+
+<link href="main-app.css" rel="stylesheet">
+<link rel="import" href="profile-setup-overlay.html">
+<link rel="import" href="project-setup-overlay.html">
+<link rel="import" href="annotation-box.html">
+<link rel="import" href="render-view.html">
+<link rel="import" href="dashboard.html">
+
+<dom-module id="main-app">
+
+<style is="custom-style">
+iron-icon.iron-selected {
+	background-color: none;
+}
+
+iron-icon:not(.iron-selected):hover {
+	/*--iron-icon-fill-color: blue;*/
+	background-color: rgb(98, 98, 98)
+}
+
+
+
+
+</style>
 
 
 
 <body>
 
-<template>
+	<template>
 
 
 		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
@@ -61,90 +59,98 @@
 		</project-setup-overlay>
 
 		<!-- TODO: use paper-header-panel for toggling and shit -->
-	<div class="top-container">
+		<div class="top-container">
 
-		<div class="main-container">
+			<div class="main-container">
 
-			<div class="main menu">
-				<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
-				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
-				<paper-button disabled class="menu-item">TOPIC</paper-button>
-				<paper-button disabled class="menu-item">OBJECT</paper-button>
-				<paper-button class="menu-item" on-tap="connectSensors">CONNECT SENSORS {{sensorstatus}}</paper-button>
+				<div class="menu" id="main-menu">
+					<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
+					<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
+					<paper-button disabled class="menu-item">TOPIC</paper-button>
+					<paper-button disabled class="menu-item">OBJECT</paper-button>
+					<paper-button class="menu-item" on-tap="connectSensors">CONNECT SENSORS {{sensorstatus}}</paper-button>
 
-				<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>
-			</div>
-
-		<div id="workspace">
+					<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>
+				</div>
 
 
-			<dash-board id="dashboard" remote-url="[[remoteUrl]]" on-boom="handleCreateProject" projects="[[projects]]" on-switch-project-click="handleSwitchProject" on-delete-project-click="handleDeleteProject"></dash-board>
-			<div id="objectview">
-				<!-- <div class="tutorial">
-					<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
-				</div> -->
-
-				<render-view id="renderView" annotations="[[annotations]]" on-create-annotation="addAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}">  </render-view>
+				<div id="workspace">
 
 
-				<iron-selector id="toolBox" attr-for-selected="name" fallback-selection="none" selected="none" on-iron-select="toolChanged">
-					<iron-icon class="tool-box-icon" name="none">click</iron-icon>
-					<iron-icon class="tool-box-icon" name="polygon" src="../images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
-					<iron-icon class="tool-box-icon" name="compare" src="../images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
-					<iron-icon class="tool-box-icon" name="freehand" src="../images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
-					<iron-icon class="tool-box-icon" name="text" src="../images/IconTool_BLACK/IconTools_Text_black.svg"></iron-icon>
-				</iron-selector>
-			</div>
+						<div class="menu" id="tool-menu">
+							<iron-selector id="tool-selector" attr-for-selected="name" fallback-selection="none" selected="none" on-iron-select="toolChanged">
+							<iron-icon class="tool-box-icon" name="none">click</iron-icon>
+							<iron-icon class="tool-box-icon" name="polygon" src="../images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="compare" src="../images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="freehand" src="../images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="text" src="../images/IconTool_BLACK/IconTools_Text_black.svg"></iron-icon>
+						</iron-selector>
+						</div>
+
+
+
+					<dash-board id="dashboard" remote-url="[[remoteUrl]]" on-boom="handleCreateProject" projects="[[projects]]" on-switch-project-click="handleSwitchProject" on-delete-project-click="handleDeleteProject"></dash-board>
+
+
+						<!-- <div class="tutorial">
+						<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
+					</div> -->
+
+					<render-view id="renderView" annotations="[[annotations]]" on-create-annotation="addAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}">
+					</render-view>
+
+
+
+		</div>
+
+
+
+
+	</div>
+
+	<div class="side-container">
+		<!--  IDEA: use paper-drawer-panel-->
+
+		<div class="side menu">
+
+			<div class="menu-item">Filter by</div>
+			<div class="menu-item"><i>search for</i></div>
+		</div>
+
+
+		<div id="annotationList">
+			<template is="dom-repeat" id="annotationListTemplate"  items="{{annotations}}" as="item">
+				<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDelete" on-tap="annotationBoxClicked"></annotation-box>
+			</template>
+		</div>
+		<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
+
+
+
+		<!-- <iron-list id="annotationList" items="[[annotations]]" as="item" on-selected-item-changed="annotationSelected" selected-items="{{selectedAnnotation}}" selection-enabled>
+		<template id="annotationListTemplate">
+		<annotation-box annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
+	</template>
+</iron-list> -->
+
 </div>
 
+</div>
 
+<div class="session-container">
 
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
 
-		</div>
-
-		<div class="side-container">
-			<!--  IDEA: use paper-drawer-panel-->
-
-			<div class="side menu">
-
-				<div class="menu-item">Filter by</div>
-				<div class="menu-item"><i>search for</i></div>
-			</div>
-
-
-	<div id="annotationList">
-		<template is="dom-repeat" id="annotationListTemplate"  items="{{annotations}}" as="item">
-			<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDelete" on-tap="annotationBoxClicked"></annotation-box>
-		</template>
-	</div>
-	<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
-
-
-
-			<!-- <iron-list id="annotationList" items="[[annotations]]" as="item" on-selected-item-changed="annotationSelected" selected-items="{{selectedAnnotation}}" selection-enabled>
-	      <template id="annotationListTemplate">
-					<annotation-box annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
-	      </template>
-	    </iron-list> -->
-
-		</div>
-
-	</div>
-
-	<div class="session-container">
-
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-		<div class="session-box"></div>
-
-		<!-- TODO: create custom web components 'session' and 'timeline' -->
-		<!-- <timeline></timeline> -->
-	</div>
+	<!-- TODO: create custom web components 'session' and 'timeline' -->
+	<!-- <timeline></timeline> -->
+</div>
 
 </template>
 
