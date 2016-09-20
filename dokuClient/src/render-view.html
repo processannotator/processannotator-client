@@ -93,23 +93,22 @@
 		ready: function() {
 			// doesnt work with listeners on this very element
 			// so create start event listener
-			console.log('renderview ready')
-			this.ready = true
-			this.rendering = false
+			console.log('renderview ready');
+			this.ready = true;
+			this.rendering = false;
 			document.addEventListener('keydown', this.keydown.bind(this));
 		},
 		startRendering: function() {
 			if(this.rendering === false) {
 				console.log('started rendering');
-				this.rendering = true
-				animate()
+				this.rendering = true;
+				animate();
 			}
 		},
 		animate: function () {
 			requestAnimationFrame(this.animate.bind(this));
 			this.light.position.copy(camera.position);
 			this.spotLight.position.copy(camera.position);
-
 			controls.update();
 		},
 		render: function() {
@@ -118,7 +117,7 @@
 		},
 
 		resetGroups: function () {
-			// create group for text annotations in 3D
+			// Remove labels and annotations
 			if(this.labelGroup && this.annotationGlGroups) {
 
 				for( var i = this.labelGroup.children.length - 1; i >= 0; i--) {
@@ -138,8 +137,8 @@
 
 			this.modus = {modelGrabbing: false};
 
-			let width = this.parentNode.getBoundingClientRect().width
-			let height = this.parentNode.getBoundingClientRect().height
+			let width = this.parentNode.getBoundingClientRect().width;
+			let height = this.parentNode.getBoundingClientRect().height;
 			this.standardDistance = 500;
 			camera = new THREE.PerspectiveCamera(50, width / height, this.standardDistance / 10, this.standardDistance * 10);
 			camera.position.set(this.standardDistance, this.standardDistance, this.standardDistance);
@@ -152,13 +151,15 @@
 			glRenderer.setSize(width, height);
 
 
-			// let both renderers/canvases overlap
-			glRenderer.domElement.style.position = 'absolute';
-			glRenderer.domElement.style.top = 0;
-
 			// cssRenderer is used for font rendering
 			cssRenderer = new THREE.CSS3DRenderer();
 			cssRenderer.setSize(width, height);
+
+			// let both renderers/canvases overlap
+			glRenderer.domElement.style.position = 'absolute';
+			glRenderer.domElement.style.top = 0;
+			cssRenderer.domElement.style.position = 'absolute';
+			cssRenderer.domElement.style.top = 0;
 
 
 			this.meshMaterial = new THREE.MeshStandardMaterial({
@@ -359,13 +360,13 @@
 			annotationGlGroup.add(arrow);
 
 
-			// HACK:create sphere for testing position!!!!!!!!!!
-			let sph = new THREE.Mesh(
+			// HACK:create sphere for testing position
+			let sphere = new THREE.Mesh(
 				new THREE.SphereGeometry(this.standardDistance / 35, 6, 6),
 				new THREE.MeshBasicMaterial({ color: 0xff0000})
 			);
-			sph.position.copy(annotation.position);
-			annotationGlGroup.add(sph);
+			sphere.position.copy(annotation.position);
+			annotationGlGroup.add(sphere);
 
 			annotation3DObject.arrow = arrow;
 
@@ -409,7 +410,7 @@
 		},
 
 		updateMouse: function (mouseEvent) {
-			let canvas = this.$$('canvas')
+			let canvas = this.$$('canvas');
 			this.mouse = new THREE.Vector2(
 				(mouseEvent.layerX / canvas.width) * 2 - 1,
 				-((mouseEvent.layerY / canvas.height) * 2 - 1)
