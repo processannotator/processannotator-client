@@ -14,7 +14,7 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "^1.4",
+    "polymer": "Polymer/polymer#^1.6.1",
     "paper-material": "PolymerElements/paper-material#^1.0.6",
     "paper-dialog": "PolymerElements/paper-dialog#^1.0.4",
     "neon-animation": "PolymerElements/neon-animation#^1.2.3",
