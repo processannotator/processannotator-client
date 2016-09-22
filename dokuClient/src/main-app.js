@@ -728,7 +728,7 @@ Polymer({
 			this.renderView.focusAnnotation(this.selectedAnnotation);
 		},
 		toolChanged: function (e) {
-			this.objectTool = this.$.toolBox.selected;
+			this.objectTool = this.$.toolSelector.selected;
 			console.log(this.objectTool);
 		}
 

@@ -2,7 +2,7 @@
 
 
 const electron = require('electron');
-require('electron-reload')(__dirname);
+// require('electron-reload')(__dirname);
 
 const app = electron.app; // Module to control application life.
 const ipcMain = electron.ipcMain; // module for interprocess communication (renderer <-> backend)
