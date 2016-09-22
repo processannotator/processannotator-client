@@ -2,6 +2,10 @@
   "name": "DokuClient",
   "version": "0.2.0",
   "main": "main.js",
+  "authors": [
+    "Tom Brewe <tom.brewe@fu-berlin.de>",
+    "Anouk Hoffmeister <anouk.hoffmeister@hu-berlin.de>"
+  ],
   "dependencies": {
     "pouchdb": "^5.3.2",
     "pouchdb-all-dbs": "^1.0.1",

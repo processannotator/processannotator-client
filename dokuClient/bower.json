@@ -2,7 +2,8 @@
   "name": "dokuClient",
   "version": "0.1.0",
   "authors": [
-    "Tom Brewe <tom.brewe@fu-berlin.de>"
+    "Tom Brewe <tom.brewe@fu-berlin.de>",
+    "Anouk Hoffmeister <anouk.hoffmeister@hu-berlin.de>"
   ],
   "main": "main.js",
   "license": "MIT",
