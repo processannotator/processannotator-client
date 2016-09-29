@@ -136,6 +136,8 @@ body {
 
 
 #workspace {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   position: relative;
   min-height: 50vh;
@@ -143,27 +145,19 @@ body {
   background-color: #d2d1d1;
 }
 
-/*Both childs of workspace (Dashboard an Objectview) have same base properties */
-/*HACK: Why again do we set all childs to position absolute again? It break label positions
-when removed and/or disables clickrotate in 3d.
-*/
-#workspace > * {
-position: absolute;
-}
-
 #renderview {
 z-index: 1;
-position: absolute;
 height: 100%;
 width: 100%;
 }
 
 #dashboard {
   /*dashboard is above objectview:*/
-  z-index: 2;
+  z-index: 4;
   width: 100%;
   min-height:1vh;
   height: 100%;
+  position: absolute;
   /*defaults to not visible:*/
   display: none;
 
