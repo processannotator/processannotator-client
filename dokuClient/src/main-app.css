@@ -179,8 +179,14 @@ width: 100%;
 }
 
 
-#tool-selector > iron-icon {
-  --iron-icon-fill-color: white;
+
+iron-icon.iron-selected {
+	background-color: rgba(233, 233, 233, 0.3);
+}
+
+iron-icon:not(.iron-selected):hover {
+	/*--iron-icon-fill-color: blue;*/
+	background-color: rgb(98, 98, 98)
 }
 
 

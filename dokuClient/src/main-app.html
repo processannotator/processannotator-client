@@ -32,13 +32,10 @@
 <dom-module id="main-app">
 
 <style is="custom-style">
-iron-icon.iron-selected {
-	background-color: none;
-}
 
-iron-icon:not(.iron-selected):hover {
-	/*--iron-icon-fill-color: blue;*/
-	background-color: rgb(98, 98, 98)
+iron-icon {
+  --iron-icon-height: 100%;
+  --iron-icon-width: 2em;
 }
 
 
@@ -79,11 +76,11 @@ iron-icon:not(.iron-selected):hover {
 
 						<div class="menu" id="tool-menu">
 							<iron-selector id="toolSelector" attr-for-selected="name" fallback-selection="none" selected="none" on-iron-select="toolChanged">
-							<iron-icon class="tool-box-icon" name="none">click</iron-icon>
-							<iron-icon class="tool-box-icon" name="polygon" src="../images/IconTool_BLACK/IconTools_Path_black.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" name="compare" src="../images/IconTool_BLACK/IconTools_Compare_black.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" name="freehand" src="../images/IconTool_BLACK/IconTools_Brush_black.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" name="text" src="../images/IconTool_BLACK/IconTools_Text_black.svg"></iron-icon>
+							<!-- <iron-icon class="tool-box-icon" name="none">click</iron-icon> -->
+							<iron-icon class="tool-box-icon" name="polygon" src="../images/Vector-01.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="compare" src="../images/Compare-01.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="freehand" src="../images/Brush-01.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="text" src="../images/Text-01.svg"></iron-icon>
 						</iron-selector>
 						</div>
 
