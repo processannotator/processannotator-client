@@ -7,11 +7,10 @@
     "Anouk Hoffmeister <anouk.hoffmeister@hu-berlin.de>"
   ],
   "dependencies": {
-    "pouchdb": "^5.3.2",
+    "pouchdb": "^5.4.5",
     "pouchdb-all-dbs": "^1.0.1",
-    "pouchdb-authentication": "^0.5.1",
-    "pouchdb-upsert": "^2.0.2",
-    "worker-pouch": "^1.0.2"
+    "pouchdb-authentication": "^0.5.5",
+    "worker-pouch": "^1.1.1"
   },
   "scripts": {
     "build": "babel src/main-app.js --out-file src/main-app-bundle.js --source-maps",
@@ -24,7 +23,7 @@
     "devtron": "^1.1.1",
     "electron-packager": "^8.1.0",
     "electron-prebuilt": "^1.4.2",
-    "electron-rebuild": "^1.1.5",
+    "electron-rebuild": "^1.2.1",
     "electron-reload": "^1.0.2"
   }
 }
