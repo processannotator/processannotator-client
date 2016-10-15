@@ -124,52 +124,7 @@ Polymer({
 
 	},
 	connectSensors: function () {
-		// These 128-Bit ID's correspond to the Nordic Semi-conductor 'UART' BLE service which is used by Adafruit and others.
-    var UART_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
-    var UART_CHAR_RX_UUID = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-    var UART_CHAR_TX_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
-
-		const filters = [{
-				name: 'Adafruit Bluefruit LE',
-				services: [UART_SERVICE_UUID]
-		}];
-		navigator.bluetooth.requestDevice({filters: filters})
-    .then(device => {
-      console.log('> Name:             ' + device.name);
-      console.log('> Id:               ' + device.id);
-      console.log('> UUIDs:            ' + device.uuids.join('\n' + ' '.repeat(20)));
-
-			console.log('Connecting to GATT Server...');
-			return device.gatt.connect();
-    })
-		.then(server => {
-			console.log('Getting Device Information Service...');
-			return server.getPrimaryService(UART_SERVICE_UUID);
-		})
-		.then(function (service) {
-				console.log('> Found event service');
-				const uartService = service;
-				return Promise.all([uartService.getCharacteristic(UART_CHAR_RX_UUID), uartService.getCharacteristic(UART_CHAR_TX_UUID)]);
-		}).then(function (characteristics) {
-				console.log('> Found read and write characteristics');
-				const [readCharacteristic, writeCharacteristic] = characteristics;
-				return readCharacteristic.startNotifications().then(function () {
-					console.log('> Started read notifications');
-					// console.log('> Initializing serial data parser');
-					const bno055 = new BNO055(state => renderView.physicalModelRotation = state.euler);
-					readCharacteristic.addEventListener('characteristicvaluechanged', function (event) {
-							console.log('> characteristicvaluechanged = ' + event.target.value + ' [' + event.target.value.byteLength + ']');
-							const dataView = event.target.value;
-							// for (let i = 0; i < dataView.byteLength; i++) {
-							// 	// Look into bno055.js from ble desktop example app / uartRx() function to find the parser logic
-							// 	bno055.push(dataView[i]);
-							// }
-					});
-			});
-		})
-    .catch(error => {
-      console.error('Argh! ' + error);
-    });
+		ipcRenderer.send('startScan');
 		// let self = this;
 		// If board already initialized, remove board and reset status message.
 		// if(this.board) {
@@ -202,19 +157,16 @@ Polymer({
 			// FIXME: Ok, the following is obviously not going to work
 			// because the user is no couchdb admin, handle this with nodejs
 			let remoteDeleteDB = new PouchDB(this.remoteUrl + '/' + project._id);
-		 return remoteDeleteDB.destroy();
-	 }).then((result) => {
-		 console.log(result);
-	 }).catch((err) => {
-		 alert(err);
-		 console.log(err);
-	 });
-
+      return remoteDeleteDB.destroy();
+    }).then((result) => {
+      console.log(result);
+    }).catch((err) => {
+      alert(err);
+      console.log(err);
+    });
 	},
 
 	switchProjectDB: function(newProject) {
-
-
 		// TODO: check if dname is a valid database name for a project
 		this.activeProject = newProject;
 		this.annotations = [];
