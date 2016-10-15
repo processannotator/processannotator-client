@@ -7,11 +7,12 @@
     "pouchdb": "^5.3.2",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.1",
-    "worker-pouch": "^1.0.2"
+    "worker-pouch": "^1.0.2",
+    "noble": "^1.1.0"
   },
   "scripts": {
     "build": "rollup -i src/main-app.js -o src/main-app-bundle.js",
-    "dev": "npm run build && (electron . &) && rollup --watch -i src/main-app.js -o src/main-app-bundle.js",
+    "dev": "npm run build && (electron . --dev &) && rollup --watch -i src/main-app.js -o src/main-app-bundle.js",
     "install": "bower install",
     "start": "npm run build && electron .",
     "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
