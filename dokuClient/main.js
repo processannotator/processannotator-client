@@ -7,10 +7,11 @@ const ipcMain = electron.ipcMain; // module for interprocess communication (rend
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
 const dialog = electron.dialog;
 
-
+// automatically reload the app when the bundle changes.
+require('electron-reload')(__dirname + '/src/main-app-bundle.js');
 
 app.commandLine.appendSwitch('enable-file-cookies');
-//app.commandLine.appendSwitch('enable-web-bluetooth');
+app.commandLine.appendSwitch('enable-web-bluetooth');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is GCed.
@@ -40,17 +41,18 @@ app.on('ready', function() {
 
 
 
-  webContents.on('select-bluetooth-device', (event, deviceList, callback) => {
-    event.preventDefault();
-    let result = deviceList.find((device) => {
-      return device.deviceName === 'test'
-    })
-    if (!result) {
-      callback('')
-    } else {
-      callback(result.deviceId)
-    }
-  });
+  // webContents.on('select-bluetooth-device', (event, deviceList, callback) => {
+    // event.preventDefault();
+		// debugger
+    // let result = deviceList.find((device) => {
+    //   return device.deviceName === 'test'
+    // })
+    // if (!result) {
+    //   callback('');
+    // } else {
+    //   callback(result.deviceId);
+    // }
+  // });
 
 
 	mainWindow.setAutoHideMenuBar(true);

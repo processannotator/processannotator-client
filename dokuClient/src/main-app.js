@@ -1,10 +1,11 @@
 /* eslint no-alert:0*/
 'use strict'; /*eslint global-strict:0*/
-var five = require('johnny-five')
 
-
-const ipcRenderer = require('electron').ipcRenderer;
-const {dialog} = require('electron').remote;
+import BNO055 from './bno055';
+const electron = require('electron');
+console.log(electron);
+const ipcRenderer = electron.ipcRenderer;
+const { dialog } = electron.remote;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
 
@@ -123,54 +124,77 @@ Polymer({
 
 	},
 	connectSensors: function () {
-		let self = this;
+		// These 128-Bit ID's correspond to the Nordic Semi-conductor 'UART' BLE service which is used by Adafruit and others.
+    var UART_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+    var UART_CHAR_RX_UUID = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+    var UART_CHAR_TX_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 
+		const filters = [{
+				name: 'Adafruit Bluefruit LE',
+				services: [UART_SERVICE_UUID]
+		}];
+		navigator.bluetooth.requestDevice({filters: filters})
+    .then(device => {
+      console.log('> Name:             ' + device.name);
+      console.log('> Id:               ' + device.id);
+      console.log('> UUIDs:            ' + device.uuids.join('\n' + ' '.repeat(20)));
+
+			console.log('Connecting to GATT Server...');
+			return device.gatt.connect();
+    })
+		.then(server => {
+			console.log('Getting Device Information Service...');
+			return server.getPrimaryService(UART_SERVICE_UUID);
+		})
+		.then(function (service) {
+				console.log('> Found event service');
+				const uartService = service;
+				return Promise.all([uartService.getCharacteristic(UART_CHAR_RX_UUID), uartService.getCharacteristic(UART_CHAR_TX_UUID)]);
+		}).then(function (characteristics) {
+				console.log('> Found read and write characteristics');
+				const [readCharacteristic, writeCharacteristic] = characteristics;
+				return readCharacteristic.startNotifications().then(function () {
+					console.log('> Started read notifications');
+					// console.log('> Initializing serial data parser');
+					const bno055 = new BNO055(state => renderView.physicalModelRotation = state.euler);
+					readCharacteristic.addEventListener('characteristicvaluechanged', function (event) {
+							console.log('> characteristicvaluechanged = ' + event.target.value + ' [' + event.target.value.byteLength + ']');
+							const dataView = event.target.value;
+							// for (let i = 0; i < dataView.byteLength; i++) {
+							// 	// Look into bno055.js from ble desktop example app / uartRx() function to find the parser logic
+							// 	bno055.push(dataView[i]);
+							// }
+					});
+			});
+		})
+    .catch(error => {
+      console.error('Argh! ' + error);
+    });
+		// let self = this;
 		// If board already initialized, remove board and reset status message.
-		if(this.board) {
-			this.board = undefined;
-			self.sensorstatus = '';
-			return;
-		}
-
-		self.sensorstatus = '(connecting…)';
-
-		this.board = new five.Board({
-			repl: false,
-			debug: true
-		});
-
-		function boardFailed(f) {
-			log
-			self.board = undefined;
-			self.sensorstatus = '(disconnected or error)';
-		}
-
-		self.boardConnectionTimeout = setTimeout(() => {
-			console.log('timeout');
-			boardFailed();
-		}, 10000);
-
-		this.board.on('ready', function() {
-			console.log('board is ready');
-			clearTimeout(self.boardConnectionTimeout);
-			let imu = new five.IMU({
-				controller: 'BNO055',
-				enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
-			});
-			self.sensorstatus = '(connected)';
-
-			// Update renderview with new physical rotation data.
-			imu.orientation.on('change', function() {
-				renderView.physicalModelRotation = this.euler;
-			});
-		});
-
-
-
-		this.board.on('fail', boardFailed);
+		// if(this.board) {
+		// 	this.board = undefined;
+		// 	self.sensorstatus = '';
+		// 	return;
+		// }
+		//
+		// function boardFailed(f) {
+		// 	log
+		// 	self.board = undefined;
+		// 	self.sensorstatus = '(disconnected or error)';
+		// }
+		//
+		// 	self.sensorstatus = '(connected)';
+		//
+		// 	// Update renderview with new physical rotation data.
+		// 	imu.orientation.on('change', function() {
+		// 		renderView.physicalModelRotation = this.euler;
+		// 	});
+		// });
+		// this.board.on('fail', boardFailed);
 
 	},
-	
+
 	deleteProjectDB: function (project) {
 		let localDeleteDB = new PouchDB(project._id);
 		console.log('really about to delete', project);
@@ -185,7 +209,7 @@ Polymer({
 		 alert(err);
 		 console.log(err);
 	 });
-	
+
 	},
 
 	switchProjectDB: function(newProject) {
