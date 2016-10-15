@@ -38,6 +38,7 @@ Polymer({
 
 	observers: [
 	],
+
 	attached: function () {
 		document.app = this;
 
@@ -76,8 +77,6 @@ Polymer({
 			this.loadPreferences().then(() => {
 				console.log('Loaded preferences.');
 
-
-
 				return new Promise((resolve, reject) => {
 					if(this.activeProfile === ''){
 						console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
@@ -93,12 +92,10 @@ Polymer({
 							}).then((result) => resolve(this.activeProfile));
 						});
 						profileOverlay.open();
-
 					} else if(this.activeProfile !== undefined) {
 						resolve(this.activeProfile);
 					}
 				});
-
 			}).then(() => {
 				console.log('ok, loaded or created the active profile. Now check if there is an active project');
 				console.log(this.activeProject);
@@ -110,44 +107,17 @@ Polymer({
 					this.projectOpened = true;
 					return this.switchProjectDB(this.activeProject);
 				}
-
-
 			}).then(() => {
-
 				console.log('continue');
 				this.updateElements({updateFile: true});
 			});
 
 			window.addEventListener('resize', this.handleResize.bind(this));
 			window.addEventListener('keyup', this.keyUp.bind(this));
-
-
 	},
+
 	connectSensors: function () {
 		ipcRenderer.send('startScan');
-		// let self = this;
-		// If board already initialized, remove board and reset status message.
-		// if(this.board) {
-		// 	this.board = undefined;
-		// 	self.sensorstatus = '';
-		// 	return;
-		// }
-		//
-		// function boardFailed(f) {
-		// 	log
-		// 	self.board = undefined;
-		// 	self.sensorstatus = '(disconnected or error)';
-		// }
-		//
-		// 	self.sensorstatus = '(connected)';
-		//
-		// 	// Update renderview with new physical rotation data.
-		// 	imu.orientation.on('change', function() {
-		// 		renderView.physicalModelRotation = this.euler;
-		// 	});
-		// });
-		// this.board.on('fail', boardFailed);
-
 	},
 
 	deleteProjectDB: function (project) {
@@ -248,6 +218,7 @@ Polymer({
 
 		return sync;
 	},
+
 	addTopic: function() {
 		// add new topic to active project
 		return localProjectDB.put({
@@ -289,11 +260,12 @@ Polymer({
 			console.log(err);
 		});
 	},
+
 	login: function(user, password) {
 		return userDB.login(user, password);
 	},
-	loadPreferences: function() {
 
+	loadPreferences: function() {
 		return localInfoDB.get('_local/lastSession')
 		.then((preferences) => {
 			console.log('preferences loaded?');
@@ -348,10 +320,9 @@ Polymer({
 				console.error('possible no internet connection, just use offline data for now', err);
 				return this.preferences;
 			}
-
 		});
-
 	},
+
 	savePreferences: function() {
 		console.log('saving preferences...');
 		// _local/lastSession should exist because loadPreferences creates it.
@@ -369,10 +340,9 @@ Polymer({
 			console.log('error in saving prefs');
 			console.log(err);
 		});
-
 	},
-	setNewProfile: function({prename, surname, email, color}) {
 
+	setNewProfile: function({prename, surname, email, color}) {
 		let metadata = {
 			surname: surname,
 			prename: prename,
@@ -409,6 +379,7 @@ Polymer({
 		})
 		.catch(err => console.error(err));
 	},
+
 	setNewProject: function({projectname, topicname, file, emails}) {
 		// Assumes current activeProfile as the creator.
 		// We will create a new db for the project.
@@ -447,9 +418,6 @@ Polymer({
 			// Save intend of user to create new DB into it's 'projects' field.
 			// This field will get read on the server, which decices wether to create a
 			// DB for it.
-
-
-
 
 			response.projects.push(newProjectDescription._id);
 			return userDB.putUser(
@@ -569,8 +537,8 @@ Polymer({
 				return Promise.all(updatedAnnotations);
 			});
 		},
-		onAnnotationEdit: function(evt) {
 
+		onAnnotationEdit: function(evt) {
 			// emitted when user edits text in annotationbox and hits enter
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 				doc.description = evt.detail.newAnnotation.description;
@@ -579,22 +547,21 @@ Polymer({
 				switch (doc.status) {
 					case 'comment':
 						doc.statusColor = 'blue';
-					break;
+						break;
 					case 'task':
 						doc.statusColor = 'yellow';
-					break;
-
+						break;
 					case 'problem':
 						doc.statusColor = 'red';
-					break;
-					default:
-
+						break;
+					default: break;
 				}
 
 				return localProjectDB.put(doc).then((value) => {});
 				// after put into DB, DB change event should be triggered automatically to update
 			});//.then(() => {updateElements()})
 		},
+
 		updateElements: function(options) {
 			if(localProjectDB === undefined) return;
 
@@ -614,43 +581,19 @@ Polymer({
 				this.annotations = annotations;
 			});
 		},
+
 		handleResize: function(event) {
 			if(renderView) {
 				renderView.resize();
 			}
 		},
+
 		keyUp: function(evt) {
 			// if(evt.keyCode === 189){
 			// 	console.log('complete reset');
 			// 	completeReset();
 			// }
 		},
-
-		// this.initWebsockets: function() {
-		// 	return new Promise((resolve, reject) => {
-		//
-		// 		ws = new WebSocket('ws://' + SERVERADDR + ':7000', ['protocolbla']);
-		//
-		// 		ws.onopen: function (event) {
-		// 			resolve(ws);
-		// 		};
-		//
-		// 		ws.onmessage: function (event) {
-		// 			let msg = JSON.parse(event.data);
-		// 			switch (msg.type) {
-		// 				case '':
-		// 				let e = new CustomEvent('db-' + msg.projectname + '-created', {detail: msg});
-		//
-		// 				console.log('attention, dispatching event', ('db-' + msg.projectname + '-created'), '!');
-		// 				this.dispatchEvent(e);
-		// 				break;
-		// 				default:
-		// 				console.log('unknown websockets event:', msg);
-		// 			}
-		// 		};
-		// 	});
-		//
-		// };
 
 		handleCreateProject: function() {
 			let projectOverlay = document.querySelector('#projectSetupOverlay');
@@ -674,17 +617,19 @@ Polymer({
 				console.log(err);
 			});
 		},
+
 		toggleDashboard: function (e) {
 			console.log('toggle dashboard');
 
 			this.$.dashboard.toggle();
 			this.$.projectMenuItem.classList.toggle('selected');
 			console.log(this.$.dashboard);
-
 		},
+
 		handleSwitchProject: function (e) {
 			this.switchProjectDB(e.detail);
 		},
+
 		handleDeleteProject: function (e) {
 			console.log(e.detail);
 			dialog.showMessageBox({
@@ -718,6 +663,7 @@ Polymer({
 				// this.$.annotationList.scrollToIndex(index);
 			}, 500);
 		},
+
 		annotationBoxClicked: function (e) {
 			e.target.classList.toggle('selectedAnnotation');
 			let item = this.$.annotationListTemplate.itemForElement(e.target);
@@ -725,25 +671,15 @@ Polymer({
 
 			console.log(this.selectedAnnotation);
 		},
+
 		_selectedAnnotationChanged: function (e) {
 			console.log('selected annotation changed');
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;
 			renderView.focusAnnotation(this.selectedAnnotation);
 		},
+
 		toolChanged: function (e) {
 			this.objectTool = this.$.toolBox.selected;
 			console.log(this.objectTool);
 		}
-
-
-
 	});
-
-	/////////////////////////////////////////////
-	// OLD STUFF down there. maybe useful later!?
-	/////////////////////////////////////////////
-
-	//
-	// ipcRenderer.on('asynchronous-reply', function(event, arg) {
-	//   console.log(arg); // prints 'pong'
-	// });
