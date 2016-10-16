@@ -700,11 +700,11 @@ Polymer({
 			ipc.on('connectStatus', (emitter, status, percent) => {
 				this.sensorStatus = `${status} (${percent}%)`;
 				console.log('Connect status:', status, percent);
+				// setTimeout(() => {
+				// 	this.bno055.straighten();
+				// }, 5000);
 				if (status === 'Connected') {
 					this.bno055.reset();
-					setTimeout(() => {
-						this.bno055.straighten();
-					}, 5000);
 				}
 			});
 
