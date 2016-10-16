@@ -45,7 +45,6 @@ export default class BNO055 {
       this.state.quatW
     );
     this.state.offsetQuat = currentQuat.conjugate();
-    this.callback(this.state);
     console.log('Orientation straightened.');
   }
 

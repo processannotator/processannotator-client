@@ -124,6 +124,50 @@
 
 		},
 
+		createPen() {
+			// Nesting: Offset -> Orientation -> Object
+
+			// Add physical pen model
+			this.penGroupGLOffset = new THREE.Group();
+			this.penGroupGLOrientation = new THREE.Group();
+			this.penGroupGLOffset.add(this.penGroupGLOrientation);
+			this.penGroupGL = new THREE.Object3D();
+			this.penGroupGLOrientation.add(this.penGroupGL);
+
+			glScene.add(this.penGroupGLOffset);
+			let penGeometry = new THREE.BoxBufferGeometry(
+				// 0.2 * this.standardDistance,
+				// 0.2 * this.standardDistance,
+				// this.standardDistance
+				this.standardDistance,
+				this.standardDistance,
+				this.standardDistance
+			);
+			let penMaterial = new THREE.MeshStandardMaterial({
+				side: THREE.DoubleSide,
+				color: 0x333333,
+				roughness: 0.75,
+				metalness: 0.2
+			});
+
+			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
+			this.physicalPenSpotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 0.3, 2.0 );
+			this.physicalPenModel.position.set(
+				// this.standardDistance,
+				0,
+				0,
+				0
+			);
+			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
+			this.penGroupGL.add( this.physicalPenModel );
+			this.penGroupGL.add( this.physicalPenSpotLight );
+
+			// let center = new THREE.Vector3(0, 0, 0);
+			// this.penGroupGLOffset.worldToLocal(center);
+			// this.physicalPenModel.lookAt(center);
+			// this.physicalPenSpotLight.lookAt(center);
+		},
+
 		attached: function() {
 
 			this.modus = {modelGrabbing: false};
@@ -165,41 +209,6 @@
 			this.light = new THREE.PointLight( 0xffffff, 1.2, 0 );
 			this.spotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 1, 2.0 );
 
-			// Add physical pen model
-			let center = new THREE.Vector3(0, 0, 0);
-			this.penGroupGL = new THREE.Object3D();
-			glScene.add(this.penGroupGL);
-			let penGeometry = new THREE.BoxBufferGeometry(
-				// 0.2 * this.standardDistance,
-				// 0.2 * this.standardDistance,
-				// this.standardDistance
-				this.standardDistance,
-				this.standardDistance,
-				this.standardDistance
-			);
-			let penMaterial = new THREE.MeshStandardMaterial({
-				side: THREE.DoubleSide,
-				color: 0x333333,
-				roughness: 0.75,
-				metalness: 0.2
-			});
-
-			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
-			this.physicalPenSpotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 0.3, 2.0 );
-			this.physicalPenModel.position.set(
-				// this.standardDistance,
-				0,
-				0,
-				0
-			);
-			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
-			this.penGroupGL.add( this.physicalPenModel );
-			this.penGroupGL.add( this.physicalPenSpotLight );
-
-			// this.penGroupGL.worldToLocal(center);
-			// this.physicalPenModel.lookAt(center);
-			// this.physicalPenSpotLight.lookAt(center);
-
 			glScene.add(this.light);
 			glScene.add(this.spotLight);
 
@@ -213,6 +222,7 @@
 			if (this.annotationGlGroups === undefined)
 				this.annotationGlGroups = new THREE.Object3D();
 
+			this.createPen();
 
 			//cssScene.add(this.labelGroup);
 			//glScene.add(this.annotationGlGroups);
@@ -253,12 +263,12 @@
 		},
 
 		_physicalModelStateChanged: function () {
-			if (this.penGroupGL) {
+			if (this.penGroupGLOffset) {
 				// TODO Use quaternion instead of euler
-				// this.penGroupGL.setRotationFromQuaternion(
+				// this.penGroupGLOffset.setRotationFromQuaternion(
 				// 	this.physicalModelState.quat
 				// );
-				this.penGroupGL.setRotationFromEuler(
+				this.penGroupGLOffset.setRotationFromEuler(
 					new THREE.Euler(this.physicalModelState.roll, this.physicalModelState.pitch, -this.physicalModelState.heading, 'ZXY')
 				);
 				// requestAnimationFrame(() => this.render());
@@ -318,7 +328,7 @@
 					this.mainGroupGL.add(this.annotationGlGroups);
 					this.mainGroupGL.add(this.fileRepresentation);
 					glScene.add(this.mainGroupGL);
-					glScene.add(this.penGroupGL);
+					glScene.add(this.penGroupGLOffset);
 					cssScene.add(this.mainGroupCSS);
 
 
