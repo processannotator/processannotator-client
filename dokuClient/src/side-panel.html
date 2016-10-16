@@ -1,0 +1,150 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../bower_components/neon-animation/animations/slide-from-top-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/slide-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-in-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-down-animation.html">
+<link rel="import" href="../bower_components/paper-material/paper-material.html">
+<link rel="import" href="annotation-box.html">
+
+<dom-module id="side-panel">
+
+	<template>
+	<style>
+
+	:host {
+
+	}
+	
+	.bigger {
+		transition: all 0.25s;
+		min-width: 25em;
+		right: 0px;
+	}
+	
+	.normal {
+		transition: all 0.25s;
+		min-width: 15em;
+		right: 0%;
+	}
+	
+	.minimal {
+		transition: all 0.25s;
+		max-width: 1vw;
+		right: -10%;
+	}
+	
+	#contentContainer {
+		float: right;
+		position: absolute;
+		/*background-color: yellow;*/
+		height: 100%;
+		
+		max-width: 15em;
+		z-index: 5;
+		box-shadow: -5px 0px 3em 0px rgba(0, 0, 0, 0.52);
+	}
+	
+
+	</style>
+	<div id="contentContainer" class="bigger">
+		<paper-button class="menu-item" raised on-tap="increase">++</paper-button>
+		<paper-button class="menu-item" raised on-tap="decrease">--</paper-button>
+		<div class="side menu">
+
+			
+			<div class="menu-item">Filter by</div>
+			<div class="menu-item"><i>search for</i></div>
+		</div>
+		<content></content>
+
+
+
+
+
+
+		<!-- <iron-list id="annotationList" items="[[annotations]]" as="item" on-selected-item-changed="annotationSelected" selected-items="{{selectedAnnotation}}" selection-enabled>
+		<template id="annotationListTemplate">
+		<annotation-box annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
+	</template>
+</iron-list> -->
+	</div>
+
+	</template>
+
+<script>
+Polymer({
+	is: 'side-panel',
+	behaviors: [
+		// Polymer.NeonAnimationRunnerBehavior
+	],
+	properties: {
+		state: {
+			value: 0,
+			type: Number,
+			notify: true
+		},
+		minimized: {
+			value: true,
+			readonly: true,
+			notify: true,
+			type: Boolean
+		}
+	},
+	ready: function () {
+		setTimeout(() => {
+			this.state = 0;
+			this.animate(1);
+		}, 1000);
+	},
+	increase: function() {
+		oldState = this.state;
+		this.state = Math.min(2, this.state + 1);
+		this.animate(oldState);
+	},
+	decrease: function () {
+		oldState = this.state;
+		this.state = Math.max(0, this.state - 1);
+		this.animate(oldState);
+	},
+	animate: function (oldState) {
+		
+		// Init fresh
+		this.$.contentContainer.classList.remove('minimal');
+		this.$.contentContainer.classList.remove('normal');
+		this.$.contentContainer.classList.remove('bigger');
+		
+		switch (this.state) {
+
+			// minimal
+			case 0:
+				this.$.contentContainer.classList.add('minimal');
+				console.log(Polymer.dom(this.root).select);
+				// this.select = '#minifiedAnnotationList';
+				this.minimized = true;
+				break;
+				
+			// normal
+			case 1:
+				this.$.contentContainer.classList.add('normal');
+				// Polymer.dom(this.root).querySelector('content').select = '#annotationList';
+				this.minimized = false;
+				break;
+				
+			// bigger
+			case 2:
+				this.$.contentContainer.classList.add('bigger');
+				// Polymer.dom(this.root).querySelector('content').select = '#annotationList';
+				this.minimized = false;
+				break;
+
+		}
+
+	}
+});
+
+</script>
+
+</dom-module>

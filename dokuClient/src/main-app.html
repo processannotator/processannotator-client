@@ -25,9 +25,12 @@
 <link href="main-app.css" rel="stylesheet">
 <link rel="import" href="profile-setup-overlay.html">
 <link rel="import" href="project-setup-overlay.html">
-<link rel="import" href="annotation-box.html">
+
 <link rel="import" href="render-view.html">
 <link rel="import" href="dashboard.html">
+<link rel="import" href="side-panel.html">
+
+
 
 <dom-module id="main-app">
 
@@ -83,6 +86,7 @@ iron-icon {
 							<iron-icon class="tool-box-icon" name="text" src="../images/Text-01.svg"></iron-icon>
 						</iron-selector>
 						</div>
+					
 
 
 
@@ -99,42 +103,43 @@ iron-icon {
 
 
 		</div>
+		
+
 
 
 
 
 	</div>
-
-	<div class="side-container">
-		<!--  IDEA: use paper-drawer-panel-->
-
-		<div class="side menu">
-
-			<div class="menu-item">Filter by</div>
-			<div class="menu-item"><i>search for</i></div>
-		</div>
-
-
-		<div id="annotationList">
-			<template is="dom-repeat" id="annotationListTemplate"  items="{{annotations}}" as="item">
+	
+	<!--
+	The side-panel manages 3 states and their animations: minimized, normal and bigger.
+	The states can be evaluated to trigger extra functionality. We are checking for the `minimized` property, to show a different visualization of annotations when the side panel is minimized/narrow.
+ -->
+	<side-panel state="{{sidePanelState}}" minimized="{{sidePanelMinimized}}">
+		
+		<div id="annotationList" hidden$="[[sidePanelMinimized]]">
+			<template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
 				<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDelete" on-tap="annotationBoxClicked"></annotation-box>
 			</template>
 		</div>
+		
+		<div id="minifiedAnnotationList" hidden$="[[!sidePanelMinimized]]">
+			<template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
+				<div style="min-width:1em; min-height:5em; background-color:[[item.statusColor]]">
+				</div>
+				<br>
+			</template>
+		</div>
+		
 		<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
+		
 
-
-
-		<!-- <iron-list id="annotationList" items="[[annotations]]" as="item" on-selected-item-changed="annotationSelected" selected-items="{{selectedAnnotation}}" selection-enabled>
-		<template id="annotationListTemplate">
-		<annotation-box annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit"></annotation-box>
-	</template>
-</iron-list> -->
-
-</div>
+</side-panel>
 
 </div>
 
 <div class="session-container">
+
 
 	<div class="session-box"></div>
 	<div class="session-box"></div>
