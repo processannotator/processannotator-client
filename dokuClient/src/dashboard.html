@@ -23,10 +23,15 @@ it's not supposed to actually handle the editing itself, just:
 	<style>
 
 	:host {
-		display: flex;
 	  background-color: rgb(12, 38, 50);
 		padding: 0;
 		color: rgb(197, 227, 241);
+		width: 100%;
+		min-height:1vh;
+		height: 100%;
+		position: absolute;
+		/*defaults to not visible:*/
+		display: none;
 
 	}
 
@@ -84,7 +89,6 @@ Polymer({
 	properties: {
 		isVisible: Boolean,
 		projects: Array,
-		remoteUrl: String,
 		animationConfig: {
 			value: function() {
 				return {
