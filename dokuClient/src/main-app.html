@@ -84,7 +84,7 @@ iron-icon {
 							<iron-icon class="tool-box-icon" name="text" src="../images/Text-01.svg"></iron-icon>
 						</iron-selector>
 						</div>
-					
+
 
 
 
@@ -101,36 +101,31 @@ iron-icon {
 
 
 		</div>
-		
-
-
-
-
 
 	</div>
-	
+
 	<!--
 	The side-panel manages 3 states and their animations: minimized, normal and bigger.
 	The states can be evaluated to trigger extra functionality. We are checking for the `minimized` property, to show a different visualization of annotations when the side panel is minimized/narrow.
  -->
 	<side-panel state="{{sidePanelState}}" minimized="{{sidePanelMinimized}}">
-		
+
 		<div id="annotationList" hidden$="[[sidePanelMinimized]]">
 			<template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
 				<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDelete" on-tap="annotationBoxClicked"></annotation-box>
 			</template>
 		</div>
-		
+
 		<div id="minifiedAnnotationList" hidden$="[[!sidePanelMinimized]]">
 			<template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
-				<div style="min-width:1em; min-height:5em; background-color:[[item.statusColor]]">
+				<div class="annotationCircle" style="background-color:[[item.statusColor]]">
 				</div>
 				<br>
 			</template>
 		</div>
-		
+
 		<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
-		
+
 
 </side-panel>
 
