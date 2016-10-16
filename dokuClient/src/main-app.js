@@ -4,7 +4,7 @@
 import BNO055 from './bno055';
 const electron = require('electron');
 console.log(electron);
-const ipcRenderer = electron.ipcRenderer;
+const ipc = electron.ipcRenderer;
 const { dialog } = electron.remote;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
@@ -21,7 +21,6 @@ var imageContainer;
 var renderView;
 
 Polymer({
-
 	is: 'main-app',
 
 	properties: {
@@ -42,82 +41,83 @@ Polymer({
 	attached: function () {
 		document.app = this;
 
+		this.setupEventHandlers();
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
 		console.log(this.remoteUrl);
 
-			imageContainer = document.querySelector('.object-view');
-			renderView = document.querySelector('render-view');
+		imageContainer = document.querySelector('.object-view');
+		renderView = document.querySelector('render-view');
 
-			// This is only a temporary DB, will be replaced once switchDB(dbname) is called soon.
-			localInfoDB = new PouchDB('info');
-			remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
-			localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
-			localInfoDB.changes({live: true, since: 'now'})
-			.on('change', (info) => {
-				console.log('local info DB changed!!');
-				return this.updateProjectList();
-			})
-			.on('error', function (err) {
-				console.log(err);
-			});
+		// This is only a temporary DB, will be replaced once switchDB(dbname) is called soon.
+		localInfoDB = new PouchDB('info');
+		remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
+		localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
+		localInfoDB.changes({live: true, since: 'now'})
+		.on('change', (info) => {
+			console.log('local info DB changed!!');
+			return this.updateProjectList();
+		})
+		.on('error', function (err) {
+			console.log(err);
+		});
 
 
-			this.updateProjectList();
-			// Contains public user info (color, name) and is used for offline situations
-			// and to reduce traffic.
-			localCachedUserDB = new PouchDB('localCachedUserDB');
-			userDB = new PouchDB(this.remoteUrl + '/_users');
+		this.updateProjectList();
+		// Contains public user info (color, name) and is used for offline situations
+		// and to reduce traffic.
+		localCachedUserDB = new PouchDB('localCachedUserDB');
+		userDB = new PouchDB(this.remoteUrl + '/_users');
 
-			// this.initWebsockets()
-			// .then(() => console.log('websocket succesfully connected'))
-			// .catch(err => console.error(err));
+		// this.initWebsockets()
+		// .then(() => console.log('websocket succesfully connected'))
+		// .catch(err => console.error(err));
 
-			this.loadPreferences().then(() => {
-				console.log('Loaded preferences.');
+		this.loadPreferences().then(() => {
+			console.log('Loaded preferences.');
 
-				return new Promise((resolve, reject) => {
-					if(this.activeProfile === ''){
-						console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
+			return new Promise((resolve, reject) => {
+				if(this.activeProfile === ''){
+					console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
 
-						let profileOverlay = document.querySelector('#profileSetupOverlay');
+					let profileOverlay = document.querySelector('#profileSetupOverlay');
 
-						profileOverlay.addEventListener('iron-overlay-closed', (e) => {
-							this.setNewProfile({
-								prename: profileOverlay.prename,
-								surname: profileOverlay.surname,
-								color: profileOverlay.color,
-								email: profileOverlay.email
-							}).then((result) => resolve(this.activeProfile));
-						});
-						profileOverlay.open();
-					} else if(this.activeProfile !== undefined) {
-						resolve(this.activeProfile);
-					}
-				});
-			}).then(() => {
-				console.log('ok, loaded or created the active profile. Now check if there is an active project');
-				console.log(this.activeProject);
-				if(this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
-					this.projectOpened = false;
-					console.log('NO ACTIVE PROFILE YET!');
-				} else {
-					console.log('loaded a project, show the renderview');
-					this.projectOpened = true;
-					return this.switchProjectDB(this.activeProject);
+					profileOverlay.addEventListener('iron-overlay-closed', (e) => {
+						this.setNewProfile({
+							prename: profileOverlay.prename,
+							surname: profileOverlay.surname,
+							color: profileOverlay.color,
+							email: profileOverlay.email
+						}).then((result) => resolve(this.activeProfile));
+					});
+					profileOverlay.open();
+				} else if(this.activeProfile !== undefined) {
+					resolve(this.activeProfile);
 				}
-			}).then(() => {
-				console.log('continue');
-				this.updateElements({updateFile: true});
 			});
+		}).then(() => {
+			console.log('ok, loaded or created the active profile. Now check if there is an active project');
+			console.log(this.activeProject);
+			if(this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
+				this.projectOpened = false;
+				console.log('NO ACTIVE PROFILE YET!');
+			} else {
+				console.log('loaded a project, show the renderview');
+				this.projectOpened = true;
+				return this.switchProjectDB(this.activeProject);
+			}
+		}).then(() => {
+			console.log('continue');
+			this.updateElements({updateFile: true});
+		});
 
-			window.addEventListener('resize', this.handleResize.bind(this));
-			window.addEventListener('keyup', this.keyUp.bind(this));
+		window.addEventListener('resize', this.handleResize.bind(this));
+		window.addEventListener('keyup', this.keyUp.bind(this));
 	},
 
 	connectSensors: function () {
-		ipcRenderer.send('startScan');
+		ipc.send('startScan');
 	},
 
 	deleteProjectDB: function (project) {
@@ -647,7 +647,7 @@ Polymer({
 		},
 
 		resetLocalDB: function (e) {
-			ipcRenderer.send('asynchronous-message', 'resetLocalDB');
+			ipc.send('asynchronous-message', 'resetLocalDB');
 		},
 
 		mouseOutAnnotationLabel: function (e) {
@@ -681,5 +681,28 @@ Polymer({
 		toolChanged: function (e) {
 			this.objectTool = this.$.toolBox.selected;
 			console.log(this.objectTool);
+		},
+
+		setupEventHandlers() {
+			const callback = state => {
+				if (!renderView) return;
+				renderView.physicalModelState = state;
+			};
+			const buttonCallback = () => {
+				console.log('Button pressed');
+			};
+			this.bno055 = new BNO055(callback, buttonCallback);
+			ipc.on('connectStatus', (emitter, status, percent) => {
+				this.sensorStatus = `${status} (${percent}%)`;
+				console.log('Connect status:', status, percent);
+				if (status === 'Connected') {
+					this.bno055.reset();
+					setTimeout(() => {
+						this.bno055.straighten();
+					}, 5000);
+				}
+			});
+
+			ipc.on('uartRx', (emitter, data) => this.bno055.push(data));
 		}
 	});

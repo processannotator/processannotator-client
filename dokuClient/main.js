@@ -98,14 +98,17 @@ function findUARTCharacteristics(services) {
       // Search for the UART TX and RX characteristics and save them.
       if (ch.uuid === '6e400002b5a3f393e0a9e50e24dcca9e') {
         uartTx = ch;
+				console.log('Found TX characteristic');
       }
       else if (ch.uuid === '6e400003b5a3f393e0a9e50e24dcca9e') {
         uartRx = ch;
         // Setup the RX characteristic to receive data updates and update
         // the UI.  Make sure no other receivers have been set to prevent them
         // stacking up on reconnect.
+				console.log('Found RX characteristic');
         uartRx.removeAllListeners('data');
         uartRx.on('data', function(data) {
+					console.log('RX:', String(data));
           if (mainWindow !== null) {
             mainWindow.webContents.send('uartRx', String(data));
           }
@@ -245,7 +248,7 @@ function setupNoble() {
   ipc.on('uartTx', function(event, data) {
     // Data is sent from the renderer process out the BLE UART (if connected).
     if (uartTx !== null) {
-      console.log('Send: ' + data);
+      console.log('Send to device: ' + data);
       uartTx.write(new Buffer(data));
     }
   });
@@ -263,6 +266,14 @@ function setupNoble() {
           console.log('Error reading characteristic: ' + error);
         }
         else {
+					console.log(
+						'Characteristics updated for service id',
+						serviceId,
+						'/ characteristic id',
+						charId,
+						'with data:',
+						data
+					);
           mainWindow.webContents.send('charUpdated', serviceId, charId, String(data));
         }
       });
@@ -315,7 +326,7 @@ app.on('ready', function() {
 		if(arg === 'resetLocalDB') {
 			session.clearStorageData({
 				storages: ['cookies', 'indexdb', 'local storage', 'serviceworkers']
-			}, () => { console.log('session cleared')});
+			}, () => { console.log('session cleared');});
 			mainWindow.webContents.session.clearCache(function(){
 				console.log('session cleared');
 				dialog.showMessageBox({type: 'info', buttons: [], message: 'Reset succesfull. The application will quit now. Please start manually afterwards.'}, () => {
