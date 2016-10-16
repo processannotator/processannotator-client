@@ -499,7 +499,7 @@ Polymer({
 						doc.creatorProfile = creatorProfile;
 
 						// also update localCachedUserDB if not done yet.
-						if(updatedCreators.has(doc.creator) === false) {
+						if (updatedCreators.has(doc.creator) === false) {
 							updatedCreators.add(doc.creator);
 							localCachedUserDB.get(doc.creator).then((cachedProfile) => {
 								cachedProfile.surname = surname;
