@@ -118,7 +118,7 @@
 
 	<div id="annotationList">
 		<template is="dom-repeat" id="annotationListTemplate"  items="{{annotations}}" as="item">
-			<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-tap="annotationBoxClicked"></annotation-box>
+			<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-deleted-by-user="onAnnotationDelete" on-annotation-edited-by-user="onAnnotationEdit" on-tap="annotationBoxClicked"></annotation-box>
 		</template>
 	</div>
 	<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>

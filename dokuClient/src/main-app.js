@@ -538,6 +538,11 @@ Polymer({
 			});
 		},
 
+		onAnnotationDeleted(evt) {
+			debugger
+			localProjectDB.remove(evt.detail.annotation);
+		},
+
 		onAnnotationEdit: function(evt) {
 			// emitted when user edits text in annotationbox and hits enter
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
