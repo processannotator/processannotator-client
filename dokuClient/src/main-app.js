@@ -539,7 +539,6 @@ Polymer({
 		},
 
 		onAnnotationDeleted(evt) {
-			debugger
 			localProjectDB.remove(evt.detail.annotation);
 		},
 
