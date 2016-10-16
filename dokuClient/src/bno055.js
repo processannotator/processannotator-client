@@ -1,28 +1,3 @@
-// Based on code from Adafruit Bluefruit LE Desktop, released under the following license:
-//
-// The MIT License (MIT)
-//
-// Copyright (c) 2015 Adafruit Industries
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
-
 // Useful conversion functions.
 function degToRad(deg) {
   // Convert degrees to radians.
@@ -35,7 +10,7 @@ function radToDeg(radians) {
 }
 
 export default class BNO055 {
-  constructor(callback) {
+  constructor(callback, buttonCallback) {
     // Set initial state.
     this.state = {
       quatX: 0,
@@ -51,16 +26,27 @@ export default class BNO055 {
       calMag: 0
     };
 
-    this.buffer = '';
+    this.reset();
     this.callback = callback;
+    this.buttonCallback = buttonCallback;
+  }
+
+  reset() {
+    this.buffer = '';
   }
 
   straighten() {
     // Re-orient the 3D model so it's facing forward based on the current
     // BNO sensor orientation.
-    const currentQuat = new THREE.Quaternion(this.state.bnoData.quatX,
-      this.state.bnoData.quatY, this.state.bnoData.quatZ, this.state.bnoData.quatW);
-    this.offset.quaternion.copy(currentQuat.conjugate());
+    const currentQuat = new THREE.Quaternion(
+      this.state.quatX,
+      this.state.quatY,
+      this.state.quatZ,
+      this.state.quatW
+    );
+    this.state.offsetQuat = currentQuat.conjugate();
+    this.callback(this.state);
+    console.log('Orientation straightened.');
   }
 
   push(data) {
@@ -79,7 +65,10 @@ export default class BNO055 {
     // Found a new line, pull it out of the buffer.
     const line = this.buffer.slice(0, newLine);
     this.buffer = this.buffer.slice(newLine+1);
-    console.log('Got:', line);
+    if (line === 'B\r') {
+      this.buttonCallback();
+      return;
+    }
     // Now parse the components from the reading.
     const components = line.split(',');
     if (components.length !== 5) {
@@ -107,20 +96,22 @@ export default class BNO055 {
 
     // Update the BNO sensor state.
     this.state = {
+      offsetQuat: this.state.offsetQuat || quat,
       quat,
       euler,
       quatX: x,
       quatY: y,
       quatZ: z,
       quatW: w,
-      roll: radToDeg(euler.x),
-      pitch: radToDeg(euler.y),
-      heading: radToDeg(euler.z),
+      roll: euler.x,
+      pitch: euler.y,
+      heading: euler.z,
       calSys: sys,
       calAccel: accel,
       calGyro: gyro,
       calMag: mag
     };
+    // console.log('State:', this.state);
 
     this.callback(this.state);
   }
