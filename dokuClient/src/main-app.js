@@ -720,7 +720,7 @@ Polymer({
 		},
 		annotationBoxClicked: function (e) {
 			e.target.classList.toggle('selectedAnnotation');
-			let item = this.$.annotationListTemplate.itemForElement(e.target);
+			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
 			this.$.annotationSelector.select(item);
 		},
 		_selectedAnnotationChanged: function (e) {
