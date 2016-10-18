@@ -74,7 +74,7 @@
 				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
 				<paper-button class="menu-item">TOPIC</paper-button>
 				<paper-button class="menu-item">OBJECT</paper-button>
-				<paper-button class="menu-item" on-tap="connectSensors">CONNECT SENSORS {{sensorStatus}}</paper-button>
+				<paper-button class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}</paper-button>
 
 				<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>
 			</div>
@@ -118,7 +118,7 @@
 
 	<div id="annotationList">
 		<template is="dom-repeat" id="annotationListTemplate"  items="{{annotations}}" as="item">
-			<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-deleted-by-user="onAnnotationDelete" on-annotation-edited-by-user="onAnnotationEdit" on-tap="annotationBoxClicked"></annotation-box>
+			<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-deleted-by-user="onAnnotationDeleted" on-annotation-edited-by-user="onAnnotationEdit" on-tap="annotationBoxClicked"></annotation-box>
 		</template>
 	</div>
 	<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>

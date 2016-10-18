@@ -108,7 +108,7 @@ function findUARTCharacteristics(services) {
 				console.log('Found RX characteristic');
         uartRx.removeAllListeners('data');
         uartRx.on('data', function(data) {
-					console.log('RX:', String(data));
+					// console.log('RX:', String(data));
           if (mainWindow !== null) {
             mainWindow.webContents.send('uartRx', String(data));
           }
@@ -170,6 +170,7 @@ function disconnect() {
   // Now disconnect the device.
   if (device != null) {
     device.disconnect();
+    setConnectStatus('Disconnected');
   }
 }
 
@@ -208,7 +209,9 @@ function setupNoble() {
 			console.log('Bluetooth adapter not powered on. Can\'t start scan.');
 		}
   });
-
+  ipc.on('disconnectPen', function() {
+    disconnect();
+  });
   ipc.on('stopScan', function() {
     // Stop scanning for devices.
     console.log('Stopping scan...');

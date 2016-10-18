@@ -42,6 +42,7 @@ Polymer({
 		document.app = this;
 
 		this.setupEventHandlers();
+		this.penButtonText = 'Connect Pen';
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
@@ -116,8 +117,12 @@ Polymer({
 		window.addEventListener('keyup', this.keyUp.bind(this));
 	},
 
-	connectSensors: function () {
-		ipc.send('startScan');
+	connectOrDisconnectPen: function () {
+		if (this.penStatus === 'Connected') {
+			ipc.send('disconnectPen');
+		} else {
+			ipc.send('startScan');
+		}
 	},
 
 	deleteProjectDB: function (project) {
@@ -288,8 +293,8 @@ Polymer({
 		.then(response => {
 			return userDB.getSession();
 		})
-		.then(response => {
-			if(!response.userCtx.name){
+    .then(response => {
+      if (!response.userCtx.name) {
 				console.error('Couldnt get user session: hmm, nobody logged on.');
 			}
 			// got session, that means login works and user remains logged in, get more userInfo now.
@@ -692,18 +697,37 @@ Polymer({
 				if (!renderView) return;
 				renderView.physicalModelState = state;
 			};
-			const buttonCallback = () => {
-				console.log('Button pressed');
+
+			let annotationIndex = 0;
+
+			const penCallback = (eventName) => {
+				if (eventName === 'buttonDown') {
+					this.addAnnotation({
+						detail: {
+							description: `Annotation #${++annotationIndex}`,
+							position: renderView.pointerSphere.getWorldPosition(),
+							cameraPosition: renderView.physicalPenModel.getWorldPosition(),
+							// cameraRotation: camera.rotation,
+							cameraUp: renderView.camera.up,
+						},
+					});
+				}
 			};
-			this.bno055 = new BNO055(callback, buttonCallback);
+
+			this.bno055 = new BNO055(callback, penCallback);
 			ipc.on('connectStatus', (emitter, status, percent) => {
-				this.sensorStatus = `${status} (${percent}%)`;
+				this.penStatus = status;
+				this.penStatusPercent = percent;
+				this.penButtonText = status === 'Connecting' ? `${status} (${percent}%)` : `${status}`;
 				console.log('Connect status:', status, percent);
 				// setTimeout(() => {
 				// 	this.bno055.straighten();
 				// }, 5000);
-				if (status === 'Connected') {
+				if (status === 'Connected' && percent === 100) {
+					this.penButtonText = 'Disconnect Pen';
 					this.bno055.reset();
+				} else if (status === 'Disconnected') {
+					this.penButtonText = 'Connect Pen';
 				}
 			});
 
