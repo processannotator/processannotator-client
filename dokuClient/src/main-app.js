@@ -706,7 +706,7 @@ Polymer({
 						detail: {
 							description: `Annotation #${++annotationIndex}`,
 							position: renderView.pointerSphere.getWorldPosition(),
-							cameraPosition: renderView.physicalPenModel.getWorldPosition(),
+							cameraPosition: renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
 							// cameraRotation: camera.rotation,
 							cameraUp: renderView.camera.up,
 						},
