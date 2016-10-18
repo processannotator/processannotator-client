@@ -39,7 +39,6 @@
 
 	var glScene = new THREE.Scene();
 	var cssScene = new THREE.Scene();
-	var camera;
 	var controls;
 	var cssObject;
 	var glRenderer;
@@ -70,7 +69,7 @@
 			},
 			physicalModelState: {
 				type: Object,
-				observer: "_physicalModelStateChanged"
+				observer: "physicalModelStateChanged"
 			}
 		},
 
@@ -79,7 +78,7 @@
 			'up': 'toggleTrack',
 			'down': 'toggleTrack',
 			'track': 'track',
-			'mousemove': 'mouseMoved'
+			'mousemove': 'mouseOrPenMoved'
 		},
 
 		ready: function() {
@@ -101,15 +100,15 @@
 
 		animate: function () {
 			requestAnimationFrame(this.animate.bind(this));
-			this.light.position.copy(camera.position);
-			this.spotLight.position.copy(camera.position);
+			this.light.position.copy(this.camera.position).addScaledVector(this.camera.up, this.standardDistance);
+			this.spotLight.position.copy(this.camera.position);
 
 			controls.update();
 		},
 
 		render: function() {
-			glRenderer.render(glScene, camera);
-			cssRenderer.render(cssScene, camera);
+			glRenderer.render(glScene, this.camera);
+			cssRenderer.render(cssScene, this.camera);
 		},
 
 		resetGroups: function () {
@@ -134,6 +133,7 @@
 
 			// Add physical pen model
 			this.penGroupGLOffset = new THREE.Group();
+			this.penGroupGLOffset.rotateX(-0.5 * Math.PI);
 			this.penGroupGLOrientation = new THREE.Group();
 			this.penGroupGLOffset.add(this.penGroupGLOrientation);
 			this.penGroupGL = new THREE.Object3D();
@@ -144,9 +144,6 @@
 				0.4 * this.standardDistance,
 				0.1 * this.standardDistance,
 				0.1 * this.standardDistance
-				// this.standardDistance,
-				// this.standardDistance,
-				// this.standardDistance
 			);
 			let penMaterial = new THREE.MeshStandardMaterial({
 				side: THREE.DoubleSide,
@@ -156,22 +153,35 @@
 			});
 
 			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
-			this.physicalPenSpotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 0.3, 2.0 );
+			this.physicalPenSpotLight = new THREE.SpotLight( 0xffeedd, 0.5, 0, 0.5, 0.3, 2.0 );
 			this.physicalPenModel.position.set(
 				this.standardDistance,
 				// 0,
 				0,
 				0
 			);
+			const penAxisHelper = new THREE.AxisHelper(0.3 * this.standardDistance);
+			penAxisHelper.position.copy(this.physicalPenModel.position);
+			this.penGroupGL.add(penAxisHelper);
 			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
 			this.penGroupGL.add( this.physicalPenModel );
 			this.penGroupGL.add( this.physicalPenSpotLight );
 
 			let center = new THREE.Vector3(0, 0, 0);
-			// this.penGroupGLOffset.worldToLocal(center);
-			// this.physicalPenModel.lookAt(center);
 			this.physicalPenSpotLight.worldToLocal(center);
 			this.physicalPenSpotLight.lookAt(center);
+		},
+
+		physicalModelStateChanged: function () {
+			if (this.penGroupGLOrientation) {
+				// TODO Use quaternion instead of euler
+				const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
+				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
+				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
+				this.mouseOrPenMoved();
+				requestAnimationFrame(() => this.render());
+				// this.render();
+			}
 		},
 
 		attached: function() {
@@ -181,8 +191,8 @@
 			let width = this.parentNode.getBoundingClientRect().width
 			let height = this.parentNode.getBoundingClientRect().height
 			this.standardDistance = 500;
-			camera = new THREE.PerspectiveCamera(50, width / height, this.standardDistance / 10, this.standardDistance * 10);
-			camera.position.set(
+			this.camera = new THREE.PerspectiveCamera(50, width / height, this.standardDistance / 100, this.standardDistance * 100);
+			this.camera.position.set(
 				2 * this.standardDistance,
 				2 * this.standardDistance,
 				2 * this.standardDistance
@@ -204,17 +214,19 @@
 			cssRenderer = new THREE.CSS3DRenderer();
 			cssRenderer.setSize(width, height);
 
-
 			this.meshMaterial = new THREE.MeshStandardMaterial({
 				side: THREE.DoubleSide,
 				color: 0x787878,
 				roughness: 0.75,
-				metalness: 0.05
+				metalness: 0.02
 			})
 
-			this.light = new THREE.PointLight( 0xffffff, 1.2, 0 );
-			this.spotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 1, 2.0 );
+			this.atmosphericLight = new THREE.PointLight( 0x336699, 1, 0 );
+			this.atmosphericLight.position.set(0, 5 * this.standardDistance, 0);
+			this.light = new THREE.PointLight( 0xffeedd, 1, 0 );
+			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.5, 1, 2.0 );
 
+			glScene.add(this.atmosphericLight);
 			glScene.add(this.light);
 			glScene.add(this.spotLight);
 
@@ -235,7 +247,7 @@
 			this.resetGroups();
 
 			// setup 3d-controls (rotating the camera with cursor)
-			controls = new THREE.TrackballControls(camera, this);
+			controls = new THREE.TrackballControls(this.camera, this);
 			controls.rotateSpeed = 1.0;
 			controls.zoomSpeed = 1.2;
 			controls.panSpeed = 0.8;
@@ -247,7 +259,7 @@
 
 			// add cursor pointer to 3D scene
 			var sphereGeometry = new THREE.SphereGeometry( this.standardDistance / 45, 6, 6 );
-			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+			var sphereMaterial = new THREE.MeshLambertMaterial( {color: 0xff0000} );
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
 			glScene.add(this.pointerSphere);
 
@@ -268,18 +280,8 @@
 			this.fire('initialized')
 		},
 
-		_physicalModelStateChanged: function () {
-			if (this.penGroupGLOffset) {
-				// TODO Use quaternion instead of euler
-				// this.penGroupGLOffset.setRotationFromQuaternion(
-				// 	this.physicalModelState.quat
-				// );
-				this.penGroupGLOffset.setRotationFromEuler(
-					new THREE.Euler(this.physicalModelState.roll, this.physicalModelState.pitch, -this.physicalModelState.heading, 'ZXY')
-				);
-				// requestAnimationFrame(() => this.render());
-				this.render();
-			}
+		getPenPosition() {
+			return this.penGroupGLOffset;
 		},
 
 		resize: function(event) {
@@ -287,8 +289,8 @@
 			let height = this.parentNode.getBoundingClientRect().height;
 			glRenderer.setSize(width, height);
 			cssRenderer.setSize(width, height);
-			camera.aspect = width / height;
-			camera.updateProjectionMatrix();
+			this.camera.aspect = width / height;
+			this.camera.updateProjectionMatrix();
 			controls.handleResize();
 			this.render();
 		},
@@ -305,8 +307,7 @@
 			var filepath = URL.createObjectURL(this.file)
 			loader.load(filepath,
 				geometry  => {
-					var meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
-
+					const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
 					// TODO: Save scale factor in DB.
@@ -336,8 +337,6 @@
 					glScene.add(this.mainGroupGL);
 					glScene.add(this.penGroupGLOffset);
 					cssScene.add(this.mainGroupCSS);
-
-
 
 					this.render();
 					this.animate();
@@ -375,7 +374,7 @@
 			// HACK:create sphere for testing position!!!!!!!!!!
 			let sph = new THREE.Mesh(
 				new THREE.SphereGeometry(this.standardDistance / 100, 6, 6),
-				new THREE.MeshBasicMaterial({ color: 0xff0000})
+				new THREE.MeshLambertMaterial({ color: 0xff0000})
 			);
 			sph.position.copy(annotation.position);
 			//glScene.add(sph);
@@ -403,9 +402,9 @@
 			if (this.labelGroup.children === undefined) return
 
 			for(let label of this.labelGroup.children) {
-				let normalizedDirection = (label.position.clone().sub(camera.position)).normalize()
-				raycaster.set(camera.position.clone(), normalizedDirection)
-				raycaster.far = camera.position.distanceTo(label.position)
+				let normalizedDirection = (label.position.clone().sub(this.camera.position)).normalize()
+				raycaster.set(this.camera.position.clone(), normalizedDirection)
+				raycaster.far = this.camera.position.distanceTo(label.position)
 				let intersections = raycaster.intersectObject(this.fileRepresentation)
 				if (intersections.length !== 0) {
 					label.element.style.opacity = 0.0
@@ -430,18 +429,27 @@
 			);
 		},
 
-		mouseMoved: function (e) {
+		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
 
 			switch (this.tool) {
 				case 'polygon':
-					this.updateMouse(e);
+				case 'none':
+					if (event) {
+						this.updateMouse(event);
+					}
 
 					let intersections = [];
 
 					if (this.fileRepresentation) {
-						this.raycaster.setFromCamera(this.mouse, camera);
+						if (this.tool === 'polygon') {
+							this.raycaster.setFromCamera(this.mouse, this.camera);
+						} else {
+							const origin = this.physicalPenModel.getWorldPosition();
+							const normalizedDirection = origin.clone().negate().normalize();
+							this.raycaster.set(origin, normalizedDirection);
+						}
 						intersections = this.raycaster.intersectObject(this.fileRepresentation);
 					}
 
@@ -450,7 +458,7 @@
 							Polymer.dom(this).classList.add('polygonCursor');
 						this.spotLight.target = this.pointerSphere;
 						this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
-						this.render()
+						this.render();
 					} else {
 						Polymer.dom(this).classList.remove('polygonCursor')
 					}
@@ -475,7 +483,7 @@
 							position: this.verticesPolygonTool[0],
 							cameraPosition: controls.object.position.clone(),
 							// cameraRotation: camera.rotation,
-							cameraUp: camera.up
+							cameraUp: this.camera.up
 						});
 						if (this.previewAnnotation !== undefined) {
 							this.mainGroupGL.remove(this.previewAnnotation.arrow);
@@ -515,7 +523,7 @@
 		},
 		tap: function(e) {
 
-			if (jsonEqual(this.previousCameraPosition, camera.position) === false || jsonEqual(this.previousCameraRotation, camera.rotation) == false) {
+			if (jsonEqual(this.previousCameraPosition, this.camera.position) === false || jsonEqual(this.previousCameraRotation, this.camera.rotation) == false) {
 				console.log('moved! return!');
 			}
 
@@ -524,12 +532,12 @@
 
 			// update the picking ray with the camera and mouse position
 			this.fileRepresentation.updateMatrixWorld()
-			this.raycaster.setFromCamera(this.mouse, camera);
+			this.raycaster.setFromCamera(this.mouse, this.camera);
 
 			// Calculate objects intersecting the picking ray
 			// only use the first/frontmost intersection  -> [0]
-			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
-			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+			const intersections = this.raycaster.intersectObject(this.fileRepresentation);
+			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
 			this.mainGroupGL.worldToLocal(intersection.point);
@@ -541,7 +549,7 @@
 						position: intersection.point.clone(),
 						cameraPosition: controls.object.position.clone(),
 						// cameraRotation: camera.rotation,
-						cameraUp: camera.up
+						cameraUp: this.camera.up
 					});
 					break;
 				case 'polygon':
@@ -561,7 +569,7 @@
 							description: "Press Enter to edit/create. Esc to cancel.",
 							position: intersection.point.clone(),
 							cameraPosition: controls.object.position.clone(),
-							cameraUp: camera.up
+							cameraUp: this.camera.up
 						});
 					}
 

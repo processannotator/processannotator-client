@@ -10,7 +10,7 @@ function radToDeg(radians) {
 }
 
 export default class BNO055 {
-  constructor(callback, buttonCallback) {
+  constructor(callback, penCallback) {
     // Set initial state.
     this.state = {
       quatX: 0,
@@ -28,7 +28,7 @@ export default class BNO055 {
 
     this.reset();
     this.callback = callback;
-    this.buttonCallback = buttonCallback;
+    this.penCallback = penCallback;
   }
 
   reset() {
@@ -64,8 +64,14 @@ export default class BNO055 {
     // Found a new line, pull it out of the buffer.
     const line = this.buffer.slice(0, newLine);
     this.buffer = this.buffer.slice(newLine+1);
-    if (line === 'B\r') {
-      this.buttonCallback();
+    if (line === 'buttonDown\r') {
+      console.log('physical button pressed');
+      this.penCallback('buttonDown');
+      return;
+    }
+    if (line === 'buttonUp\r') {
+      console.log('physical button released');
+      this.penCallback('buttonUp');
       return;
     }
     // Now parse the components from the reading.
