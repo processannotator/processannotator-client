@@ -176,8 +176,11 @@
 		physicalModelStateChanged: function () {
 			if (this.penGroupGLOrientation) {
 				// TODO Use quaternion instead of euler
-				const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
+				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
 				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
+				// if (this.fileRepresentation) {
+				// 	this.fileRepresentation.setRotationFromQuaternion(quaternion);
+				// }
 				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
 				this.mouseOrPenMoved();
 				requestAnimationFrame(() => this.render());
