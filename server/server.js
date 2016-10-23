@@ -76,7 +76,7 @@ var listenForNewUsers = function () {
       console.log('valid _new_ user, add it!');
       // Add new role to valid user.
       if(change.doc.roles === undefined) {
-        change.doc.roles = {};
+        change.doc.roles = [];
       }
       change.doc.roles.push('testuser');
       users.insert(change.doc);
@@ -146,7 +146,6 @@ var listenForInfoChanges = function () {
           updatedProjectList = updatedProjectList.map((project) => project._id);
 
           // Filter out dbs besides 'project_', such as '_users' and 'info'
-          dbs = dbs.filter(dbname => dbname.startsWith('project_'));
 
           resolve( dbs.filter((dbname) => dbname.startsWith('project_') && !updatedProjectList.includes(dbname) ) );
         });
