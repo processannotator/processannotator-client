@@ -208,7 +208,7 @@
 			);
 
 			glRenderer = new THREE.WebGLRenderer({
-				antialias: false,
+				antialias: true,
 				alpha: true
 			});
 			glRenderer.setClearColor(0x00ff00, 0.0);
@@ -233,23 +233,31 @@
 				metalness: 0.02
 			})
 
-			this.atmosphericLight = new THREE.DirectionalLight( 0x336699, 0.5);
+			this.atmosphericLight = new THREE.DirectionalLight(0x556677, 0.5);
 			this.atmosphericLight.castShadow = true;
 			this.atmosphericLight.shadowDarkness = 0.5;
 			this.atmosphericLight.shadowMapSoft = true;
 			this.atmosphericLight.shadowMapWidth = 1024;
-			this.atmosphericLight.shadowMapHeight = 1024
-			this.atmosphericLight.position.set(5 * this.standardDistance, 10 * this.standardDistance, -2.5 * this.standardDistance);
+			this.atmosphericLight.shadowMapHeight = 1024;
+			this.atmosphericLight.position.set(10 * this.standardDistance, 20 * this.standardDistance, -2.5 * this.standardDistance);
 
-			this.atmosphericLight2 = new THREE.DirectionalLight( 0x336699, 0.5);
+			this.atmosphericLight2 = new THREE.DirectionalLight(0x1166bb, 0.5);
 			this.atmosphericLight2.castShadow = true;
 			this.atmosphericLight2.shadowDarkness = 0.5;
 			this.atmosphericLight2.shadowMapSoft = true;
 			this.atmosphericLight2.shadowMapWidth = 1024;
-			this.atmosphericLight2.shadowMapHeight = 1024
-			this.atmosphericLight2.position.set(-5 * this.standardDistance, 10 * this.standardDistance, 2.5 * this.standardDistance);
+			this.atmosphericLight2.shadowMapHeight = 1024;
+			this.atmosphericLight2.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
 
-			this.light = new THREE.PointLight( 0xffeedd, 1, 0 );
+			this.atmosphericLight2 = new THREE.DirectionalLight(0xff6600, 0.5);
+			this.atmosphericLight2.castShadow = true;
+			this.atmosphericLight2.shadowDarkness = 0.5;
+			this.atmosphericLight2.shadowMapSoft = true;
+			this.atmosphericLight2.shadowMapWidth = 1024;
+			this.atmosphericLight2.shadowMapHeight = 1024;
+			this.atmosphericLight2.position.set(0, -10 * this.standardDistance, 0);
+
+			this.light = new THREE.PointLight( 0xccddff, 1, 0 );
 			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.5, 1, 2.0 );
 
 			glScene.add(this.atmosphericLight);
