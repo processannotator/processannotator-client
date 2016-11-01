@@ -213,6 +213,7 @@
 			});
 			glRenderer.setClearColor(0x00ff00, 0.0);
 			glRenderer.setSize(width, height);
+			glRenderer.setPixelRatio(window.devicePixelRatio);
 			glRenderer.shadowMapEnabled = true;
 
 			// cssRenderer is used for font rendering
@@ -460,8 +461,8 @@
 		updateMouse: function (mouseEvent) {
 			let canvas = this.$$('canvas');
 			this.mouse = new THREE.Vector2(
-				(mouseEvent.layerX / canvas.width) * 2 - 1,
-				-((mouseEvent.layerY / canvas.height) * 2 - 1)
+				(mouseEvent.layerX / canvas.width) * window.devicePixelRatio - 1,
+				-((mouseEvent.layerY / canvas.height) * window.devicePixelRatio - 1)
 			);
 		},
 
