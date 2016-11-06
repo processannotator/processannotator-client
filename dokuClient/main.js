@@ -8,8 +8,9 @@ const ipc = electron.ipcMain; // module for interprocess communication (renderer
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
 const os = require('os');
 
-// automatically reload the renderer app when the bundle changes.
-require('electron-reload')(__dirname + '/src/main-app-bundle.js');
+// automatically reload the renderer app when the bundle changes
+// IMPORTANT: Uncomment before running `npm run package`
+// require('electron-reload')(__dirname + '/src/main-app-bundle.js');
 
 
 app.commandLine.appendSwitch('enable-file-cookies');
