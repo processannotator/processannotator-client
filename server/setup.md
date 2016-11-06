@@ -24,17 +24,8 @@ sudo firewall-cmd --zone=FedoraServer --add-masquerade --permanent`
 sudo firewall-cmd --zone=FedoraServer --add-forward-port=port=80:proto=tcp:toport=5984 --permanent
 ```
 
-To disallow anonymous users to delete other users and only to add own docs, add following design document to _users db:
 
-```
-{
-  "_id": "_design/no_anonymous_delete",
-  "language": "javascript",
-  "validate_doc_update": "function(newDoc, oldDoc, userCtx, secObj){ \n    if('_admin' in userCtx.roles) return; // skip anonymous in Admin Party case;\n    if(!userCtx.name && newDoc._deleted){\n      throw({'forbidden': 'auth first before delete something'});\n    }\n}"
-}
-```
-
-Finally Copy systemd service processannotator.service into `/etc/systemd/system/` and enable + start it. Before doing this, make sure the pathes (especially to the recent node version match!)
+Finally Copy systemd service processannotator.service from [this repo](https://raw.githubusercontent.com/nylki/ProjectAnnotator/master/systemd/system/processannotator.service) into `/etc/systemd/system/` and enable + start it. Before doing this, make sure the pathes (especially to the recent node version match!)
 ```
 sudo cp systemd/system/processannotator.service /etc/systemd/system/processannotator.service
 sudo systemctl enable processannotator

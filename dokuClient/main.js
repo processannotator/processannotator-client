@@ -11,6 +11,7 @@ const os = require('os');
 // automatically reload the renderer app when the bundle changes.
 require('electron-reload')(__dirname + '/src/main-app-bundle.js');
 
+
 app.commandLine.appendSwitch('enable-file-cookies');
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -144,10 +145,10 @@ function connected(error) {
   });
   // Connected, now kick off service discovery.
   setConnectStatus('Discovering Services...', 66);
-  selectedDevice.discoverAllServicesAndCharacteristics(function(error, services, characteristics) {
+  selectedDevice.discoverAllServicesAndCharacteristics(function(error_, services, characteristics) {
     // Handle if there was an error.
-    if (error) {
-      console.log('Error discovering: ' + error);
+    if (error_) {
+      console.log('Error discovering: ' + error_);
       setConnectStatus('Error!');
       return;
     }
@@ -286,7 +287,7 @@ function setupNoble() {
   noble.on('discover', function(device) {
     // Noble found a device.  Add it to the list of known devices and then send
     // an event to notify the renderer process of the current device state.
-    let index = devices.push(device)-1;
+    let index = devices.push(device) - 1;
 		const serializedDevices = devices.map(serializeDevice);
     mainWindow.webContents.send('devicesChanged', serializedDevices);
 		console.log('Found devices:', serializedDevices);
@@ -329,7 +330,7 @@ app.on('ready', function() {
 		if(arg === 'resetLocalDB') {
 			session.clearStorageData({
 				storages: ['cookies', 'indexdb', 'local storage', 'serviceworkers']
-			}, () => { console.log('session cleared');});
+			}, () => { console.log('session cleared'); });
 			mainWindow.webContents.session.clearCache(function(){
 				console.log('session cleared');
 				dialog.showMessageBox({type: 'info', buttons: [], message: 'Reset succesfull. The application will quit now. Please start manually afterwards.'}, () => {
