@@ -3,6 +3,9 @@
 		"browser": true,
 		"es6": true
 	},
+	"parserOptions": {
+		"sourceType": "module"
+	},
 	"rules": {
 		"eqeqeq": [1, "smart"],
 		"semi": [1, "always"],

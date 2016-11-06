@@ -1,8 +1,11 @@
 /* eslint no-alert:0*/
 'use strict'; /*eslint global-strict:0*/
 
-const ipcRenderer = require('electron').ipcRenderer;
-const {dialog} = require('electron').remote;
+import BNO055 from './bno055';
+const electron = require('electron');
+console.log(electron);
+const ipc = electron.ipcRenderer;
+const { dialog } = electron.remote;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
 
@@ -11,7 +14,6 @@ var sync;
 
 
 Polymer({
-
 	is: 'main-app',
 
 	properties: {
@@ -31,6 +33,8 @@ Polymer({
 	attached: function () {
 		document.app = this;
 
+		this.setupEventHandlers();
+		this.penButtonText = 'Connect Pen';
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.hasCachedUserDB = false;
@@ -90,67 +94,17 @@ Polymer({
 
 		window.addEventListener('resize', this.handleResize.bind(this));
 		window.addEventListener('keyup', this.keyUp.bind(this));
-
 	},
 
-	connectSensors: function () {
-		let self = this;
-		self.sensorstatus = '(Sensor readouts not implemented in master branch yet)';
-		// Sample implementation using johnny five below:
+	connectOrDisconnectPen: function () {
 
-
-		// set for model: this.renderView.physicalModelRotation = this.euler;
-		// or for pen: 	this.renderView.physicalPenRotation = this.euler;
-
-
-		// example for model:
-		// If board already initialized, remove board and reset status message.
-		// if(this.board) {
-		// 	this.board = undefined;
-		// 	self.sensorstatus = '';
-		// 	return;
-		// }
-		//
-
-		//
-		// this.board = new five.Board({
-		// 	repl: false,
-		// 	debug: true
-		// });
-		//
-		// function boardFailed(f) {
-		// 	log
-		// 	self.board = undefined;
-		// 	self.sensorstatus = '(disconnected or error)';
-		// }
-		//
-		// self.boardConnectionTimeout = setTimeout(() => {
-		// 	console.log('timeout');
-		// 	boardFailed();
-		// }, 10000);
-		//
-		// this.board.on('ready', function() {
-		// 	console.log('board is ready');
-		// 	clearTimeout(self.boardConnectionTimeout);
-		// 	let imu = new five.IMU({
-		// 		controller: 'BNO055',
-		// 		enableExternalCrystal: false // this can be turned on for better performance if you are using the Adafruit board
-		// 	});
-		// 	self.sensorstatus = '(connected)';
-		//
-		// 	// Update this.renderView with new physical rotation data.
-		// 	imu.orientation.on('change', function() {
-		// 		this.renderView.physicalModelRotation = this.euler;
-		// 	});
-		// });
-		//
-		//
-		//
-		// this.board.on('fail', boardFailed);
-
-
-
-
+		if (this.penStatus === 'Connected') {
+			ipc.send('disconnectPen');
+			console.log('trying to disconnect pen');
+		} else {
+			ipc.send('startScan');
+			console.log('trying to connect pen');
+		}
 	},
 
 	deleteProjectDB: function (project) {
@@ -232,6 +186,7 @@ Polymer({
 
 		return sync;
 	},
+
 	addTopic: function() {
 		// add new topic to active project
 		return localProjectDB.put({
@@ -280,8 +235,8 @@ Polymer({
 	login: function(user, password) {
 		return userDB.login(user, password);
 	},
-	loadPreferences: function() {
 
+	loadPreferences: function() {
 		return localInfoDB.get('_local/lastSession')
 		.then((preferences) => {
 
@@ -299,8 +254,8 @@ Polymer({
 		.then(response => {
 			return userDB.getSession();
 		})
-		.then(response => {
-			if(!response.userCtx.name){
+    .then(response => {
+      if (!response.userCtx.name) {
 				console.error('Couldnt get user session: hmm, nobody logged on.');
 			}
 			// got session, that means login works and user remains logged in, get more userInfo now.
@@ -331,10 +286,9 @@ Polymer({
 				console.error('possible no internet connection, just use offline data for now', err);
 				return this.preferences;
 			}
-
 		});
-
 	},
+
 	savePreferences: function() {
 
 		// _local/lastSession should exist because loadPreferences creates it.
@@ -349,10 +303,9 @@ Polymer({
 		.catch( err => {
 			console.log('error in saving preferences', err);
 		});
-
 	},
-	setNewProfile: function({prename, surname, email, color}) {
 
+	setNewProfile: function({prename, surname, email, color}) {
 		let metadata = {
 			surname: surname,
 			prename: prename,
@@ -388,6 +341,7 @@ Polymer({
 		})
 		.catch(err => console.error);
 	},
+
 	setNewProject: function({projectname, topicname, file, emails}) {
 		// Assumes current activeProfile as the creator.
 		// We will create a new db for the project.
@@ -412,7 +366,7 @@ Polymer({
 		userDB.getUser(this.activeProfile.name).then((response) => {
 			// Save intend of user to create new DB into it's 'projects' field.
 			// This field will get read on the server, which decices wether to create a
-			// DB for it!
+			// DB for it.
 
 			response.projects.push(newProjectDescription._id);
 
@@ -593,9 +547,11 @@ Polymer({
 			});
 		},
 
+		onAnnotationDeleted(evt) {
+			localProjectDB.remove(evt.detail.annotation);
+		},
 
 		onAnnotationEdit: function(evt) {
-
 			// emitted when user edits text in annotationbox and hits enter
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 				doc.description = evt.detail.newAnnotation.description;
@@ -603,26 +559,20 @@ Polymer({
 				// TODO: get colors from CSS, so it stays in one place?
 				switch (doc.status) {
 					case 'comment':
-					doc.statusColor = 'blue';
-					break;
+						doc.statusColor = 'blue';
+						break;
 					case 'task':
-					doc.statusColor = 'yellow';
-					break;
-
+						doc.statusColor = 'yellow';
+						break;
 					case 'problem':
-					doc.statusColor = 'orange';
-					break;
-					default:
-
+						doc.statusColor = 'red';
+						break;
+					default: break;
 				}
 
 				return localProjectDB.put(doc).then((value) => {});
 				// after put into DB, DB change event should be triggered automatically to update
 			});//.then(() => {updateElements()})
-		},
-
-		onAnnotationDelete: function(evt) {
-			return this.deleteAnnotation(evt.detail);
 		},
 
 		updateElements: function(options) {
@@ -650,7 +600,6 @@ Polymer({
 				this.renderView.resize();
 			}
 		},
-
 
 		keyUp: function(evt) {
 			// if(evt.keyCode === 189){
@@ -705,7 +654,7 @@ Polymer({
 		},
 
 		resetLocalDB: function (e) {
-			ipcRenderer.send('asynchronous-message', 'resetLocalDB');
+			ipc.send('asynchronous-message', 'resetLocalDB');
 		},
 
 		mouseOutAnnotationLabel: function (e) {
@@ -718,20 +667,62 @@ Polymer({
 				annotationBox.scrollIntoView({block: 'end', behavior: 'smooth'});
 			}, 500);
 		},
+
 		annotationBoxClicked: function (e) {
 			e.target.classList.toggle('selectedAnnotation');
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
 			this.$.annotationSelector.select(item);
 		},
+
 		_selectedAnnotationChanged: function (e) {
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;
 			this.renderView.focusAnnotation(this.selectedAnnotation);
 		},
+
 		toolChanged: function (e) {
 			this.objectTool = this.$.toolSelector.selected;
 			console.log(this.objectTool);
+		},
+
+		setupEventHandlers() {
+			const callback = state => {
+				if (!renderView) return;
+				this.renderView.physicalModelState = state;
+			};
+
+			let annotationIndex = 0;
+
+			const penCallback = (eventName) => {
+				if (eventName === 'buttonDown') {
+					this.addAnnotation({
+						detail: {
+							description: `Annotation #${++annotationIndex}`,
+							position: this.renderView.pointerSphere.getWorldPosition(),
+							cameraPosition: this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
+							// cameraRotation: camera.rotation,
+							cameraUp: this.renderView.camera.up,
+						},
+					});
+				}
+			};
+
+			this.bno055 = new BNO055(callback, penCallback);
+			ipc.on('connectStatus', (emitter, status, percent) => {
+				this.penStatus = status;
+				this.penStatusPercent = percent;
+				this.penButtonText = status === 'Connecting' ? `${status} (${percent}%)` : `${status}`;
+				console.log('Connect status:', status, percent);
+				// setTimeout(() => {
+				// 	this.bno055.straighten();
+				// }, 5000);
+				if (status === 'Connected' && percent === 100) {
+					this.penButtonText = 'Disconnect Pen';
+					this.bno055.reset();
+				} else if (status === 'Disconnected') {
+					this.penButtonText = 'Connect Pen';
+				}
+			});
+
+			ipc.on('uartRx', (emitter, data) => this.bno055.push(data));
 		}
-
-
-
 	});

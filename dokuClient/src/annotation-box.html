@@ -23,22 +23,6 @@
 				border-radius: 0px;
 			}
 
-			#deleteBtn {
-				color: rgb(232, 146, 90);
-				position: absolute;
-				top: 50%;
-				left: 85%;
-
-			}
-
-			#deleteBtn.hidden {
-				display: none;
-			}
-
-
-
-
-
 
 			#container {
 				display: flex;
@@ -111,15 +95,17 @@
 				flex: 1.5 0 0;
 				display: flex;
 				flex-direction: row;
+				justify-content: space-around;
 				color: rgb(197, 227, 241);
+				font-size: 0.75em;
 			}
 
-			#tagsAndStatus > #tags, #status {
-				flex: 1 0 0;
-
+			#tagsAndStatus > * {
+				flex: 1;
+				margin: 0;
 			}
 
-			#tags {
+			#tagsAndStatus > paper-button:not(:last-of-type) {
 				border-right: 1px solid rgb(21, 68, 89);
 			}
 
@@ -181,18 +167,16 @@
 				<br>
 				<div contenteditable="true" id="annotationText" on-keydown="keydown">{{annotation.description}}</div>
 			</div>
-			<paper-icon-button id="deleteBtn" class="hidden" icon="delete" on-tap="handleDelete"></paper-icon-button>
 			<div id="tagsAndStatus">
 				<paper-button id="tags">Tags</paper-button>
+				<paper-button on-tap="deleteAnnotation" id="delete">Delete</paper-button>
 				<paper-button class$="[[annotation.status]]" id="status" dropdown-trigger on-tap="openStatusDropdown">[[annotation.status]]</paper-button>
 				<iron-dropdown always-on-top auto-fit-on-attach id="statusDropdown" horizontal-align="right" vertical-align="top">
-
-<paper-listbox on-tap="clickedStatusList" attr-for-selected="label" selected="{{annotation.status}}" fallback-selection="[[annotation.status]]" id="statusList" on-iron-select="statusChanged" class="dropdown-content">
-	<paper-item class="comment" label="comment">COMMENT</paper-item>
-	<paper-item class="task" label="task">TASK</paper-item>
-<paper-item class="problem" label="problem">PROBLEM</paper-item>
-</paper-listbox>
-
+					<paper-listbox on-tap="clickedStatusList" attr-for-selected="label" selected="{{annotation.status}}" fallback-selection="[[annotation.status]]" id="statusList" on-iron-select="statusChanged" class="dropdown-content">
+						<paper-item class="comment" label="comment">COMMENT</paper-item>
+						<paper-item class="task" label="task">TASK</paper-item>
+					<paper-item class="problem" label="problem">PROBLEM</paper-item>
+					</paper-listbox>
 				</iron-dropdown>
 
 
@@ -245,15 +229,17 @@
 
 				if(event.keyIdentifier === 'Enter'){
 					event.preventDefault();
-					this.handleEdit(event);
+					this.editAnnotation(event);
 				}
 			},
-			handleEdit: function(event, detail, sender) {
+			editAnnotation: function(event, detail, sender) {
 				this.annotation.description = event.srcElement.innerHTML;
 				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
 			},
-			handleDelete: function (event, detail, sender) {
-				this.fire('annotation-deleted-by-user', this.annotation);
+			deleteAnnotation(event) {
+				this.fire('annotation-deleted-by-user', {annotation: this.annotation, elem: this});
+				event.preventDefault();
+				event.stopPropagation();
 			},
 			computeNameLetters: function (prename, surname) {
 				return prename[0] + surname[0];
@@ -272,15 +258,6 @@
 			openStatusDropdown: function (e) {
 					this.$.statusDropdown.toggle();
 			},
-			mouseEnter: function (e) {
-				this.$.deleteBtn.classList.toggle('hidden');
-			},
-
-			mouseLeave: function (e) {
-				this.$.deleteBtn.classList.toggle('hidden');
-			}
-
-
 		});
 	</script>
 

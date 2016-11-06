@@ -6,35 +6,29 @@
 <dom-module id="render-view">
 
 	<template>
-	<style is="custom-style">
-	:host {
-		margin: 0;
-		cursor: -webkit-grab;
-		min-height: 100%;
-		min-width: 100%;
-	}
+		<style is="custom-style">
+			:host {
+				margin: 0;
+				cursor: -webkit-grab;
+				min-height: 100%;
+				min-width: 100%;
+			}
 
-	:host.track {
-		cursor: -webkit-grabbing;
-	}
+			:host.track {
+				cursor: -webkit-grabbing;
+			}
 
+			:host:hover {}
 
+			canvas {
+				width: 100%;
+				height: 100%;
+			}
 
-	:host:hover {}
-
-	canvas {
-		width: 100%;
-		height: 100%;
-	}
-
-	:host.polygonCursor {
-		cursor: crosshair;
-	}
-
-
-
-</style>
-
+			:host.polygonCursor {
+				cursor: crosshair;
+			}
+		</style>
 	</template>
 
 	<script>
@@ -45,7 +39,6 @@
 
 	var glScene = new THREE.Scene();
 	var cssScene = new THREE.Scene();
-	var camera;
 	var controls;
 	var cssObject;
 	var glRenderer;
@@ -59,6 +52,7 @@
 
 	Polymer({
 		is: "render-view",
+
 		properties: {
 			fileRepresentation: Object,
 			file: {
@@ -73,21 +67,18 @@
 				type: Array,
 				observer: "_annotationsChanged"
 			},
-			physicalModelRotation: {
+			physicalModelState: {
 				type: Object,
-				observer: "_physicalModelRotationChanged"
-			},
-			physicalPenRotation: {
-				type: Object,
-				observer: "_physicalPenRotationChanged"
+				observer: "physicalModelStateChanged"
 			}
 		},
+
 		listeners: {
 			'tap': 'tap',
 			'up': 'toggleTrack',
 			'down': 'toggleTrack',
 			'track': 'track',
-			'mousemove': 'mouseMoved'
+			'mousemove': 'mouseOrPenMoved'
 		},
 
 		ready: function() {
@@ -98,22 +89,26 @@
 			this.rendering = false;
 			document.addEventListener('keydown', this.keydown.bind(this));
 		},
+
 		startRendering: function() {
-			if(this.rendering === false) {
+			if (this.rendering === false) {
 				console.log('started rendering');
 				this.rendering = true;
 				animate();
 			}
 		},
+
 		animate: function () {
 			requestAnimationFrame(this.animate.bind(this));
-			this.light.position.copy(camera.position);
-			this.spotLight.position.copy(camera.position);
+			this.light.position.copy(this.camera.position).addScaledVector(this.camera.up, this.standardDistance);
+			this.spotLight.position.copy(this.camera.position);
+
 			controls.update();
 		},
+
 		render: function() {
-			glRenderer.render(glScene, camera);
-			cssRenderer.render(cssScene, camera);
+			glRenderer.render(glScene, this.camera);
+			cssRenderer.render(cssScene, this.camera);
 		},
 
 		resetGroups: function () {
@@ -133,6 +128,66 @@
 
 		},
 
+		createPen() {
+			// Nesting: Offset -> Orientation -> Object
+
+			// Add physical pen model
+			this.penGroupGLOffset = new THREE.Group();
+			this.penGroupGLOffset.rotateX(-0.5 * Math.PI);
+			this.penGroupGLOrientation = new THREE.Group();
+			this.penGroupGLOffset.add(this.penGroupGLOrientation);
+			this.penGroupGL = new THREE.Object3D();
+			this.penGroupGLOrientation.add(this.penGroupGL);
+
+			glScene.add(this.penGroupGLOffset);
+			let penGeometry = new THREE.BoxBufferGeometry(
+				0.4 * this.standardDistance,
+				0.1 * this.standardDistance,
+				0.1 * this.standardDistance
+			);
+			let penMaterial = new THREE.MeshStandardMaterial({
+				side: THREE.DoubleSide,
+				color: 0x333333,
+				roughness: 0.75,
+				metalness: 0.2
+			});
+
+			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
+			this.physicalPenSpotLight = new THREE.SpotLight( 0xffeedd, 1, 0, 0.5, 0.3, 2.0 );
+
+			this.physicalPenModel.position.set(
+				1.5 * this.standardDistance,
+				// 0,
+				0,
+				0
+			);
+			const penAxisHelper = new THREE.AxisHelper(0.3 * this.standardDistance);
+			penAxisHelper.position.copy(this.physicalPenModel.position);
+			this.penGroupGL.add(penAxisHelper);
+			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
+			this.penGroupGL.add( this.physicalPenModel );
+			this.penGroupGL.add( this.physicalPenSpotLight );
+
+			let center = new THREE.Vector3(0, 0, 0);
+			this.physicalPenSpotLight.worldToLocal(center);
+			this.physicalPenSpotLight.lookAt(center);
+		},
+
+		physicalModelStateChanged: function () {
+			if (this.penGroupGLOrientation) {
+				// TODO Use quaternion instead of euler
+				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
+				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
+				// if (this.fileRepresentation) {
+				// 	this.fileRepresentation.setRotationFromQuaternion(quaternion);
+				// }
+				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
+				this.mouseOrPenMoved();
+				requestAnimationFrame(() => this.render());
+				// this.render();
+			}
+		},
+
 		attached: function() {
 
 			this.modus = {modelGrabbing: false};
@@ -140,8 +195,12 @@
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
 			this.standardDistance = 500;
-			camera = new THREE.PerspectiveCamera(50, width / height, this.standardDistance / 10, this.standardDistance * 10);
-			camera.position.set(this.standardDistance, this.standardDistance, this.standardDistance);
+			this.camera = new THREE.PerspectiveCamera(50, width / height, this.standardDistance / 100, this.standardDistance * 100);
+			this.camera.position.set(
+				2 * this.standardDistance,
+				2 * this.standardDistance,
+				2 * this.standardDistance
+			);
 
 			glRenderer = new THREE.WebGLRenderer({
 				antialias: false,
@@ -149,7 +208,7 @@
 			});
 			glRenderer.setClearColor(0x00ff00, 0.0);
 			glRenderer.setSize(width, height);
-
+			glRenderer.shadowMapEnabled = true;
 
 			// cssRenderer is used for font rendering
 			cssRenderer = new THREE.CSS3DRenderer();
@@ -162,36 +221,33 @@
 			cssRenderer.domElement.style.top = 0;
 
 
-			this.meshMaterial = new THREE.MeshStandardMaterial({
+			this.meshMaterial = new THREE.MeshLambertMaterial({
 				side: THREE.DoubleSide,
 				color: 0x787878,
 				roughness: 0.75,
-				metalness: 0.05
+				metalness: 0.02
 			})
 
-			this.light = new THREE.PointLight( 0xffffff, 1.2, 0 );
-			this.spotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 1, 2.0 );
+			this.atmosphericLight = new THREE.DirectionalLight( 0x336699, 0.5);
+			this.atmosphericLight.castShadow = true;
+			this.atmosphericLight.shadowDarkness = 0.5;
+			this.atmosphericLight.shadowMapSoft = true;
+			this.atmosphericLight.shadowMapWidth = 1024;
+			this.atmosphericLight.shadowMapHeight = 1024
+			this.atmosphericLight.position.set(5 * this.standardDistance, 10 * this.standardDistance, -2.5 * this.standardDistance);
 
-			// Add physical pen model
-			this.penGroupGL = new THREE.Object3D();
-			glScene.add(this.penGroupGL);
-			let penGeometry = new THREE.BoxBufferGeometry( this.standardDistance/10, this.standardDistance/10, this.standardDistance/3 );
-			let penMaterial = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
-			this.physicalPenSpotLight = new THREE.SpotLight( 0xffdddd, 1.2, 0, 0.5, 0.3, 2.0 );
+			this.atmosphericLight2 = new THREE.DirectionalLight( 0x336699, 0.5);
+			this.atmosphericLight2.castShadow = true;
+			this.atmosphericLight2.shadowDarkness = 0.5;
+			this.atmosphericLight2.shadowMapSoft = true;
+			this.atmosphericLight2.shadowMapWidth = 1024;
+			this.atmosphericLight2.shadowMapHeight = 1024
+			this.atmosphericLight2.position.set(-5 * this.standardDistance, 10 * this.standardDistance, 2.5 * this.standardDistance);
 
+			this.light = new THREE.PointLight( 0xffeedd, 1, 0 );
+			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.5, 1, 2.0 );
 
-			this.physicalPenModel.position.set(this.standardDistance, this.standardDistance, this.standardDistance);
-			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
-			this.penGroupGL.add( this.physicalPenModel );
-			this.penGroupGL.add( this.physicalPenSpotLight );
-
-			let center = new THREE.Vector3(0, 0, 0);
-			this.penGroupGL.worldToLocal(center);
-
-			this.physicalPenModel.lookAt(center);
-			this.physicalPenSpotLight.lookAt(center);
-
+			glScene.add(this.atmosphericLight);
 			glScene.add(this.light);
 			glScene.add(this.spotLight);
 
@@ -200,18 +256,19 @@
 			Polymer.dom(this.root).appendChild(glRenderer.domElement);
 			Polymer.dom(this.root).appendChild(cssRenderer.domElement);
 
-			if(this.labelGroup === undefined)
+			if (this.labelGroup === undefined)
 				this.labelGroup = new THREE.Object3D();
-			if(this.annotationGlGroups === undefined)
+			if (this.annotationGlGroups === undefined)
 				this.annotationGlGroups = new THREE.Object3D();
 
+			this.createPen();
 
 			//cssScene.add(this.labelGroup);
 			//glScene.add(this.annotationGlGroups);
 			this.resetGroups();
 
 			// setup 3d-controls (rotating the camera with cursor)
-			controls = new THREE.TrackballControls(camera, this);
+			controls = new THREE.TrackballControls(this.camera, this);
 			controls.rotateSpeed = 1.0;
 			controls.zoomSpeed = 1.2;
 			controls.panSpeed = 0.8;
@@ -223,9 +280,12 @@
 
 			// add cursor pointer to 3D scene
 			var sphereGeometry = new THREE.SphereGeometry( this.standardDistance / 45, 6, 6 );
-			var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+			var sphereMaterial = new THREE.MeshLambertMaterial( {color: 0xff0000} );
 			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
 			glScene.add(this.pointerSphere);
+
+			var axisHelper = new THREE.AxisHelper( this.standardDistance );
+			glScene.add( axisHelper );
 
 			// create Raycaster used for polygon editing tool
 			this.raycaster = new THREE.Raycaster()
@@ -241,13 +301,17 @@
 			this.fire('initialized')
 		},
 
+		getPenPosition() {
+			return this.penGroupGLOffset;
+		},
+
 		resize: function(event) {
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
 			glRenderer.setSize(width, height);
 			cssRenderer.setSize(width, height);
-			camera.aspect = width / height;
-			camera.updateProjectionMatrix();
+			this.camera.aspect = width / height;
+			this.camera.updateProjectionMatrix();
 			controls.handleResize();
 			this.render();
 		},
@@ -264,8 +328,9 @@
 			var filepath = URL.createObjectURL(this.file)
 			loader.load(filepath,
 				geometry  => {
-					var meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
-
+					const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
+					meshFromFile.castShadow = true;
+					meshFromFile.receiveShadow = true;
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
 					// TODO: Save scale factor in DB.
@@ -275,7 +340,7 @@
 
 
 					// swap existing mesh with new mesh
-					if(this.fileRepresentation !== undefined)
+					if (this.fileRepresentation !== undefined)
 						this.mainGroupGL.remove(this.fileRepresentation);
 
 					this.fileRepresentation = meshFromFile;
@@ -284,19 +349,17 @@
 
 
 					// create group for text annotations in 3D
-					if(this.labelGroup === undefined)
+					if (this.labelGroup === undefined)
 						this.labelGroup = new THREE.Object3D();
-					if(this.annotationGlGroups === undefined)
+					if (this.annotationGlGroups === undefined)
 						this.annotationGlGroups = new THREE.Object3D();
 
 					this.mainGroupCSS.add(this.labelGroup);
 					this.mainGroupGL.add(this.annotationGlGroups);
 					this.mainGroupGL.add(this.fileRepresentation);
 					glScene.add(this.mainGroupGL);
-					glScene.add(this.penGroupGL);
+					glScene.add(this.penGroupGLOffset);
 					cssScene.add(this.mainGroupCSS);
-
-
 
 					this.render();
 					this.animate();
@@ -311,40 +374,11 @@
 			// FIXME: only update modified ones, instead of removing and completely re-creating
 			this.resetGroups();
 
-
 			for (let annotation of this.annotations) {
 				this.addAnnotationObject(annotation);
 			}
+
 			this.render();
-		},
-		_physicalModelRotationChanged: function () {
-			// TODO Use quaternion instead of euler
-			this.mainGroupGL.rotation.set(
-				this.physicalModelRotation.roll / (180/Math.PI),
-				this.physicalModelRotation.heading / (180/Math.PI),
-				this.physicalModelRotation.pitch / (180/Math.PI)
-			);
-
-			this.mainGroupCSS.rotation.set(
-				this.physicalModelRotation.roll / (180/Math.PI),
-				this.physicalModelRotation.heading / (180/Math.PI),
-				this.physicalModelRotation.pitch / (180/Math.PI)
-			);
-
-
-			requestAnimationFrame(this.render.bind(this));
-		},
-
-		_physicalPenRotationChanged: function () {
-			// TODO Use quaternion instead of euler
-			this.penGroupGL.rotation.set(
-				this.physicalPenRotation.roll / (180/Math.PI),
-				this.physicalPenRotation.heading / (180/Math.PI),
-				this.physicalPenRotation.pitch / (180/Math.PI)
-			);
-
-
-			requestAnimationFrame(this.render.bind(this));
 		},
 
 		addAnnotationObject: function (annotation) {
@@ -360,10 +394,9 @@
 			annotationGlGroup.add(arrow);
 
 
-			// HACK:create sphere for testing position
 			let sphere = new THREE.Mesh(
-				new THREE.SphereGeometry(this.standardDistance / 35, 6, 6),
-				new THREE.MeshBasicMaterial({ color: 0xff0000})
+				new THREE.SphereGeometry(this.standardDistance / 100, 6, 6),
+				new THREE.MeshLambertMaterial({ color: 0xff0000})
 			);
 			sphere.position.copy(annotation.position);
 			annotationGlGroup.add(sphere);
@@ -371,7 +404,7 @@
 			annotation3DObject.arrow = arrow;
 
 			// if annotation has polygon info, create it and add it to the scene
-			if(annotation.polygon !== undefined) {
+			if (annotation.polygon !== undefined) {
 				let polygon = this.createPolygon(annotation.polygon, annotation.creatorProfile.color);
 				annotationGlGroup.add(polygon)
 				annotation3DObject.polygon = polygon
@@ -387,14 +420,14 @@
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster()
 
-			if(this.labelGroup.children === undefined) return
+			if (this.labelGroup.children === undefined) return
 
 			for(let label of this.labelGroup.children) {
-				let normalizedDirection = (label.position.clone().sub(camera.position)).normalize()
-				raycaster.set(camera.position.clone(), normalizedDirection)
-				raycaster.far = camera.position.distanceTo(label.position)
+				let normalizedDirection = (label.position.clone().sub(this.camera.position)).normalize()
+				raycaster.set(this.camera.position.clone(), normalizedDirection)
+				raycaster.far = this.camera.position.distanceTo(label.position)
 				let intersections = raycaster.intersectObject(this.fileRepresentation)
-				if(intersections.length !== 0) {
+				if (intersections.length !== 0) {
 					label.element.style.opacity = 0.0
 				} else {
 					label.element.style.opacity = 0.8
@@ -417,31 +450,41 @@
 			);
 		},
 
-		mouseMoved: function (e) {
+		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
 
+			switch (this.tool) {
+				case 'polygon':
+				case 'none':
+					if (event) {
+						this.updateMouse(event);
+					}
 
+					let intersections = [];
 
-			if(this.tool === 'polygon') {
-				this.updateMouse(e);
+					if (this.fileRepresentation) {
+						if (this.tool === 'polygon') {
+							this.raycaster.setFromCamera(this.mouse, this.camera);
+						} else {
+							const origin = this.physicalPenModel.getWorldPosition();
+							const normalizedDirection = origin.clone().negate().normalize();
+							this.raycaster.set(origin, normalizedDirection);
+						}
+						intersections = this.raycaster.intersectObject(this.fileRepresentation);
+					}
 
+					if (intersections.length !== 0) {
+						if (this.modus.modelGrabbing === false)
+							Polymer.dom(this).classList.add('polygonCursor');
+						this.spotLight.target = this.pointerSphere;
+						this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
+						this.render();
+					} else {
+						Polymer.dom(this).classList.remove('polygonCursor')
+					}
 
-				let intersections = [];
-				if(this.fileRepresentation) {
-					this.raycaster.setFromCamera(this.mouse, camera);
-					intersections = this.raycaster.intersectObject(this.fileRepresentation);
-				}
-
-				if(intersections.length !== 0){
-					if(this.modus.modelGrabbing === false)
-						Polymer.dom(this).classList.add('polygonCursor');
-					this.spotLight.target = this.pointerSphere;
-					this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
-					this.render()
-				} else {
-					Polymer.dom(this).classList.remove('polygonCursor')
-				}
+					break;
 			}
 		},
 
@@ -453,19 +496,17 @@
 			switch (e.which) {
 				case 13: /*Enter*/
 					console.log('pressed enter');
-					if(this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
+					if (this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						// TODO: finish shape and create annotation
-
-
 						this.fire('create-annotation', {
 							description: 'new polygon...',
 							polygon: this.verticesPolygonTool,
 							position: this.verticesPolygonTool[0],
 							cameraPosition: controls.object.position.clone(),
 							// cameraRotation: camera.rotation,
-							cameraUp: camera.up
+							cameraUp: this.camera.up
 						});
-						if(this.previewAnnotation !== undefined) {
+						if (this.previewAnnotation !== undefined) {
 							this.mainGroupGL.remove(this.previewAnnotation.arrow);
 							this.mainGroupGL.remove(this.previewAnnotation.polygon);
 							this.mainGroupCSS.remove(this.previewAnnotation.label);
@@ -479,7 +520,7 @@
 					break;
 					case 27 /* Escape */:
 						console.log(this.previewAnnotation);
-						if(this.previewPolygon !== undefined){
+						if (this.previewPolygon !== undefined){
 							glScene.remove(this.previewPolygon);
 							this.previewPolygon = undefined;
 						}
@@ -495,16 +536,15 @@
 						requestAnimationFrame(this.render.bind(this));
 					break;
 				default:
-
+					break;
 			}
-
 		},
 		track: function (e) {
 
 		},
 		tap: function(e) {
-			console.log('tap');
-			if(jsonEqual(this.previousCameraPosition, camera.position) === false || jsonEqual(this.previousCameraRotation, camera.rotation) == false) {
+
+			if (jsonEqual(this.previousCameraPosition, this.camera.position) === false || jsonEqual(this.previousCameraRotation, this.camera.rotation) == false) {
 				console.log('moved! return!');
 			}
 
@@ -513,16 +553,15 @@
 
 			// update the picking ray with the camera and mouse position
 			this.fileRepresentation.updateMatrixWorld()
-			this.raycaster.setFromCamera(this.mouse, camera);
+			this.raycaster.setFromCamera(this.mouse, this.camera);
 
 			// Calculate objects intersecting the picking ray
 			// only use the first/frontmost intersection  -> [0]
-			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
-			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+			const intersections = this.raycaster.intersectObject(this.fileRepresentation);
+			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
 			this.mainGroupGL.worldToLocal(intersection.point);
-
 
 			switch (this.tool) {
 
@@ -533,29 +572,28 @@
 						position: intersection.point.clone(),
 						cameraPosition: controls.object.position.clone(),
 						// cameraRotation: camera.rotation,
-						cameraUp: camera.up
+						cameraUp: this.camera.up
 					});
 					break;
 
 				case 'polygon':
-
 					this.verticesPolygonTool.push(intersection.point.clone());
 
 					// create new preview polygon/shape when enough points are available
-					if(this.verticesPolygonTool.length >= 3) {
+					if (this.verticesPolygonTool.length >= 3) {
 							glScene.remove(this.previewPolygon);
 							this.previewPolygon = this.createPolygon(this.verticesPolygonTool, 0x00ff00);
 							glScene.add(this.previewPolygon);
 					}
 
 					// And show a temporary preview annotation if first tap.
-					if(this.previewAnnotation === undefined) {
+					if (this.previewAnnotation === undefined) {
 						this.previewAnnotation = this.addAnnotationObject({
 							_id: 'previewAnnotation',
 							description: "Press Enter to edit/create. Esc to cancel.",
 							position: intersection.point.clone(),
 							cameraPosition: controls.object.position.clone(),
-							cameraUp: camera.up
+							cameraUp: this.camera.up
 						});
 					}
 
@@ -563,11 +601,9 @@
 				break;
 				default:
 			}
-
 		},
 
 		createPolygon: function (vertices, color) {
-
 			// IDEA: move to helper object?
 			let polygon = new THREE.Geometry();
 			polygon.vertices = vertices;
@@ -576,12 +612,13 @@
 			for (var i = 1; i < polygon.vertices.length - 1; i++) {
 				polygon.faces.push( new THREE.Face3( 0, i, i+1 ) )
 			}
-
-				return new THREE.Mesh(
-					polygon,
-					new THREE.MeshBasicMaterial( {color: color, side: THREE.DoubleSide})
-				);
-
+			return new THREE.Mesh(
+				polygon,
+				new THREE.MeshBasicMaterial( {
+					color: color,
+					side: THREE.DoubleSide
+				} )
+			);
 		},
 
 		createLabel: function (annotation, multFactor) {
@@ -600,13 +637,13 @@
 			div.addEventListener('mouseout', () => {
 				this.fire('label-out', annotation._id);
 			});
+
 			let label = new THREE.CSS3DSprite(div);
 
 			if (annotation.cameraPosition !== undefined) {
 				// Convert x,y,z object into Vector3 object.
 				let camPos = new THREE.Vector3(annotation.cameraPosition.x, annotation.cameraPosition.y, annotation.cameraPosition.z);
 				label.position.copy(annotation.cameraPosition).multiplyScalar(0.6);
-
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
 				label.position.multiplyScalar(multFactor);
@@ -639,24 +676,20 @@
 
 			switch (this.tool) {
 				case 'polygon':
-
 					break;
 				default:
-
+					break;
 			}
 		},
 		focusAnnotation: function (annotation) {
-
-			if(annotation.cameraPosition !== undefined) {
+			if (annotation.cameraPosition !== undefined) {
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)
 				controls.resetFrom(annotation.cameraPosition, annotation.cameraUp);
 			} else {
 				return;
 			}
-
 		}
-
 	})
 	</script>
 
