@@ -67,6 +67,9 @@
 				type: Array,
 				observer: "_annotationsChanged"
 			},
+			labels: {
+				type: Map
+			},
 			physicalModelState: {
 				type: Object,
 				observer: "physicalModelStateChanged"
@@ -113,8 +116,9 @@
 
 		resetGroups: function () {
 			// Remove labels and annotations
+			this.labels = new Map();
 			if(this.labelGroup && this.annotationGlGroups) {
-
+				
 				for( var i = this.labelGroup.children.length - 1; i >= 0; i--) {
 					this.labelGroup.remove(this.labelGroup.children[i]);
 					cssScene.remove(this.labelGroup.children[i]);
@@ -386,6 +390,8 @@
 			let annotationGlGroup = new THREE.Object3D();
 			let multFactor = 2;
 			let label = this.createLabel(annotation, multFactor);
+
+			this.labels.set(annotation._id, label);
 			this.labelGroup.add(label);
 			annotation3DObject.label = label;
 
@@ -492,14 +498,15 @@
 			if (e.defaultPrevented) {
 				return; // Should do nothing if the key event was already consumed.
 			}
-			console.log(e);
+			
 			switch (e.which) {
 				case 13: /*Enter*/
 					console.log('pressed enter');
 					if (this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
+						event.preventDefault();
 						// TODO: finish shape and create annotation
 						this.fire('create-annotation', {
-							description: 'new polygon...',
+							description: '',
 							polygon: this.verticesPolygonTool,
 							position: this.verticesPolygonTool[0],
 							cameraPosition: controls.object.position.clone(),
@@ -536,6 +543,7 @@
 						requestAnimationFrame(this.render.bind(this));
 					break;
 				default:
+
 					break;
 			}
 		},
@@ -565,15 +573,29 @@
 
 			switch (this.tool) {
 
-				case 'none':
+				case 'freehand':
 
-					this.fire('create-annotation', {
-						description: 'new polygon...',
-						position: intersection.point.clone(),
-						cameraPosition: controls.object.position.clone(),
-						// cameraRotation: camera.rotation,
-						cameraUp: this.camera.up
-					});
+						event.preventDefault();
+						// TODO: finish shape and create annotation
+						this.fire('create-annotation', {
+							description: '',
+							polygon: [intersection.point.clone()],
+							position: intersection.point.clone(),
+							cameraPosition: controls.object.position.clone(),
+							// cameraRotation: camera.rotation,
+							cameraUp: this.camera.up
+						});
+						if (this.previewAnnotation !== undefined) {
+							this.mainGroupGL.remove(this.previewAnnotation.arrow);
+							this.mainGroupGL.remove(this.previewAnnotation.polygon);
+							this.mainGroupCSS.remove(this.previewAnnotation.label);
+							this.previewAnnotation = undefined;
+						}
+						glScene.remove(this.previewPolygon);
+						this.previewPolygon = undefined;
+						this.verticesPolygonTool = [];
+						console.log('added polygon annotation');
+
 					break;
 
 				case 'polygon':
@@ -631,14 +653,15 @@
 			div.style.border = annotation.statusColor + " solid 0.125em";
 			div.style.transition = "opacity 0.5s";
 			div.innerHTML = annotation.description;
-			div.addEventListener('mouseover', () => {
-				this.fire('label-over', annotation._id);
-			});
-			div.addEventListener('mouseout', () => {
-				this.fire('label-out', annotation._id);
-			});
+			// div.addEventListener('mouseover', () => {
+			// 	this.fire('label-over', annotation._id);
+			// });
+			// div.addEventListener('mouseout', () => {
+			// 	this.fire('label-out', annotation._id);
+			// });
 
 			let label = new THREE.CSS3DSprite(div);
+			label.userData.div = div;
 
 			if (annotation.cameraPosition !== undefined) {
 				// Convert x,y,z object into Vector3 object.

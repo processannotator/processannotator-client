@@ -168,6 +168,7 @@ Polymer({
 			// as we would have to notify updateElements about the actual changed docs. this is not true yet and may never be, just wanted to note this here in case we ever decide to do so:)
 			clearTimeout(this.updateTimeout);
 			this.updateTimeout = setTimeout(() => {
+				console.log('changes', info);
 				this.updateElements({updateFile: updateFile});
 			}, 30);
 
@@ -201,6 +202,7 @@ Polymer({
 	},
 
 	// this is an event handler, triggering on enter-key event in this.renderView
+	// or by a button press on the physical pen.
 	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[]}}) {
 
 		let annotation = {
@@ -220,7 +222,8 @@ Polymer({
 			polygon
 		};
 
-		return localProjectDB.put(annotation).catch(err => console.log);
+		return localProjectDB.put(annotation)
+		.catch(err => console.log)
 	},
 
 	deleteAnnotation: function (annotation) {
@@ -552,7 +555,18 @@ Polymer({
 		},
 
 		onAnnotationEdit: function(evt) {
-			// emitted when user edits text in annotationbox and hits enter
+			
+			// If edit is temporary, don't inform the database
+			if(evt.detail.temporary === true) {
+				this.renderView.labels.get(evt.detail.newAnnotation._id).userData.div.innerHTML = evt.detail.newAnnotation.description;
+				return;
+			}
+			console.log('edited annotation, inform database');
+
+			
+			
+			
+			// emitted when user edits text in annotationbox
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 				doc.description = evt.detail.newAnnotation.description;
 				doc.status = evt.detail.newAnnotation.status;
