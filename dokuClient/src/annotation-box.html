@@ -212,10 +212,9 @@
 				}
 			},
 			attached: function () {
-
+				this.$.annotationText.focus();
 			},
 			_annotationChanged: function() {
-				console.log(this.annotations);
 				this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
 				this.$.header.style.color = this.annotation.statusColor;
 			},
@@ -227,14 +226,20 @@
 				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
 
-				if(event.keyIdentifier === 'Enter'){
-					event.preventDefault();
-					this.editAnnotation(event);
-				}
+
+				// Reatime inform app about keypress, to update 3D-labels especially, before
+				// DB update kicks in (editAnnotation)
+				this.editAnnotation({text: event.srcElement.innerHTML, temporary: true});
+				
+				clearTimeout(this.editTimeOut);
+				this.editTimeOut = setTimeout(() => {
+					this.editAnnotation({text: event.srcElement.innerHTML});
+				}, 5000);
 			},
-			editAnnotation: function(event, detail, sender) {
-				this.annotation.description = event.srcElement.innerHTML;
-				this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
+			
+			editAnnotation: function({text, temporary=false}) {
+				this.annotation.description = text;
+				this.fire('annotation-edited-by-user', {temporary, newAnnotation: this.annotation, elem: this});
 			},
 			deleteAnnotation(event) {
 				this.fire('annotation-deleted-by-user', {annotation: this.annotation, elem: this});
