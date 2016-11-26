@@ -8,15 +8,15 @@
     "Sebastian Felix Zappe"
   ],
   "dependencies": {
-    "pouchdb": "^6.0.7",
+    "pouchdb-browser": "^6.0.7",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.5",
     "worker-pouch": "^2.0.0",
     "noble": "^1.1.0"
   },
   "scripts": {
-    "build": "rollup -i src/main-app.js -o src/main-app-bundle.js",
-    "dev": "npm run build && (electron . --dev &) && rollup --watch -i src/main-app.js -o src/main-app-bundle.js",
+    "build": "rollup -c",
+    "dev": "npm run build && (electron . --dev &) && rollup -c --watch",
     "install": "./node_modules/.bin/electron-rebuild && bower install",
     "start": "npm run build && electron .",
     "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
