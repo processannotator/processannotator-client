@@ -33,7 +33,7 @@ Polymer({
 	attached: function () {
 		document.app = this;
 
-		this.setupEventHandlers();
+		this.setupPenEventHandlers();
 		this.penButtonText = 'Connect Pen';
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
@@ -684,7 +684,7 @@ Polymer({
 			console.log(this.objectTool);
 		},
 
-		setupEventHandlers() {
+		setupPenEventHandlers() {
 			const callback = state => {
 				if (!renderView) return;
 				this.renderView.physicalModelState = state;
