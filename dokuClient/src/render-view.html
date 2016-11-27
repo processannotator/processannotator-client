@@ -455,43 +455,39 @@
 				-((mouseEvent.layerY / canvas.height) * 2 - 1)
 			);
 		},
-
+		
 		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
-
-			switch (this.tool) {
-				case 'polygon':
-				case 'none':
-					if (event) {
-						this.updateMouse(event);
-					}
-
-					let intersections = [];
-
-					if (this.fileRepresentation) {
-						if (this.tool === 'polygon') {
-							this.raycaster.setFromCamera(this.mouse, this.camera);
-						} else {
-							const origin = this.physicalPenModel.getWorldPosition();
-							const normalizedDirection = origin.clone().negate().normalize();
-							this.raycaster.set(origin, normalizedDirection);
-						}
-						intersections = this.raycaster.intersectObject(this.fileRepresentation);
-					}
-
-					if (intersections.length !== 0) {
-						if (this.modus.modelGrabbing === false)
-							Polymer.dom(this).classList.add('polygonCursor');
-						this.spotLight.target = this.pointerSphere;
-						this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
-						this.render();
-					} else {
-						Polymer.dom(this).classList.remove('polygonCursor')
-					}
-
-					break;
+			
+			if (event) {
+				this.updateMouse(event);
 			}
+			
+			let intersections = [];
+			
+			if (this.fileRepresentation) {
+				if (this.tool === 'polygon' || this.tool === 'brush') {
+					this.raycaster.setFromCamera(this.mouse, this.camera);
+				} else {
+					const origin = this.physicalPenModel.getWorldPosition();
+					const normalizedDirection = origin.clone().negate().normalize();
+					this.raycaster.set(origin, normalizedDirection);
+				}
+				intersections = this.raycaster.intersectObject(this.fileRepresentation);
+			}
+			
+			if (intersections.length !== 0) {
+				if (this.modus.modelGrabbing === false) {
+					Polymer.dom(this).classList.add('polygonCursor');
+				}
+				this.spotLight.target = this.pointerSphere;
+				this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
+				this.render();
+			} else {
+				Polymer.dom(this).classList.remove('polygonCursor')
+			}
+			
 		},
 
 		keydown: function (e) {
@@ -693,9 +689,9 @@
 			// when a different tool is selected, this function is triggered
 			console.log('tool changed.');
 			//do some cleanup/inits
-			glScene.remove(this.previewPolygon)
-			this.previewPolygon = undefined
-			this.verticesPolygonTool = []
+			glScene.remove(this.previewPolygon);
+			this.previewPolygon = undefined;
+			this.verticesPolygonTool = [];
 
 			switch (this.tool) {
 				case 'polygon':
