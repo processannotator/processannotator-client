@@ -214,17 +214,15 @@
 				// see: https://github.com/PolymerElements/iron-autogrow-textarea/issues/92
 
 				this.$.annotationText.$$('textarea').focus();
+				if(this.annotation.description === '') {
+					
+				}
 			},
 			_annotationChanged: function() {
 				this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
 				this.$.header.style.color = this.annotation.statusColor;
 			},
 			keydown: function (event) {
-				// FIXME: data binding would be useful here like:
-				//console.log(this.annotation.description);
-				//Doesnt work. maybe because of iron-list?
-				// console.log(this.$.annotationText.innerHTML);
-				console.log(this.annotation.description);
 				this.editAnnotation({text: this.annotation.description, temporary: true});
 				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
@@ -265,8 +263,8 @@
 			},
 			openStatusDropdown: function (e) {
 					this.$.statusDropdown.toggle();
-			},
-		});
+			}
+		})
 	</script>
 
 </dom-module>
