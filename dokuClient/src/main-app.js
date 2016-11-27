@@ -2,8 +2,8 @@
 'use strict'; /*eslint global-strict:0*/
 
 import BNO055 from './bno055';
+// import SpeechRecognition from './speechRecognition'
 const electron = require('electron');
-console.log(electron);
 const ipc = electron.ipcRenderer;
 const { dialog } = electron.remote;
 const SERVERADDR = '141.20.168.11';
@@ -676,10 +676,10 @@ Polymer({
 		},
 
 		mouseOverAnnotationLabel: function (e) {
-			this.labelHoverTimeout = setTimeout(() => {
-				let annotationBox = document.getElementById('annotationbox_' + e.detail);
-				annotationBox.scrollIntoView({block: 'end', behavior: 'smooth'});
-			}, 500);
+			// this.labelHoverTimeout = setTimeout(() => {
+			// 	let annotationBox = document.getElementById('annotationbox_' + e.detail);
+			// 	annotationBox.scrollIntoView({block: 'end', behavior: 'smooth'});
+			// }, 500);
 		},
 
 		annotationBoxClicked: function (e) {
