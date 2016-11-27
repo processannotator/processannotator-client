@@ -2,6 +2,7 @@
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
 <link href="../bower_components/iron-icons/iron-icons.html" rel="import">
 
 <dom-module id="annotation-box">
@@ -29,11 +30,10 @@
 				flex-direction: column;
 				background-color: rgb(7, 20, 26);
 				transition: background-color 0.3s ease-in-out;
-				height: 10em;
-				min-height: 10em;
-				max-height: 15em;
+				height: auto;
+				min-height: 7em;
+				max-height: 20em;
 				/*margin-bottom: 1em;*/
-
 				cursor: pointer;
 			}
 
@@ -98,6 +98,7 @@
 				justify-content: space-around;
 				color: rgb(197, 227, 241);
 				font-size: 0.75em;
+				min-height: 2em;
 			}
 
 			#tagsAndStatus > * {
@@ -144,9 +145,16 @@
 			}
 			#annotationText {
 				cursor: text;
+				width: 100%;
+				max-height: auto;
+				outline: none;
+				background-color: none;
+				border: none;
+ 				outline: none;
+ 				box-shadow: none;
 			}
 		#annotationText:focus {
-				outline: none;
+
 			}
 
 
@@ -165,7 +173,7 @@
 			<div id="main">
 				<span>[[annotation.creationDate]]</span>
 				<br>
-				<div contenteditable="true" id="annotationText" on-keydown="keydown">{{annotation.description}}</div>
+				<iron-autogrow-textarea bind-value="{{annotation.description}}" on-input="keydown" placeholder="enter text…" id="annotationText"></iron-autogrow-textarea>
 			</div>
 			<div id="tagsAndStatus">
 				<paper-button id="tags">Tags</paper-button>
@@ -208,11 +216,15 @@
 			properties: {
 				annotation: {
 					type: Object,
-					observer: "_annotationChanged"
+					observer: "_annotationChanged",
+					notify: true
 				}
 			},
 			attached: function () {
-				this.$.annotationText.focus();
+				// HACK: this should work without $$('input')
+				// see: https://github.com/PolymerElements/iron-autogrow-textarea/issues/92
+
+				this.$.annotationText.$$('textarea').focus();
 			},
 			_annotationChanged: function() {
 				this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
@@ -223,17 +235,19 @@
 				//console.log(this.annotation.description);
 				//Doesnt work. maybe because of iron-list?
 				// console.log(this.$.annotationText.innerHTML);
+				console.log(this.annotation.description);
+				this.editAnnotation({text: this.annotation.description, temporary: true});
 				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
 
 
 				// Reatime inform app about keypress, to update 3D-labels especially, before
 				// DB update kicks in (editAnnotation)
-				this.editAnnotation({text: event.srcElement.innerHTML, temporary: true});
+				
 				
 				clearTimeout(this.editTimeOut);
 				this.editTimeOut = setTimeout(() => {
-					this.editAnnotation({text: event.srcElement.innerHTML});
+					this.editAnnotation({text: this.annotation.description});
 				}, 5000);
 			},
 			
