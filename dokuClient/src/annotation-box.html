@@ -143,18 +143,21 @@
 				color: #303030;
 				/*background-color: #696565;*/
 			}
+			#creationDate {
+					opacity: 0.65;
+					font-size: 0.85em;
+			}
+			
 			#annotationText {
 				cursor: text;
 				width: 100%;
 				max-height: auto;
-				outline: none;
 				background-color: none;
 				border: none;
- 				outline: none;
  				box-shadow: none;
+				outline: none;
 			}
-		#annotationText:focus {
-
+			#annotationText:focus {
 			}
 
 
@@ -171,7 +174,7 @@
 			</div>
 
 			<div id="main">
-				<span>[[annotation.creationDate]]</span>
+				<span id="creationDate">[[annotation.creationDate]]</span>
 				<br>
 				<iron-autogrow-textarea bind-value="{{annotation.description}}" on-input="keydown" placeholder="enter text…" id="annotationText"></iron-autogrow-textarea>
 			</div>
@@ -186,22 +189,8 @@
 					<paper-item class="problem" label="problem">PROBLEM</paper-item>
 					</paper-listbox>
 				</iron-dropdown>
-
-
-				<!-- <paper-dropdown-menu-light id="status" value={{annotation.status}} label="Status">
-					<paper-listbox class="dropdown-content" id="statusList">
-						<paper-item label="comment">Comment</paper-item>
-						<paper-item label="task">Task</paper-item>
-						<paper-item label="problem">Problem</paper-item>
-					</paper-listbox>
-				</paper-dropdown-menu-light> -->
-				<!-- <paper-button class$="{{status}}" id="status" on-tap="statusChanged">Status</paper-button> -->
 			</div>
 
-
-			<!-- <div id="footer">
-				<span>[[annotation.creatorProfile.prename]]</span>
-			</div> -->
 		</div>
 
 	</template>
