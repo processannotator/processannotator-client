@@ -55,6 +55,7 @@ Polymer({
 		localCachedUserDB = new PouchDB('localCachedUserDB');
 		userDB = new PouchDB(this.remoteUrl + '/_users');
 
+
 		this.loadPreferences().then(() => {
 			return new Promise((resolve, reject) => {
 				if(this.activeProfile === ''){
@@ -168,7 +169,6 @@ Polymer({
 			// as we would have to notify updateElements about the actual changed docs. this is not true yet and may never be, just wanted to note this here in case we ever decide to do so:)
 			clearTimeout(this.updateTimeout);
 			this.updateTimeout = setTimeout(() => {
-				console.log('changes', info);
 				this.updateElements({updateFile: updateFile});
 			}, 30);
 
@@ -178,8 +178,13 @@ Polymer({
 
 		localProjectDB.get('info').then(info => {
 			this.activeProject.activeTopic = info.activeTopic;
+			// TODO: Design more streamlined way for regular intervals like updating user cache
+			// put this in a worker perhaps too?
+			this.updateCachedUserDB();
 			return this.updateElements({updateFile: true});
 		});
+
+
 
 		// TODO: this.switchTopic().then(() => {
 		//  this.updateElements
@@ -227,7 +232,7 @@ Polymer({
 	},
 
 	deleteAnnotation: function (annotation) {
-
+		console.log('removing', annotation);
 		return localProjectDB.remove(annotation)
 		.catch((err) => {
 			console.error('error deleting', id);
@@ -430,13 +435,16 @@ Polymer({
 		//
 		// So, If identical user doc/info/public_fields already in cache
 		// -> dont cache again as it is expensive (network traffic)
-		updateCachedUserDB: function (annotations) {
+		updateCachedUserDB: function () {
 
-			// FUTURE TODO: implement timed queue to automaically do things like updating
-			// the user db cache etc. every once in a while (like every 10 minutes)
-			if(this.hasCachedUserDB === true) {
-				return Promise.resolve('already cached');
-			}
+			localProjectDB.allDocs({
+				include_docs: true,
+				startkey: 'annotation',
+				endkey: 'annotation\uffff'
+			})
+			.then((results) => {
+				let annotations = results.rows;
+
 
 			let userIDs = new Set();
 			let userNames = new Set();
@@ -449,6 +457,8 @@ Polymer({
 			return userDB.allDocs({
 				keys: [...userIDs],
 				include_docs: true
+			});
+
 			})
 			.then((result) => {
 				let userDocs = result.rows.map(({doc, id}) => {
@@ -525,7 +535,6 @@ Polymer({
 			})
 			.then((result) => {
 				annotations = result.rows;
-				return this.updateCachedUserDB(annotations);
 			})
 			.then(() => {
 
@@ -555,7 +564,7 @@ Polymer({
 		},
 
 		onAnnotationEdit: function(evt) {
-			
+
 			// If edit is temporary, don't inform the database
 			if(evt.detail.temporary === true) {
 				this.renderView.labels.get(evt.detail.newAnnotation._id).userData.div.innerHTML = evt.detail.newAnnotation.description;
@@ -563,9 +572,9 @@ Polymer({
 			}
 			console.log('edited annotation, inform database');
 
-			
-			
-			
+
+
+
 			// emitted when user edits text in annotationbox
 			localProjectDB.get(evt.detail.newAnnotation._id).then(doc => {
 				doc.description = evt.detail.newAnnotation.description;

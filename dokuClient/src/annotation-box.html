@@ -147,7 +147,7 @@
 					opacity: 0.65;
 					font-size: 0.85em;
 			}
-			
+
 			#annotationText {
 				cursor: text;
 				width: 100%;
@@ -199,8 +199,7 @@
 		Polymer({
 			is: "annotation-box",
 			listeners: {
-				mouseenter: 'mouseEnter',
-		    mouseleave: 'mouseLeave'
+				mouseenter: 'mouseEnter'
 			},
 			properties: {
 				annotation: {
@@ -215,7 +214,7 @@
 
 				this.$.annotationText.$$('textarea').focus();
 				if(this.annotation.description === '') {
-					
+
 				}
 			},
 			_annotationChanged: function() {
@@ -230,14 +229,14 @@
 
 				// Reatime inform app about keypress, to update 3D-labels especially, before
 				// DB update kicks in (editAnnotation)
-				
-				
+
+
 				clearTimeout(this.editTimeOut);
 				this.editTimeOut = setTimeout(() => {
 					this.editAnnotation({text: this.annotation.description});
 				}, 5000);
 			},
-			
+
 			editAnnotation: function({text, temporary=false}) {
 				this.annotation.description = text;
 				this.fire('annotation-edited-by-user', {temporary, newAnnotation: this.annotation, elem: this});
