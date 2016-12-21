@@ -555,7 +555,7 @@ Polymer({
 						doc.creatorProfile = creatorProfile;
 						return doc;
 					})
-					.catch(err_ => () {
+					.catch(err_ => {
 						this.updateCachedUserDB();
 						console.log(err_);
 					});
