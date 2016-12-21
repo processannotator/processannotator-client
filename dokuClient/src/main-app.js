@@ -90,8 +90,12 @@ Polymer({
 			}
 
 		}).then(() => {
+			// TODO, design better interval handling for these kind of background tasks
+			// as we may have a few more in the future:
+			setInterval(() => { this.updateCachedUserDB()}, 600 * 1000);
+
 			return this.updateElements({updateFile: true});
-		});
+		})
 
 		window.addEventListener('resize', this.handleResize.bind(this));
 		window.addEventListener('keyup', this.keyUp.bind(this));
@@ -512,6 +516,7 @@ Polymer({
 			})
 			.then((result) => {
 				this.hasCachedUserDB = true;
+				this.updateElements();
 			})
 			.catch((err) => console.error);
 
@@ -550,7 +555,10 @@ Polymer({
 						doc.creatorProfile = creatorProfile;
 						return doc;
 					})
-					.catch(err_ => console.error);
+					.catch(err_ => () {
+						this.updateCachedUserDB();
+						console.log(err_);
+					});
 
 					updatedAnnotations.push(updatedAnnotation);
 				}
