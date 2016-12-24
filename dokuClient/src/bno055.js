@@ -10,7 +10,7 @@ function radToDeg(radians) {
 }
 
 export default class BNO055 {
-  constructor(callback, penCallback) {
+  constructor(onSensorState, onEvent) {
     // Set initial state.
     this.state = {
       quatX: 0,
@@ -27,8 +27,8 @@ export default class BNO055 {
     };
 
     this.reset();
-    this.callback = callback;
-    this.penCallback = penCallback;
+    this.onSensorState = onSensorState;
+    this.onEvent = onEvent;
   }
 
   reset() {
@@ -66,12 +66,12 @@ export default class BNO055 {
     this.buffer = this.buffer.slice(newLine+1);
     if (line === 'buttonDown\r') {
       console.log('physical button pressed');
-      this.penCallback('buttonDown');
+      this.onEvent('buttonDown');
       return;
     }
     if (line === 'buttonUp\r') {
       console.log('physical button released');
-      this.penCallback('buttonUp');
+      this.onEvent('buttonUp');
       return;
     }
     // Now parse the components from the reading.
@@ -118,6 +118,6 @@ export default class BNO055 {
     };
     // console.log('State:', this.state);
 
-    this.callback(this.state);
+    this.onSensorState(this.state);
   }
 }

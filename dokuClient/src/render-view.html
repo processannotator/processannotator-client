@@ -67,6 +67,10 @@
 				type: Array,
 				observer: "_annotationsChanged"
 			},
+			penState: {
+				type: Object,
+				observer: "penStateChanged"
+			},
 			physicalModelState: {
 				type: Object,
 				observer: "physicalModelStateChanged"
@@ -173,23 +177,28 @@
 			this.physicalPenSpotLight.lookAt(center);
 		},
 
-		physicalModelStateChanged: function () {
+		penStateChanged: function () {
 			if (this.penGroupGLOrientation) {
-				// TODO Use quaternion instead of euler
-				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
-				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
-				// if (this.fileRepresentation) {
-				// 	this.fileRepresentation.setRotationFromQuaternion(quaternion);
-				// }
+				const quaternion = this.penState.quat.clone();
 				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
 				this.mouseOrPenMoved();
 				requestAnimationFrame(() => this.render());
-				// this.render();
+			}
+		},
+
+		physicalModelStateChanged: function () {
+			if (this.mainGroupGL) {
+				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
+				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
+				this.mainGroupGL.setRotationFromQuaternion(quaternion);
+				this.mainGroupCSS.setRotationFromQuaternion(quaternion);
+				// console.log('Rotated model:', quaternion);
+				// this.mouseOrPenMoved();
+				// requestAnimationFrame(() => this.render());
 			}
 		},
 
 		attached: function() {
-
 			this.modus = {modelGrabbing: false};
 
 			let width = this.parentNode.getBoundingClientRect().width
@@ -335,8 +344,6 @@
 			loader.load(filepath,
 				geometry  => {
 					const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
-					meshFromFile.castShadow = true;
-					meshFromFile.receiveShadow = true;
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
 					// TODO: Save scale factor in DB.
