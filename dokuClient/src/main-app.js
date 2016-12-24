@@ -693,14 +693,19 @@ Polymer({
 		},
 
 		setupEventHandlers() {
-			const callback = state => {
+			const onPenSensorState = state => {
+				if (!renderView) return;
+				renderView.penState = state;
+			};
+
+			const onPhysicalModelSensorState = state => {
 				if (!renderView) return;
 				renderView.physicalModelState = state;
 			};
 
 			let annotationIndex = 0;
 
-			const penCallback = (eventName) => {
+			const onPenEvent = (eventName) => {
 				if (eventName === 'buttonDown') {
 					this.addAnnotation({
 						detail: {
@@ -714,23 +719,35 @@ Polymer({
 				}
 			};
 
-			this.bno055 = new BNO055(callback, penCallback);
-			ipc.on('connectStatus', (emitter, status, percent) => {
+			const onPhysicalModelSensorEvent = (eventName) => {
+				if (eventName === 'buttonDown') {
+					this.parsers['Project Annotator Asset'].straighten();
+				}
+			};
+
+			this.parsers = {
+				'Project Annotator Pen': new BNO055(onPenSensorState, onPenEvent),
+				'Project Annotator Asset': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
+			};
+
+			ipc.on('connectStatus', (emitter, deviceName, status, percent) => {
 				this.penStatus = status;
 				this.penStatusPercent = percent;
 				this.penButtonText = status === 'Connecting' ? `${status} (${percent}%)` : `${status}`;
 				console.log('Connect status:', status, percent);
-				// setTimeout(() => {
-				// 	this.bno055.straighten();
-				// }, 5000);
 				if (status === 'Connected' && percent === 100) {
-					this.penButtonText = 'Disconnect Pen';
-					this.bno055.reset();
+					this.penButtonText = 'Disconnect Sensors';
+					this.parsers[deviceName].reset();
+					// setTimeout(() => {
+					// 	this.penSensorDataParser.straighten();
+					// }, 5000);
 				} else if (status === 'Disconnected') {
-					this.penButtonText = 'Connect Pen';
+					this.penButtonText = 'Connect Sensors';
 				}
 			});
 
-			ipc.on('uartRx', (emitter, data) => this.bno055.push(data));
+			ipc.on('uartRx', (emitter, deviceName, data) => {
+				this.parsers[deviceName].push(data);
+			});
 		}
 	});
