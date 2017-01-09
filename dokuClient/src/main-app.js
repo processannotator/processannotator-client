@@ -49,7 +49,7 @@ Polymer({
 		.on('change', this.updateProjectList)
 		.on('error', err => console.log);
 
-		this.updateProjectList();
+		
 		// Contains public user info (color, name) and is used for offline situations
 		// and to reduce traffic.
 		localCachedUserDB = new PouchDB('localCachedUserDB');
@@ -260,6 +260,7 @@ Polymer({
 			} else {
 				throw	new Error('No preferences loaded.');
 			}
+			
 
 			return this.login(preferences.activeProfile.name, preferences.activeProfile.password);
 		})
@@ -270,6 +271,8 @@ Polymer({
       if (!response.userCtx.name) {
 				console.error('Couldnt get user session: hmm, nobody logged on.');
 			}
+			this.updateProjectList();
+			
 			// got session, that means login works and user remains logged in, get more userInfo now.
 			return userDB.getUser(this.activeProfile.name);
 		})
@@ -350,6 +353,7 @@ Polymer({
 		})
 		.then( response => {
 			this.activeProfile = Object.assign(this.activeProfile, response);
+			this.updateProjectList();
 		})
 		.catch(err => console.error);
 	},
