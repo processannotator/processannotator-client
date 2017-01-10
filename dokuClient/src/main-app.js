@@ -39,17 +39,21 @@ Polymer({
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.hasCachedUserDB = false;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
+		this.isOnline = window.navigator.onLine;
+		window.addEventListener("offline", (e) => { this.isOnline = false; });
+		window.addEventListener("online", (e) => { this.isOnline = true });
 
 		this.renderView = document.querySelector('render-view');
 
 		localInfoDB = new PouchDB('info');
 		remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
 		localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
+		this.updateProjectList();
 		localInfoDB.changes( {live: true, since: 'now'} )
 		.on('change', this.updateProjectList)
 		.on('error', err => console.log);
 
-		
+
 		// Contains public user info (color, name) and is used for offline situations
 		// and to reduce traffic.
 		localCachedUserDB = new PouchDB('localCachedUserDB');
@@ -92,13 +96,27 @@ Polymer({
 		}).then(() => {
 			// TODO, design better interval handling for these kind of background tasks
 			// as we may have a few more in the future:
-			setInterval(() => { this.updateCachedUserDB()}, 600 * 1000);
+			// setInterval(() => { this.updateCachedUserDB()}, 600 * 1000);
 
 			return this.updateElements({updateFile: true});
 		})
 
 		window.addEventListener('resize', this.handleResize.bind(this));
 		window.addEventListener('keyup', this.keyUp.bind(this));
+	},
+
+	// Return false if either whole computer is offline or databases are unreachable
+	onlineStatus: function () {
+			if(this.isOnline === false) return Promise.resolve(false);
+			console.log('ask online status');
+			return userDB.info().catch(function (err) {
+					return false;
+			}).then(() => {
+				return true;
+			})
+
+
+
 	},
 
 	connectOrDisconnectPen: function () {
@@ -184,7 +202,6 @@ Polymer({
 			this.activeProject.activeTopic = info.activeTopic;
 			// TODO: Design more streamlined way for regular intervals like updating user cache
 			// put this in a worker perhaps too?
-			this.updateCachedUserDB();
 			return this.updateElements({updateFile: true});
 		});
 
@@ -260,7 +277,7 @@ Polymer({
 			} else {
 				throw	new Error('No preferences loaded.');
 			}
-			
+
 
 			return this.login(preferences.activeProfile.name, preferences.activeProfile.password);
 		})
@@ -272,7 +289,7 @@ Polymer({
 				console.error('Couldnt get user session: hmm, nobody logged on.');
 			}
 			this.updateProjectList();
-			
+
 			// got session, that means login works and user remains logged in, get more userInfo now.
 			return userDB.getUser(this.activeProfile.name);
 		})
@@ -443,86 +460,95 @@ Polymer({
 		//
 		// So, If identical user doc/info/public_fields already in cache
 		// -> dont cache again as it is expensive (network traffic)
-		updateCachedUserDB: function () {
+		updateCachedUserDB: function (annotations) {
 
-			localProjectDB.allDocs({
-				include_docs: true,
-				startkey: 'annotation',
-				endkey: 'annotation\uffff'
-			})
-			.then((results) => {
-				let annotations = results.rows;
+			// ALTERNATIVELY fetch annotations itself:
+			//
+			// localProjectDB.allDocs({
+			// 	include_docs: true,
+			// 	startkey: 'annotation',
+			// 	endkey: 'annotation\uffff'
+			// })
 
 
-			let userIDs = new Set();
-			let userNames = new Set();
+			// UPDATE ONLY WHEN ONLNE!!!
+			return this.onlineStatus().then((status) => {
 
-			for (let annotation of annotations) {
-				userNames.add(annotation.doc.creator);
-				userIDs.add('org.couchdb.user:' + annotation.doc.creator);
-			}
+				if(status === false) {
+					console.log('dont updateCachedUserDB, because offline');
+					return Promise.reject();
+				}
 
-			return userDB.allDocs({
-				keys: [...userIDs],
-				include_docs: true
-			});
 
-			})
-			.then((result) => {
-				let userDocs = result.rows.map(({doc, id}) => {
-					// to be compatible with pouchdb-authentication
-					// user the user name as id instead of long id:
-					doc._id = id.split('org.couchdb.user:')[1];
-					return doc;
-				});
-				return userDocs;
+				let userIDs = new Set();
+				let userNames = new Set();
 
-			})
-			.then((userDocs) => {
+				for (let annotation of annotations) {
+					userNames.add(annotation.doc.creator);
+					userIDs.add('org.couchdb.user:' + annotation.doc.creator);
+				}
 
-				return localCachedUserDB.allDocs({
-					keys: [...userNames],
+				return userDB.allDocs({
+					keys: [...userIDs],
 					include_docs: true
+				})
+				.then((result) => {
+					let userDocs = result.rows.map(({doc, id}) => {
+						// to be compatible with pouchdb-authentication
+						// user the user name as id instead of long id:
+						doc._id = id.split('org.couchdb.user:')[1];
+						return doc;
+					});
+					return userDocs;
 
 				})
-				.then((cachedUserDocs) => {
-					cachedUserDocs = cachedUserDocs.rows;
-					let updatedUserDocs = [];
-					let hasProfileChanged = false;
-					let isNewProfile = false;
+				.then((userDocs) => {
 
-					for (var i = 0; i < userDocs.length; i++) {
+					return localCachedUserDB.allDocs({
+						keys: [...userNames],
+						include_docs: true
 
-						if((cachedUserDocs[i].error && cachedUserDocs[i].error === 'not_found')) {
-							// If user has never been cached before, mark as profile change
-							hasProfileChanged = isNewProfile = true;
-						} else {
-							// compare surname, name, color, etc. for changes
-							for (let prop in userDocs[i]) {
-								if( ((prop !== '_id' && prop !== 'doc' && prop !== '_rev') && ((cachedUserDocs[i].doc.hasOwnProperty(prop) === false) || (userDocs[i][prop] !== cachedUserDocs[i].doc[prop]))) ){
-									hasProfileChanged = true;
-									break;
+					})
+					.then((cachedUserDocs) => {
+						cachedUserDocs = cachedUserDocs.rows;
+						let updatedUserDocs = [];
+						let hasProfileChanged = false;
+						let isNewProfile = false;
+
+						for (var i = 0; i < userDocs.length; i++) {
+
+							if((cachedUserDocs[i].error && cachedUserDocs[i].error === 'not_found')) {
+								// If user has never been cached before, mark as profile change
+								hasProfileChanged = isNewProfile = true;
+							} else {
+								// compare surname, name, color, etc. for changes
+								for (let prop in userDocs[i]) {
+									if( ((prop !== '_id' && prop !== 'doc' && prop !== '_rev') && ((cachedUserDocs[i].doc.hasOwnProperty(prop) === false) || (userDocs[i][prop] !== cachedUserDocs[i].doc[prop]))) ){
+										hasProfileChanged = true;
+										break;
+									}
 								}
 							}
-						}
 
-						// If no change found, dont add the userdoc to the bulk update list
-						if(hasProfileChanged === true) {
-							// Use existing _rev if already not a newly cached profile
-							if(isNewProfile === false && cachedUserDocs[i].doc && cachedUserDocs[i].doc._rev !== undefined) {
-								userDocs[i]._rev = cachedUserDocs[i].doc._rev;
+							// If no change found, dont add the userdoc to the bulk update list
+							if(hasProfileChanged === true) {
+								// Use existing _rev if already not a newly cached profile
+								if(isNewProfile === false && cachedUserDocs[i].doc && cachedUserDocs[i].doc._rev !== undefined) {
+									userDocs[i]._rev = cachedUserDocs[i].doc._rev;
+								}
+								updatedUserDocs.push(userDocs[i]);
 							}
-							updatedUserDocs.push(userDocs[i]);
 						}
-					}
-					return localCachedUserDB.bulkDocs(updatedUserDocs);
-				});
-			})
-			.then((result) => {
-				this.hasCachedUserDB = true;
-				this.updateElements();
-			})
-			.catch((err) => console.error);
+						return localCachedUserDB.bulkDocs(updatedUserDocs);
+					});
+				})
+				.then((result) => {
+					this.hasCachedUserDB = true;
+					this.updateElements();
+				})
+				.catch((err) => console.error);
+
+			}).catch((err) => {console.log})
 
 		},
 
@@ -544,6 +570,7 @@ Polymer({
 			})
 			.then((result) => {
 				annotations = result.rows;
+				return this.updateCachedUserDB(annotations);
 			})
 			.then(() => {
 
@@ -560,7 +587,7 @@ Polymer({
 						return doc;
 					})
 					.catch(err_ => {
-						this.updateCachedUserDB();
+
 						console.log(err_);
 					});
 

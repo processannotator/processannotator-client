@@ -8,7 +8,7 @@
     "Sebastian Felix Zappe"
   ],
   "dependencies": {
-    "pouchdb-browser": "^6.0.7",
+    "pouchdb": "^6.1.1",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.5",
     "worker-pouch": "^2.0.0",
