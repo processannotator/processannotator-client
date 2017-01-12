@@ -29,8 +29,14 @@ Polymer({
 	},
 	observers: [
 	],
+	foo: async function () {
+		console.log('\n\nBefore async info get...');
+		let result = await localInfoDB.info();
+		console.log('async result:', result);
+		console.log('\n\n');
+	},
 
-	attached: function () {
+	attached: async function () {
 		document.app = this;
 
 		this.setupPenEventHandlers();
@@ -46,6 +52,7 @@ Polymer({
 		this.renderView = document.querySelector('render-view');
 
 		localInfoDB = new PouchDB('info');
+		this.foo();
 		remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
 		localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
 		this.updateProjectList();
@@ -59,47 +66,34 @@ Polymer({
 		localCachedUserDB = new PouchDB('localCachedUserDB');
 		userDB = new PouchDB(this.remoteUrl + '/_users');
 
+		await this.loadPreferences();
 
-		this.loadPreferences().then(() => {
-			return new Promise((resolve, reject) => {
-				if(this.activeProfile === ''){
-					console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
+		if(this.activeProfile === ''){
+			console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
 
-					let profileOverlay = document.querySelector('#profileSetupOverlay');
+			let profileOverlay = document.querySelector('#profileSetupOverlay');
 
-					profileOverlay.addEventListener('iron-overlay-closed', (e) => {
-						this.setNewProfile({
-							prename: profileOverlay.prename,
-							surname: profileOverlay.surname,
-							color: profileOverlay.color,
-							email: profileOverlay.email
-						}).then((result) => { resolve(this.activeProfile) });
-					});
-					profileOverlay.open();
-
-				} else if(this.activeProfile !== undefined) {
-					resolve(this.activeProfile);
-				}
+			profileOverlay.addEventListener('iron-overlay-closed', (e) => {
+				this.setNewProfile({
+					prename: profileOverlay.prename,
+					surname: profileOverlay.surname,
+					color: profileOverlay.color,
+					email: profileOverlay.email
+				}).then((result) => { resolve(this.activeProfile) });
 			});
+			profileOverlay.open();
 
-		}).then(() => {
-			console.log('ok, loaded or created the active profile. Now check if there is an active project');
-			console.log(this.activeProject);
-			if( this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
-				this.projectOpened = false;
-				console.log('no active profile yet!');
-			} else {
-				this.projectOpened = true;
-				return this.switchProjectDB(this.activeProject);
-			}
-
-		}).then(() => {
-			// TODO, design better interval handling for these kind of background tasks
-			// as we may have a few more in the future:
-			// setInterval(() => { this.updateCachedUserDB()}, 600 * 1000);
-
-			return this.updateElements({updateFile: true});
-		})
+		}
+		console.log('ok, loaded or created the active profile. Now check if there is an active project');
+		console.log(this.activeProject);
+		if( this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
+			this.projectOpened = false;
+			console.log('no active profile yet!');
+		} else {
+			this.projectOpened = true;
+			await this.switchProjectDB(this.activeProject);
+		}
+		return this.updateElements({updateFile: true});
 
 		window.addEventListener('resize', this.handleResize.bind(this));
 		window.addEventListener('keyup', this.keyUp.bind(this));
@@ -135,6 +129,7 @@ Polymer({
 		// HACK: Only in testing phase, any user can delete any project DB by
 		// modifying the array projectsInfo.projects of the `info` db
 		// In the future only allow db members to delete their project db, by modifying a users projects array.
+
 		return localInfoDB.get('projectsInfo').then((doc) => {
 
 			let index;
@@ -265,9 +260,12 @@ Polymer({
 		return userDB.login(user, password);
 	},
 
-	loadPreferences: function() {
-		return localInfoDB.get('_local/lastSession')
-		.then((preferences) => {
+	loadPreferences: async function() {
+
+
+	try {
+
+			let preferences = await localInfoDB.get('_local/lastSession');
 
 			if(preferences !== undefined) {
 				console.log(preferences);
@@ -279,46 +277,44 @@ Polymer({
 			}
 
 
-			return this.login(preferences.activeProfile.name, preferences.activeProfile.password);
-		})
-		.then(response => {
-			return userDB.getSession();
-		})
-    .then(response => {
-      if (!response.userCtx.name) {
+			let response = await this.login(preferences.activeProfile.name, preferences.activeProfile.password);
+			respose = await userDB.getSession();
+
+			if (!response.userCtx.name) {
 				console.error('Couldnt get user session: hmm, nobody logged on.');
 			}
 			this.updateProjectList();
 
 			// got session, that means login works and user remains logged in, get more userInfo now.
-			return userDB.getUser(this.activeProfile.name);
-		})
-		.then(updatedProfile => {
+			let updatedProfile = await userDB.getUser(this.activeProfile.name);
+
 			// use fresh profile info to set local profile (eg. when user logged in from other device and changed colors etc.)
 			this.activeProfile = Object.assign(updatedProfile, this.activeProfile);
+
 			return this.preferences;
-		})
-		.catch((err) => {
-			if(err.message === 'missing'){
-				console.log('no preferences yet, creating template.');
-				return localInfoDB.put({
-					_id: '_local/lastSession',
-					projects: [],
-					activeProfile: '',
-					activeProject: {}
-				})
-				.then((result) => {
+
+	} catch (err) {
+
+				if(err.message === 'missing'){
+					console.log('no preferences yet, creating template.');
+
+					let result = await localInfoDB.put({
+						_id: '_local/lastSession',
+						projects: [],
+						activeProfile: '',
+						activeProject: {}
+					})
+
 					//trying to reload preferences after setting fresh initial one.
 					return this.loadPreferences();
-				})
-				.catch((error) => {
-					console.log(error);
-				});
-			} else {
-				console.error('possible no internet connection, just use offline data for now', err);
-				return this.preferences;
-			}
-		});
+
+				} else {
+					console.error('possible no internet connection, just use offline data for now', err);
+					return this.preferences;
+				}
+			};
+
+
 	},
 
 	savePreferences: function() {
