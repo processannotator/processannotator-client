@@ -263,7 +263,7 @@ Polymer({
 	loadPreferences: async function() {
 
 
-	try {
+		try {
 
 			let preferences = await localInfoDB.get('_local/lastSession');
 
@@ -293,44 +293,43 @@ Polymer({
 
 			return this.preferences;
 
-	} catch (err) {
+		} catch (err) {
 
-				if(err.message === 'missing'){
-					console.log('no preferences yet, creating template.');
+			if(err.message === 'missing'){
+				console.log('no preferences yet, creating template.');
 
-					let result = await localInfoDB.put({
-						_id: '_local/lastSession',
-						projects: [],
-						activeProfile: '',
-						activeProject: {}
-					})
+				let result = await localInfoDB.put({
+					_id: '_local/lastSession',
+					projects: [],
+					activeProfile: '',
+					activeProject: {}
+				})
 
-					//trying to reload preferences after setting fresh initial one.
-					return this.loadPreferences();
+				//trying to reload preferences after setting fresh initial one.
+				return this.loadPreferences();
 
-				} else {
-					console.error('possible no internet connection, just use offline data for now', err);
-					return this.preferences;
-				}
-			};
+			} else {
+				console.error('possible no internet connection, just use offline data for now', err);
+				return this.preferences;
+			}
+		};
 
 
 	},
 
-	savePreferences: function() {
+	savePreferences: async function() {
 
 		// _local/lastSession should exist because loadPreferences creates it.
-		return localInfoDB.get('_local/lastSession').then(doc => {
+		try {
+			let doc = await localInfoDB.get('_local/lastSession');
 			doc.activeProfile = this.activeProfile;
 			doc.activeProject = this.activeProject;
-			return localInfoDB.put(doc);
-		})
-		.then( result => {
+			let result = await localInfoDB.put(doc);
 			console.log('saved preferences.', result);
-		})
-		.catch( err => {
+		} catch (err) {
 			console.log('error in saving preferences', err);
-		});
+		}
+
 	},
 
 	setNewProfile: function({prename, surname, email, color}) {
@@ -552,46 +551,39 @@ Polymer({
 		// 1. Update localCachedUserDB based in annotation creators (if userDB is available)
 		// 2. Use localCachedUserDB to add profile info (color, name) to annotation.
 		// 3. return updated annotations.
-		getAnnotations: function() {
+		getAnnotations: async function() {
 
 			if(localProjectDB === undefined) return false;
 			let creators = new Set();
 			let updatedCreators = new Set();
 			let annotations;
 
-			return localProjectDB.allDocs({
+			let result = await localProjectDB.allDocs({
 				include_docs: true,
 				startkey: 'annotation',
 				endkey: 'annotation\uffff'
-			})
-			.then((result) => {
-				annotations = result.rows;
-				return this.updateCachedUserDB(annotations);
-			})
-			.then(() => {
-
-				let promiseUserUpdates = [];
-				let updatedAnnotations = [];
-
-				// Annotate/augment all annotation objects with a .creatorProfile field
-				// fetched from localCachedUserDB
-				for (let {doc} of annotations) {
-
-					let updatedAnnotation = localCachedUserDB.get(doc.creator)
-					.then((creatorProfile) => {
-						doc.creatorProfile = creatorProfile;
-						return doc;
-					})
-					.catch(err_ => {
-
-						console.log(err_);
-					});
-
-					updatedAnnotations.push(updatedAnnotation);
-				}
-
-				return Promise.all(updatedAnnotations);
 			});
+
+			annotations = result.rows;
+			await this.updateCachedUserDB(annotations);
+
+			let promiseUserUpdates = [];
+			let updatedAnnotations = [];
+
+			// Annotate/augment all annotation objects with a .creatorProfile field
+			// fetched from localCachedUserDB
+
+			for (let {doc} of annotations) {
+				try {
+					creatorProfile = await localCachedUserDB.get(doc.creator);
+					doc.creatorProfile = creatorProfile;
+					updatedAnnotations.push(doc);
+				} catch (err) {
+					console.log(err);
+				}
+			}
+
+			return Promise.all(updatedAnnotations);
 		},
 
 		onAnnotationDeleted(evt) {
