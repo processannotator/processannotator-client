@@ -112,17 +112,14 @@ Polymer({
 	},
 
 	// Return false if either whole computer is offline or databases are unreachable
-	onlineStatus: function () {
-			if(this.isOnline === false) return Promise.resolve(false);
-			console.log('ask online status');
-			return userDB.info().catch(function (err) {
-					return false;
-			}).then(() => {
+	onlineStatus: async function () {
+			if(this.isOnline === false) return false;
+			try {
+				let info = await userDB.info();
 				return true;
-			})
-
-
-
+			} catch (err) {
+				return false;
+			}
 	},
 
 	connectOrDisconnectPen: function () {
