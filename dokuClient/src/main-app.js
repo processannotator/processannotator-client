@@ -66,34 +66,46 @@ Polymer({
 		localCachedUserDB = new PouchDB('localCachedUserDB');
 		userDB = new PouchDB(this.remoteUrl + '/_users');
 
-		await this.loadPreferences();
+		this.loadPreferences().then(() => {
+			return new Promise((resolve, reject) => {
+				if(this.activeProfile === ''){
+					console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
 
-		if(this.activeProfile === ''){
-			console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
+					let profileOverlay = document.querySelector('#profileSetupOverlay');
 
-			let profileOverlay = document.querySelector('#profileSetupOverlay');
+					profileOverlay.addEventListener('iron-overlay-closed', (e) => {
+						this.setNewProfile({
+							prename: profileOverlay.prename,
+							surname: profileOverlay.surname,
+							color: profileOverlay.color,
+							email: profileOverlay.email
+						}).then((result) => { resolve(this.activeProfile) });
+					});
+					profileOverlay.open();
 
-			profileOverlay.addEventListener('iron-overlay-closed', (e) => {
-				this.setNewProfile({
-					prename: profileOverlay.prename,
-					surname: profileOverlay.surname,
-					color: profileOverlay.color,
-					email: profileOverlay.email
-				}).then((result) => { resolve(this.activeProfile) });
+				} else if(this.activeProfile !== undefined) {
+					resolve(this.activeProfile);
+				}
 			});
-			profileOverlay.open();
 
-		}
-		console.log('ok, loaded or created the active profile. Now check if there is an active project');
-		console.log(this.activeProject);
-		if( this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
-			this.projectOpened = false;
-			console.log('no active profile yet!');
-		} else {
-			this.projectOpened = true;
-			await this.switchProjectDB(this.activeProject);
-		}
-		return this.updateElements({updateFile: true});
+		}).then(() => {
+			console.log('ok, loaded or created the active profile. Now check if there is an active project');
+			console.log(this.activeProject);
+			if( this.activeProject === undefined || Object.keys(this.activeProject).length === 0) {
+				this.projectOpened = false;
+				console.log('no active profile yet!');
+			} else {
+				this.projectOpened = true;
+				return this.switchProjectDB(this.activeProject);
+			}
+
+		}).then(() => {
+			// TODO, design better interval handling for these kind of background tasks
+			// as we may have a few more in the future:
+			// setInterval(() => { this.updateCachedUserDB()}, 600 * 1000);
+
+			return this.updateElements({updateFile: true});
+		})
 
 		window.addEventListener('resize', this.handleResize.bind(this));
 		window.addEventListener('keyup', this.keyUp.bind(this));
@@ -625,24 +637,21 @@ Polymer({
 			});//.then(() => {updateElements()})
 		},
 
-		updateElements: function(options) {
+		updateElements: async function(options) {
 			if(localProjectDB === undefined) return;
 
+
 			if((options.updateFile && options.updateFile === true)) {
-				localProjectDB.get('info')
-				.then((doc) => {
-					return localProjectDB.getAttachment(doc.activeTopic, 'file');
-				})
-				.then((blob) => {
+				try {
+					let doc = await localProjectDB.get('info');
+					let blob = await localProjectDB.getAttachment(doc.activeTopic, 'file');
 					this.renderView.file = blob;
-					return Promise.resolve();
-				})
-				.catch((err) => console.log);
+				} catch (err) {
+					console.log(err);
+				}
 			}
 
-			this.getAnnotations().then(annotations => {
-				this.annotations = annotations;
-			});
+			this.annotations = await this.getAnnotations();
 		},
 
 		handleResize: function(event) {
@@ -674,9 +683,9 @@ Polymer({
 		},
 
 		updateProjectList: function () {
-			return localInfoDB.get('projectsInfo').then((doc) => {
-				this.set('projects', doc.projects);
-			}).catch((err) => console.log);
+			let doc = localInfoDB.get('projectsInfo');
+			this.set('projects', doc.projects);
+
 		},
 
 		toggleDashboard: function (e) {
