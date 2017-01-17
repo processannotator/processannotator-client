@@ -10,8 +10,6 @@
 
 body {
   margin: 0;
-  display: flex;
-  flex-direction: column;
   font-family: "SourceSansPro-Light";
   background-color: rgb(7, 20, 26);
   overflow: hidden;
@@ -29,9 +27,11 @@ body {
 
 
 .top-container {
+  position: relative;
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
+  overflow-x: hidden;
   height: 90vh;
 }
 .main-container {
@@ -103,14 +103,18 @@ body {
   font-weight: normal;
 }
 
+side-panel {
+/* all other properties like z-index are inside side-panels css*/
+  right: 0;
+  float:right;
+  overflow: hidden;
+}
+
 #annotationList {
-  flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0px;
   max-height: auto;
-  height: 100%;
   padding: 0.75em;
-
   background-color: rgb(12, 38, 50);
 }
 

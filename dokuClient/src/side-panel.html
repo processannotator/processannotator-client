@@ -47,13 +47,23 @@
 	}
 
 	#contentContainer {
+
 		opacity: 1.0;
-		float: right;
 		position: absolute;
+		top: 0;
+		/*min-width: auto;*/
+	  height: 100%;
+
+		display: flex;
+		flex-direction: column;
 		background-color: rgb(12, 38, 50);
-		height: 100%;
+
 		z-index: 5;
 		box-shadow: -5px 0px 3em 0px rgba(0, 0, 0, 0.52);
+	}
+
+	content {
+		flex: 1 1 auto; /* !!!!! important to auto grow the injected content !!!!!!*/
 	}
 
 

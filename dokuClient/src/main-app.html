@@ -106,32 +106,11 @@ iron-icon {
 
 	</div>
 
-	<!--
-	The side-panel manages 3 states and their animations: minimized, normal and bigger.
-	The states can be evaluated to trigger extra functionality. We are checking for the `minimized` property, to show a different visualization of annotations when the side panel is minimized/narrow.
- -->
-	<side-panel state="{{sidePanelState}}" minimized="{{sidePanelMinimized}}">
 
-		<div id="annotationList" hidden$="[[sidePanelMinimized]]">
-			<template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
-				<annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked"></annotation-box>
-			</template>
-		</div>
-
-		<div id="minifiedAnnotationList" hidden$="[[!sidePanelMinimized]]">
-			<template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
-				<div class="annotationCircle" style="background-color:[[item.statusColor]]">
-				</div>
-				<br>
-			</template>
-		</div>
-
-		<array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
-
-
-</side-panel>
 
 </div>
+
+
 
 <div class="session-container">
 
@@ -148,6 +127,31 @@ iron-icon {
 	<!-- TODO: create custom web components 'session' and 'timeline' -->
 	<!-- <timeline></timeline> -->
 </div>
+
+<!--
+The side-panel manages 3 states and their animations: minimized, normal and bigger.
+The states can be evaluated to trigger extra functionality. We are checking for the `minimized` property, to show a different visualization of annotations when the side panel is minimized/narrow.
+-->
+<side-panel state="{{sidePanelState}}" minimized="{{sidePanelMinimized}}">
+
+  <div id="annotationList" hidden$="[[sidePanelMinimized]]">
+    <template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
+      <annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked"></annotation-box>
+    </template>
+  </div>
+
+  <div id="minifiedAnnotationList" hidden$="[[!sidePanelMinimized]]">
+    <template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
+      <div class="annotationCircle" style="background-color:[[item.statusColor]]">
+      </div>
+      <br>
+    </template>
+  </div>
+
+  <array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
+
+
+</side-panel>
 
 </template>
 
