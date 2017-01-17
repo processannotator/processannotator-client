@@ -48,9 +48,13 @@ If you installed the dependencies you should be able to (on distros using system
 ```.sh
 sudo systemctl enable couchdb
 sudo systemctl start couchdb
+
+npm install -g add-cors-to-couchdb
+add-cors-to-couchdb
+# route port 80 to 5984 (optional)
+sudo firewall-cmd --zone=FedoraServer --add-masquerade --permanent
+sudo firewall-cmd --zone=FedoraServer --add-forward-port=port=80:proto=tcp:toport=5984 --permanent
 ```
-
-
 
 ## Installing ProjectAnnotator
 Clone the repo on your server and execute:
