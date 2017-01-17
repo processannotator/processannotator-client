@@ -62,6 +62,7 @@ iron-icon {
 
 			<div id="main-menu" class="menu">
         <iron-icon icon="notification:sync"></iron-icon>
+        <div>online: {{onlineStatus}}</div>
 				<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
 				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
 				<paper-button disabled class="menu-item">TOPIC</paper-button>
@@ -82,7 +83,7 @@ iron-icon {
 
 							<iron-icon class="tool-box-icon" name="polygon" src="../images/Vector-01.svg"></iron-icon>
 							<iron-icon class="tool-box-icon" name="compare" src="../images/Compare-01.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" name="freehand" src="../images/Brush-01.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="point" src="../images/Brush-01.svg"></iron-icon>
 							<!-- <iron-icon class="tool-box-icon" name="text" src="../images/Text-01.svg"></iron-icon> -->
 						</iron-selector>
 						</div>
