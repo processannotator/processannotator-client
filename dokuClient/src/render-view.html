@@ -118,7 +118,7 @@
 			// Remove labels and annotations
 			this.labels = new Map();
 			if(this.labelGroup && this.annotationGlGroups) {
-				
+
 				for( var i = this.labelGroup.children.length - 1; i >= 0; i--) {
 					this.labelGroup.remove(this.labelGroup.children[i]);
 					cssScene.remove(this.labelGroup.children[i]);
@@ -455,19 +455,19 @@
 				-((mouseEvent.layerY / canvas.height) * 2 - 1)
 			);
 		},
-		
+
 		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
-			
+
 			if (event) {
 				this.updateMouse(event);
 			}
-			
+
 			let intersections = [];
-			
+
 			if (this.fileRepresentation) {
-				if (this.tool === 'polygon' || this.tool === 'brush') {
+				if (this.tool === 'polygon' || this.tool === 'point') {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
 				} else {
 					const origin = this.physicalPenModel.getWorldPosition();
@@ -476,7 +476,7 @@
 				}
 				intersections = this.raycaster.intersectObject(this.fileRepresentation);
 			}
-			
+
 			if (intersections.length !== 0) {
 				if (this.modus.modelGrabbing === false) {
 					Polymer.dom(this).classList.add('polygonCursor');
@@ -487,14 +487,14 @@
 			} else {
 				Polymer.dom(this).classList.remove('polygonCursor')
 			}
-			
+
 		},
 
 		keydown: function (e) {
 			if (e.defaultPrevented) {
 				return; // Should do nothing if the key event was already consumed.
 			}
-			
+
 			switch (e.which) {
 				case 13: /*Enter*/
 					console.log('pressed enter');
@@ -569,7 +569,7 @@
 
 			switch (this.tool) {
 
-				case 'freehand':
+				case 'point':
 
 						event.preventDefault();
 						// TODO: finish shape and create annotation
