@@ -38,6 +38,7 @@ Polymer({
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.hasCachedUserDB = false;
+		this.lastUserCacheUpdate = -1;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
 		this.isOnline = window.navigator.onLine;
 		window.addEventListener("offline", (e) => { this.isOnline = false; });
@@ -164,6 +165,7 @@ Polymer({
 		// Reset check wether remote user db got cached, to allow for updatingthe cached
 		// when a project is switched
 		this.hasCachedUserDB = false;
+		this.lastUserCacheUpdate = -1;
 		this.activeProject = newProject;
 		this.annotations = [];
 		localProjectDB = new PouchDB(this.activeProject._id, {adapter: 'worker'});
@@ -469,14 +471,23 @@ Polymer({
 			// 	startkey: 'annotation',
 			// 	endkey: 'annotation\uffff'
 			// })
+			console.log(this.lastUserCacheUpdate === -1);
+			console.log(new Date() - this.lastUserCacheUpdate);
+			if(this.lastUserCacheUpdate !== -1 || new Date() - this.lastUserCacheUpdate <= 1000 * 60 * 10) {
+				console.log('updated user cache only 10 minutes ago, continue');
+				return;
+			} else {
+				console.log('not updated user cache for a longer time, do it now');
+			}
 
 
-			// UPDATE ONLY WHEN ONLNE!!!
+			// UPDATE ONLY WHEN ONLNE!!
+
 			return this.onlineStatus().then((status) => {
 
 				if(status === false) {
 					console.log('dont updateCachedUserDB, because offline');
-					return Promise.reject();
+					return;
 				}
 
 
@@ -544,6 +555,9 @@ Polymer({
 				})
 				.then((result) => {
 					this.hasCachedUserDB = true;
+					console.log('updated user cache successfully');
+					this.lastUserCacheUpdate = new Date();
+					console.log(this.lastUserCacheUpdate);
 					this.updateElements();
 				})
 				.catch((err) => console.error);
