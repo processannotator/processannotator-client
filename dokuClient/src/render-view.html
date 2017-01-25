@@ -471,12 +471,12 @@
 			if (this.fileRepresentation) {
 				if (this.tool === 'polygon' || this.tool === 'point') {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
-					intersections = this.raycaster.intersectObject(this.fileRepresentation);
 				} else {
-					// const origin = this.physicalPenModel.getWorldPosition();
-					// const normalizedDirection = origin.clone().negate().normalize();
-					// this.raycaster.set(origin, normalizedDirection);
+					const origin = this.physicalPenModel.getWorldPosition();
+					const normalizedDirection = origin.clone().negate().normalize();
+					this.raycaster.set(origin, normalizedDirection);
 				}
+				intersections = this.raycaster.intersectObject(this.fileRepresentation);
 
 			}
 
