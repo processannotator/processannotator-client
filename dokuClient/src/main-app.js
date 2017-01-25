@@ -236,7 +236,7 @@ Polymer({
 		let annotation = {
 			_id: 'annotation_' + new Date().toISOString(),
 			type: 'annotation',
-			status: 'status',
+			status: 'comment',
 			parentProject: this.activeProject._id,
 			parentTopic: this.activeProject.activeTopic,
 			parentObject: this.activeObject_id,
@@ -643,7 +643,7 @@ Polymer({
 					case 'problem':
 						doc.statusColor = 'red';
 						break;
-					default: break;
+					default: doc.statusColor = 'blue'; break;
 				}
 
 				return localProjectDB.put(doc).then((value) => {});

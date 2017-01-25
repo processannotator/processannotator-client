@@ -195,7 +195,7 @@
 		attached: function() {
 
 			this.modus = {modelGrabbing: false};
-			
+
 
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
@@ -610,6 +610,8 @@
 					if (this.previewAnnotation === undefined) {
 						this.previewAnnotation = this.addAnnotationObject({
 							_id: 'previewAnnotation',
+							status: 'comment',
+							statusColor: 'blue',
 							description: "Press Enter to edit/create. Esc to cancel.",
 							position: intersection.point.clone(),
 							cameraPosition: controls.object.position.clone(),
