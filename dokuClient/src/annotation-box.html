@@ -13,11 +13,11 @@
 		<style>
 
 			:host {
-				display: block;
+				/*display: block;
 				position: relative;
 				box-sizing: border-box;
 				width: auto;
-				height: auto;
+				height: auto;*/
 			}
 
 			paper-button {
@@ -234,7 +234,7 @@
 				clearTimeout(this.editTimeOut);
 				this.editTimeOut = setTimeout(() => {
 					this.editAnnotation({text: this.annotation.description});
-				}, 5000);
+				}, 2500);
 			},
 
 			editAnnotation: function({text, temporary=false}) {
