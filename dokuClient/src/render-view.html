@@ -196,6 +196,7 @@
 
 			this.modus = {modelGrabbing: false};
 
+
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
 			this.standardDistance = 500;
@@ -301,7 +302,7 @@
 			// init annotations to empty array
 			this.annotations = [];
 			this.annotation3DObjects = [];
-
+			this.resize();
 			this.fire('initialized')
 		},
 
@@ -470,12 +471,13 @@
 			if (this.fileRepresentation) {
 				if (this.tool === 'polygon' || this.tool === 'point') {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
+					intersections = this.raycaster.intersectObject(this.fileRepresentation);
 				} else {
-					const origin = this.physicalPenModel.getWorldPosition();
-					const normalizedDirection = origin.clone().negate().normalize();
-					this.raycaster.set(origin, normalizedDirection);
+					// const origin = this.physicalPenModel.getWorldPosition();
+					// const normalizedDirection = origin.clone().negate().normalize();
+					// this.raycaster.set(origin, normalizedDirection);
 				}
-				intersections = this.raycaster.intersectObject(this.fileRepresentation);
+
 			}
 
 			if (intersections.length !== 0) {
@@ -609,6 +611,8 @@
 					if (this.previewAnnotation === undefined) {
 						this.previewAnnotation = this.addAnnotationObject({
 							_id: 'previewAnnotation',
+							status: 'comment',
+							statusColor: 'blue',
 							description: "Press Enter to edit/create. Esc to cancel.",
 							position: intersection.point.clone(),
 							cameraPosition: controls.object.position.clone(),
