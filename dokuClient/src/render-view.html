@@ -302,7 +302,7 @@
 			// init annotations to empty array
 			this.annotations = [];
 			this.annotation3DObjects = [];
-
+			this.resize();
 			this.fire('initialized')
 		},
 
@@ -466,6 +466,7 @@
 			}
 
 			let intersections = [];
+			console.log(this.tool);
 
 			if (this.fileRepresentation) {
 				if (this.tool === 'polygon' || this.tool === 'point') {
