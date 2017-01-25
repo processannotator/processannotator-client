@@ -41,6 +41,13 @@ it's not supposed to actually handle the editing itself, just:
 
 	}
 
+	.scrollContainer {
+		overflow-y: auto;
+		min-height: 0px;
+		max-height: auto;
+		padding: 0.75em;
+	}
+
 
 	:host .menu {
 		padding-left: 20em;
@@ -56,25 +63,27 @@ it's not supposed to actually handle the editing itself, just:
 		}
 
 	</style>
-	
+
 	<!-- <paper-material id="base" elevation="3"> -->
 	<div class="project sub menu">
 		<paper-button class="menu-item" id="createProjectBtn" on-tap="createProjectClick">Create New Project<iron-icon icon="add"></iron-icon></paper-button>
 	</div>
 
 		<h1>Switch</h1>
-		
-			<template id="projectList" is="dom-repeat" items="{{projects}}" as="project">
-				<paper-item>
-					<paper-button on-tap="projectSelectClick">
-						{{project.name}}
-					</paper-button>
-					<paper-button on-tap="deleteProjectClick">
-						X
-					</paper-button>
-				</paper-item>
+			<div class="scrollContainer">
+				<template id="projectList" is="dom-repeat" items="{{projects}}" as="project">
+					<paper-item>
+						<paper-button on-tap="projectSelectClick">
+							{{project.name}}
+						</paper-button>
+						<paper-button on-tap="deleteProjectClick">
+							X
+						</paper-button>
+					</paper-item>
 
-			</template>
+				</template>
+			</div>
+
 
 
 
@@ -132,7 +141,7 @@ Polymer({
 	deleteProjectClick: function (e) {
 		this.fire('delete-project-click', e.model.project);
 	},
-	
+
 	projectSelectClick: function(e) {
 		this.fire('switch-project-click', e.model.project);
 	}
