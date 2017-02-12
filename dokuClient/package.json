@@ -12,7 +12,8 @@
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.5",
     "worker-pouch": "^2.0.0",
-    "noble": "^1.1.0"
+    "noble": "^1.1.0",
+    "electron-reload": "^1.0.2"
   },
   "scripts": {
     "build": "rollup -c",
