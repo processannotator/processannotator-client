@@ -70,6 +70,10 @@
 			labels: {
 				type: Map
 			},
+			penState: {
+				type: Object,
+				observer: "penStateChanged"
+			},
 			physicalModelState: {
 				type: Object,
 				observer: "physicalModelStateChanged"
@@ -177,23 +181,28 @@
 			this.physicalPenSpotLight.lookAt(center);
 		},
 
-		physicalModelStateChanged: function () {
+		penStateChanged: function () {
 			if (this.penGroupGLOrientation) {
-				// TODO Use quaternion instead of euler
-				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
-				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
-				// if (this.fileRepresentation) {
-				// 	this.fileRepresentation.setRotationFromQuaternion(quaternion);
-				// }
+				const quaternion = this.penState.quat.clone();
 				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
 				this.mouseOrPenMoved();
 				requestAnimationFrame(() => this.render());
-				// this.render();
+			}
+		},
+
+		physicalModelStateChanged: function () {
+			if (this.mainGroupGL) {
+				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
+				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
+				this.mainGroupGL.setRotationFromQuaternion(quaternion);
+				this.mainGroupCSS.setRotationFromQuaternion(quaternion);
+				// console.log('Rotated model:', quaternion);
+				// this.mouseOrPenMoved();
+				// requestAnimationFrame(() => this.render());
 			}
 		},
 
 		attached: function() {
-
 			this.modus = {modelGrabbing: false};
 
 
@@ -250,13 +259,21 @@
 			this.atmosphericLight2.shadowMapHeight = 1024;
 			this.atmosphericLight2.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
 
-			this.atmosphericLight2 = new THREE.DirectionalLight(0xff6600, 0.5);
-			this.atmosphericLight2.castShadow = true;
-			this.atmosphericLight2.shadowDarkness = 0.5;
-			this.atmosphericLight2.shadowMapSoft = true;
-			this.atmosphericLight2.shadowMapWidth = 1024;
-			this.atmosphericLight2.shadowMapHeight = 1024;
-			this.atmosphericLight2.position.set(0, -10 * this.standardDistance, 0);
+			this.atmosphericLight3 = new THREE.DirectionalLight(0xff6600, 0.5);
+			this.atmosphericLight3.castShadow = true;
+			this.atmosphericLight3.shadowDarkness = 0.5;
+			this.atmosphericLight3.shadowMapSoft = true;
+			this.atmosphericLight3.shadowMapWidth = 1024;
+			this.atmosphericLight3.shadowMapHeight = 1024;
+			this.atmosphericLight3.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
+
+			this.atmosphericLight4 = new THREE.DirectionalLight(0xff6600, 0.5);
+			this.atmosphericLight4.castShadow = true;
+			this.atmosphericLight4.shadowDarkness = 0.5;
+			this.atmosphericLight4.shadowMapSoft = true;
+			this.atmosphericLight4.shadowMapWidth = 1024;
+			this.atmosphericLight4.shadowMapHeight = 1024;
+			this.atmosphericLight4.position.set(0, -10 * this.standardDistance, 0);
 
 			this.light = new THREE.PointLight( 0xccddff, 1, 0 );
 			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.5, 1, 2.0 );
@@ -343,8 +360,6 @@
 			loader.load(filepath,
 				geometry  => {
 					const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
-					meshFromFile.castShadow = true;
-					meshFromFile.receiveShadow = true;
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
 					// TODO: Save scale factor in DB.
