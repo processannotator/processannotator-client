@@ -57,6 +57,10 @@ body {
   min-width: 2.5em;
 }
 
+#tool-menu > .menu-item {
+  margin-right: 20px;
+}
+
 #main-menu > .menu-item {
   --paper-button-ink-color: rgb(7, 20, 26);
   --paper-icon-button-ink-color: rgb(7, 20, 26);
@@ -203,4 +207,16 @@ iron-icon:not(.iron-selected):hover {
   border-radius: 50%;
 	width: 0.5em;
 	height: 0.5em;
+}
+
+#onlineStatusText {
+  cursor: default;
+}
+
+#onlineStatusText, #connectPenButton {
+  margin-left: 5em;
+}
+
+#resetDBButton {
+  margin-left: 55em;
 }
