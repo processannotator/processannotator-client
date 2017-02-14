@@ -25,12 +25,8 @@ On RedHat/Fedora:
 ```.sh
 sudo dnf install nodejs
 sudo dnf install couchdb
-# make npm sudoless: https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-2-change-npms-default-directory-to-another-directory
-npm install -g add-cors-to-couchdb
-add-cors-to-couchdb
-# route port 80 to 5984
-sudo firewall-cmd --zone=FedoraServer --add-masquerade --permanent
-sudo firewall-cmd --zone=FedoraServer --add-forward-port=port=80:proto=tcp:toport=5984 --permanent
+
+# optionally make npm work without sudo, read and follow: https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-2-change-npms-default-directory-to-another-directory
 ```
 Please Note: In some distros, the nodejs version is quite old. I recommend using [the node version manager (nvm)](https://github.com/creationix/nvm) if you have version 4.x or older.
 
