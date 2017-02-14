@@ -55,16 +55,15 @@ sudo firewall-cmd --zone=FedoraServer --add-masquerade --permanent
 sudo firewall-cmd --zone=FedoraServer --add-forward-port=port=80:proto=tcp:toport=5984 --permanent
 ```
 
-## Installing ProjectAnnotator
-Clone the repo on your server and execute:
+Now, Clone the repo on your server:
 ```.sh
 git clone git@github.com:nylki/ProjectAnnotator.git
 cd ProjectAnnotator/server
 # Install dependencies
 npm install
-# Start server
-# If you want to start it automatically, I recommend putting it into the crontab, or creating a systemd service
-npm start
+# you can start the server with npm start
+# but the optimal was is to install the systemd unit so it runs each reboot and restarts when crashed
+sudo cp ProjectAnnotator/systemd/system/processannotator.service /etc/systemd/system/processannotator.service
 ```
 
 ## Running the electron client
