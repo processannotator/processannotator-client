@@ -340,8 +340,10 @@ app.on('ready', function() {
 	mainWindow.loadURL('file://' + __dirname + '/index.html');
 	var session = mainWindow.webContents.session;
 
-	ipc.on('asynchronous-message', function(event, arg) {
-		if(arg === 'resetLocalDB') {
+  ipc.on('quit', app.quit);
+
+	ipc.on('resetLocalDB', function() {
+
 			session.clearStorageData({
 				storages: ['cookies', 'indexdb', 'local storage', 'serviceworkers']
 			}, () => { console.log('session cleared'); });
@@ -351,8 +353,9 @@ app.on('ready', function() {
 					app.quit();
 				});
 			});
-		}
 	});
+
+
 
   // Check running as root on Linux (usually required for noble).
   if (os.platform() === 'linux' && !runningAsRoot()) {

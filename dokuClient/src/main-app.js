@@ -18,10 +18,10 @@ Polymer({
 
 	properties: {
 		objectTool: {
-			type: 'Object'
+			type: Object
 		},
 		selectedAnnotation: {
-			type: 'Object',
+			type: Object,
 			notify: true,
 			observer: '_selectedAnnotationChanged'
 		}
@@ -32,13 +32,16 @@ Polymer({
 
 	attached: async function () {
 		document.app = this;
-
+		console.log(this);
 		this.setupPenEventHandlers();
 
 		this.penButtonText = 'Connect Pen';
 		this.objectButtonText = 'Connect Object';
 		this.penButtonConnecting = false;
 		this.objectButtonConnecting = false;
+		this.onlineStatus = false;
+		this.OnlineStatusText = '-';
+
 
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
@@ -46,9 +49,8 @@ Polymer({
 		this.lastUserCacheUpdate = -1;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
 		this.isOnline = window.navigator.onLine;
-		window.addEventListener("offline", this.updateOnlineStatus);
-		window.addEventListener("online", this.updateOnlineStatus);
-		setInterval(this.updateOnlineStatus, 1000 * 60);
+		window.addEventListener("offline", this.updateOnlineStatus.bind(this));
+		window.addEventListener("online", this.updateOnlineStatus.bind(this));
 
 
 		this.renderView = document.querySelector('render-view');
@@ -61,6 +63,9 @@ Polymer({
 		.on('change', this.updateProjectList)
 		.on('error', err => console.log);
 
+		setInterval(this.updateOnlineStatus, 1000 * 60);
+		this.updateOnlineStatus();
+
 
 		// Contains public user info (color, name) and is used for offline situations
 		// and to reduce traffic.
@@ -68,9 +73,16 @@ Polymer({
 		userDB = new PouchDB(this.remoteUrl + '/_users');
 
 		this.loadPreferences().then(() => {
-			return new Promise((resolve, reject) => {
-				if(this.activeProfile === ''){
+			return new Promise(async (resolve, reject) => {
+				console.log('Loaded preferences.');
+
+				if(this.activeProfile === '' || this.activeProfile === undefined){
 					console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
+
+					if(await this.updateOnlineStatus() === false) {
+						dialog.showErrorBox('DokuClient', 'Error connecting to the database for new user registration. Please check if you are connected to the internet and try again.');
+						ipc.send('quit');
+					}
 
 					let profileOverlay = document.querySelector('#profileSetupOverlay');
 
@@ -117,7 +129,7 @@ Polymer({
 				status = false;
 			} else {
 				try {
-					let info = await userDB.info();
+					let info = await remoteInfoDB.info();
 					console.log(info);
 					status = true;
 				} catch (err) {
@@ -125,8 +137,11 @@ Polymer({
 				}
 			}
 
+
 			this.onlineStatus = status;
-			console.log('status change', this.onlineStatus);
+			this.onlineStatusText = status ? 'DB ONLINE ⦿' : 'DB OFFLINE ○';
+
+			console.log('online status change', this.onlineStatus);
 			return status;
 	},
 
@@ -345,6 +360,7 @@ Polymer({
 	},
 
 	setNewProfile: function({prename, surname, email, color}) {
+
 		let metadata = {
 			surname: surname,
 			prename: prename,
@@ -382,7 +398,7 @@ Polymer({
 		.catch(err => console.error);
 	},
 
-	setNewProject: function({projectname, topicname, file, emails}) {
+	setNewProject: async function({projectname, topicname, file, emails}) {
 		// Assumes current activeProfile as the creator.
 		// We will create a new db for the project.
 		// However, only server admins are allowed to create db's in couchdb,
@@ -390,6 +406,11 @@ Polymer({
 
 		// FIXME: create some kind of queue in the preferences to send out the request
 		// at a later time when the server is offline.
+
+		if(await this.updateOnlineStatus() === false) {
+			dialog.showErrorBox('DokuClient', 'Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
+			return;
+		}
 
 		function normalizeCouchDBName(name) {
 			return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_$()+/-]/g, '$');
@@ -715,7 +736,12 @@ Polymer({
 			// }
 		},
 
-		handleCreateProject: function() {
+		handleCreateProject: async function() {
+			if(await this.updateOnlineStatus() === false) {
+				dialog.showErrorBox('DokuClient', 'Error connecting to the database for new Project creation. Please check if you are connected to the internet and try again.');
+				return;
+			}
+
 			let projectOverlay = document.createElement('project-setup-overlay');
 			projectOverlay.classList.add("fullbleed");
 			projectOverlay['with-back-drop'] = true;
@@ -723,6 +749,7 @@ Polymer({
 			Polymer.dom(this.root).appendChild(projectOverlay);
 
 			projectOverlay.addEventListener('iron-overlay-closed', (e) => {
+				if(projectOverlay.pageNumber !== 2) return;
 
 				this.setNewProject({
 					projectname: projectOverlay.projectname,
@@ -739,7 +766,7 @@ Polymer({
 
 		updateProjectList: async function () {
 			let doc = await localInfoDB.get('projectsInfo');
-			this.set('projects', doc.projects);
+			this.projects = doc.projects;
 
 		},
 
@@ -768,7 +795,7 @@ Polymer({
 		},
 
 		resetLocalDB: function (e) {
-			ipc.send('asynchronous-message', 'resetLocalDB');
+			ipc.send('resetLocalDB');
 		},
 
 		mouseOutAnnotationLabel: function (e) {
@@ -823,7 +850,6 @@ Polymer({
 			this.bno055 = new BNO055(callback, penCallback);
 			ipc.on('connectStatus', (emitter, status, percent=0) => {
 				this.penStatus = status;
-
 				this.penStatusPercent = percent;
 				if(status === 'Connecting' || status === 'Discovering Services') {
 					this.penButtonConnecting = true;
