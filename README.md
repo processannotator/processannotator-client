@@ -21,10 +21,6 @@ To use *ProjectAnnotator* with your own infrastructure you first need to install
 - nodejs (>5 tested, might or might not work with lower versions)
 - npm (should get installed with nodejs)
 
-On Debian base systems:
-
-`apt-get install couchdb nodejs`
-
 On RedHat/Fedora:
 ```.sh
 sudo dnf install nodejs
