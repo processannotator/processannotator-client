@@ -16,7 +16,7 @@
 <link rel="import" href="../bower_components/neon-animation/neon-animations.html">
 <link rel="import" href="../bower_components/paper-styles/paper-styles.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
-
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
 <!-- <link rel="import" href="../bower_components/paper-fab/paper-fab.html"> -->
 
 <link href="main-app.css" rel="stylesheet">
@@ -31,17 +31,20 @@
 
 <dom-module id="main-app">
 
-<style is="custom-style">
+  <style is="custom-style">
 
-iron-icon {
-  --iron-icon-height: 100%;
-  --iron-icon-width: 2em;
-}
+  iron-icon {
+    --iron-icon-height: 100%;
+    --iron-icon-width: 2em;
+  }
 
-
-
-
-</style>
+  paper-spinner-lite {
+    --paper-spinner-color: #c8c8c8;
+    padding: 0.2em;
+    height: 1em;
+    width: 1em;
+  }
+  </style>
 
 
 
@@ -65,11 +68,10 @@ iron-icon {
         <!-- <div>online: {{onlineStatus}}</div> -->
 				<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
 				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
-				<paper-button disabled class="menu-item">TOPIC</paper-button>
-				<paper-button disabled class="menu-item">OBJECT</paper-button>
-				<paper-button class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}</paper-button>
+				<!-- <paper-button disabled class="menu-item">TOPIC</paper-button> -->
+				<!-- <paper-button disabled class="menu-item">OBJECT</paper-button> -->
 
-					<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>
+				<paper-button class="menu-item" on-tap="resetLocalDB">Reset local DB (development)</paper-button>
 				</div>
 
 
@@ -84,6 +86,10 @@ iron-icon {
 							<iron-icon class="tool-box-icon" name="polygon" src="../images/Vector-01.svg"></iron-icon>
 							<iron-icon class="tool-box-icon" name="compare" src="../images/Compare-01.svg"></iron-icon>
 							<iron-icon class="tool-box-icon" name="point" src="../images/Brush-01.svg"></iron-icon>
+
+              <paper-button class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}<paper-spinner-lite id="penConnectSpinner" alt="Loading contacts list" hidden$="{{!penButtonConnecting}}" active="{{penButtonConnecting}}"></paper-spinner-lite></paper-button>
+              <!-- <paper-button class="menu-item" on-tap="connectOrDisconnectObject">{{objectButtonText}}<paper-spinner-lite id="objectConnectSpinner" alt="Loading contacts list" hidden$="{{!objectButtonConnecting}}" active="{{objectButtonConnecting}}"></paper-spinner-lite></paper-button> -->
+
 							<!-- <iron-icon class="tool-box-icon" name="text" src="../images/Text-01.svg"></iron-icon> -->
 						</iron-selector>
 						</div>

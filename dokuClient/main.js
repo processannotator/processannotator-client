@@ -10,7 +10,7 @@ const os = require('os');
 
 // automatically reload the renderer app when the bundle changes
 // IMPORTANT: Uncomment before running `npm run package`
-// require('electron-reload')(__dirname + '/src/main-app-bundle.js');
+require('electron-reload')(__dirname + '/src/main-app-bundle.js');
 
 
 app.commandLine.appendSwitch('enable-file-cookies');
@@ -29,7 +29,7 @@ let selectedAddress = null;   // MAC address or unique ID of the currently selec
 let uartRx = null;            // Connected device UART RX char.
 let uartTx = null;            // Connected device UART TX char.
 let connectStatus = null;
-
+let btConnectionTimeout;
 
 function runningAsRoot() {
   // Check if the user is running as root on a POSIX platform (Linux/OSX).
@@ -135,7 +135,7 @@ function connected(error) {
   // the full error.
   if (error) {
     console.log('Error connecting: ' + error);
-    setConnectStatus('Error!');
+    setConnectStatus('Error');
     return;
   }
   // When disconnected try to reconnect (unless the user explicitly clicked disconnect).
@@ -145,12 +145,12 @@ function connected(error) {
     reconnect(selectedAddress);
   });
   // Connected, now kick off service discovery.
-  setConnectStatus('Discovering Services...', 66);
+  setConnectStatus('Discovering Services', 66);
   selectedDevice.discoverAllServicesAndCharacteristics(function(error_, services, characteristics) {
     // Handle if there was an error.
     if (error_) {
       console.log('Error discovering: ' + error_);
-      setConnectStatus('Error!');
+      setConnectStatus('Error');
       return;
     }
     // Setup the UART characteristics.
@@ -158,6 +158,7 @@ function connected(error) {
     // Service discovery complete, connection is ready to use!
     // Note that setting progress to 100 will cause the page to change to
     // the information page.
+    clearTimeout(btConnectionTimeout);
     setConnectStatus('Connected', 100);
   });
 }
@@ -169,6 +170,7 @@ function disconnect() {
   selectedDevice = null;
   selectedIndex = null;
   selectedAddress = null;
+  clearTimeout(btConnectionTimeout);
   // Now disconnect the device.
   if (device != null) {
     device.disconnect();
@@ -203,11 +205,22 @@ function setupNoble() {
     // First clear out any known and selected devices.
     devices = [];
     disconnect();
+    clearTimeout(btConnectionTimeout);
     // Start scanning only if already powered up.
     if (noble.state === 'poweredOn') {
       console.log('Starting scan... ');
+      setConnectStatus('Connecting', 0);
+      btConnectionTimeout = setTimeout(() => {
+        setConnectStatus('Error');
+        dialog.showErrorBox('DokuClient', 'TIMEOUT: Unfortunately process.annotator was not able to connect the pen. Is it turned on and powered?');
+        console.log('Scan timeout.');
+        disconnect();
+      }, 10000);
       noble.startScanning();
+
     } else {
+      setConnectStatus('BluetoothError');
+      dialog.showErrorBox('DokuClient', 'WARNING: Unfortunately process.annotator is not able to connect the pen. Have you activated bluetooth on your computer?');
 			console.log('Bluetooth adapter not powered on. Can\'t start scan.');
 		}
   });
@@ -245,7 +258,7 @@ function setupNoble() {
     selectedAddress = selectedDevice.address;
     // Stop scanning and kick off connection to the device.
     noble.stopScanning();
-    setConnectStatus('Connecting...', 33);
+    setConnectStatus('Connecting', 33);
 		console.log('Connecting to device #', index);
     selectedDevice.connect(connected);
   });

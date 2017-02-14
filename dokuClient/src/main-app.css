@@ -49,6 +49,7 @@ body {
   background-color: none;
   cursor: pointer;
   text-align: center;
+  height: auto;
 }
 
 
@@ -61,7 +62,6 @@ body {
   --paper-icon-button-ink-color: rgb(7, 20, 26);
   font-size: 1.3em;
   font-family: "SourceSansPro-Semibold";
-  height: 100%;
   border-radius: 0px;
 }
 
@@ -77,7 +77,7 @@ body {
   flex-wrap: nowrap;
   height: auto;
   font-size: 0.7em;
-  min-height: 2.9em;
+  height: 4em;
 
   background-color: rgb(5, 73, 105);
 }
@@ -162,7 +162,7 @@ width: 100%;
 
 #tool-menu {
   /*dashboard is above objectview:*/
-  height: auto;
+  height: 2.8em;
   z-index: 3;
   width: 100%;
   color: rgb(249, 249, 251);
