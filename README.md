@@ -63,7 +63,7 @@ cd ProjectAnnotator/server
 npm install
 # you can start the server with npm start
 # but the optimal was is to install the systemd unit so it runs each reboot and restarts when crashed
-sudo cp ProjectAnnotator/systemd/system/processannotator.service /etc/systemd/system/processannotator.service
+sudo cp ../systemd/system/processannotator.service /etc/systemd/system/processannotator.service
 ```
 
 ## Running the electron client
