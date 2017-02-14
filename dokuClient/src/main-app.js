@@ -34,7 +34,12 @@ Polymer({
 		document.app = this;
 
 		this.setupPenEventHandlers();
+
 		this.penButtonText = 'Connect Pen';
+		this.objectButtonText = 'Connect Object';
+		this.penButtonConnecting = false;
+		this.objectButtonConnecting = false;
+
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.hasCachedUserDB = false;
@@ -131,6 +136,7 @@ Polymer({
 			ipc.send('disconnectPen');
 			console.log('trying to disconnect pen');
 		} else {
+			this.penButtonConnecting = true;
 			ipc.send('startScan');
 			console.log('trying to connect pen');
 		}
@@ -815,20 +821,32 @@ Polymer({
 			};
 
 			this.bno055 = new BNO055(callback, penCallback);
-			ipc.on('connectStatus', (emitter, status, percent) => {
+			ipc.on('connectStatus', (emitter, status, percent=0) => {
 				this.penStatus = status;
+
 				this.penStatusPercent = percent;
-				this.penButtonText = status === 'Connecting' ? `${status} (${percent}%)` : `${status}`;
-				console.log('Connect status:', status, percent);
-				// setTimeout(() => {
-				// 	this.bno055.straighten();
-				// }, 5000);
-				if (status === 'Connected' && percent === 100) {
+				if(status === 'Connecting' || status === 'Discovering Services') {
+					this.penButtonConnecting = true;
+					this.penButtonText = `${status} (${percent}%)`;
+				} else if (status === 'Connected' && percent === 100) {
+					this.penButtonConnecting = false;
 					this.penButtonText = 'Disconnect Pen';
 					this.bno055.reset();
 				} else if (status === 'Disconnected') {
 					this.penButtonText = 'Connect Pen';
+				} else if (status === 'Error' || status === 'BluetoothError') {
+					this.penButtonConnecting = false;
+					this.penButtonText = 'Connect Pen';
+				} else {
+					console.warn('Got unrecognized status from bt pen connection process: ', status);
 				}
+
+
+				console.log('Connect status:', status, percent);
+				// setTimeout(() => {
+				// 	this.bno055.straighten();
+				// }, 5000);
+
 			});
 
 			ipc.on('uartRx', (emitter, data) => this.bno055.push(data));
