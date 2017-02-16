@@ -61,9 +61,11 @@ Polymer({
 		this.updateProjectList();
 		localInfoDB.changes( {live: true, since: 'now'} )
 		.on('change', this.updateProjectList)
-		.on('error', err => console.log);
+		.on('error', err => {
+			console.log('ERROR');
+		});
 
-		setInterval(this.updateOnlineStatus, 1000 * 60);
+		setInterval(this.updateOnlineStatus.bind(this), 1000 * 30);
 		this.updateOnlineStatus();
 
 
@@ -226,6 +228,7 @@ Polymer({
 			// as we would have to notify updateElements about the actual changed docs. this is not true yet and may never be, just wanted to note this here in case we ever decide to do so:)
 			clearTimeout(this.updateTimeout);
 			this.updateTimeout = setTimeout(() => {
+				this.updateOnlineStatus();
 				this.updateElements({updateFile: updateFile});
 			}, 30);
 
