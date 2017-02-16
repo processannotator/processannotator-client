@@ -207,11 +207,19 @@ Polymer({
 		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
 
 		this.savePreferences();
-
+		// blocking!
+		//let info = await remoteProjectDB.info();
+		let info;
+		console.log('Compare seq?');
+		// console.log(info);
 		sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 			live: true,
 			retry: true
-		}).on('error', err => {
+		})
+		.on('change', (info_) => {
+			console.log(info);
+		})
+		.on('error', err => {
 			console.log('sync error', err);
 		});
 
@@ -234,9 +242,10 @@ Polymer({
 
 		})
 		.on('complete', function(info) {})
+		.on('active', () => {console.log('active...');})
 		.on('error', function (err) {console.log(err)});
 
-		let info = await localProjectDB.get('info');
+		info = await localProjectDB.get('info');
 		this.activeProject.activeTopic = info.activeTopic;
 		await this.updateElements({updateFile: true});
 
@@ -362,7 +371,7 @@ Polymer({
 
 	},
 
-	setNewProfile: function({prename, surname, email, color}) {
+	setNewProfile: async function({prename, surname, email, color}) {
 
 		let metadata = {
 			surname: surname,
@@ -382,23 +391,24 @@ Polymer({
 		// will need to redo the signup once possible
 
 		// Before trying any network stuff, save preferences with locally created profile.
-		return this.savePreferences()
-		.then(() => {
-			// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
-			metadata.testkey = 'testuserkey';
-			metadata.projects = [];
-			return userDB.signup( name, password, {metadata} );
-		})
-		.then( response => { return userDB.login(name, password) })
-		.then( response => {
+		await this.savePreferences();
+
+		// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
+		metadata.testkey = 'testuserkey';
+		metadata.projects = [];
+
+		try {
+			await userDB.signup( name, password, {metadata} );
+			let response = userDB.login(name, password);
+			let profile = await userDB.getUser(name);
+			this.activeProfile = Object.assign(this.activeProfile, profile);
 			console.log('succesfully created user and logged in.', response);
-			return userDB.getUser(name);
-		})
-		.then( response => {
-			this.activeProfile = Object.assign(this.activeProfile, response);
 			this.updateProjectList();
-		})
-		.catch(err => console.error);
+		} catch (err) {
+			console.log('Error signup new user', err);
+			dialog.showErrorBox('DokuClient', 'Error: Could not signup/login new user:\n', err);
+		}
+
 	},
 
 	setNewProject: async function({projectname, topicname, file, emails}) {
@@ -776,6 +786,9 @@ Polymer({
 		toggleDashboard: function (e) {
 			this.$.dashboard.toggle();
 			this.$.projectMenuItem.classList.toggle('selected');
+			this.$.dashboard.addEventListener('switch-project-click', (e) => {
+				this.$.projectMenuItem.classList.toggle('selected');
+			}, {once: true});
 		},
 
 		handleSwitchProject: function (e) {
