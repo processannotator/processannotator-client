@@ -35,7 +35,8 @@
 
   iron-icon {
     --iron-icon-height: 100%;
-    --iron-icon-width: 2em;
+    --iron-icon-width: 1rem;
+
   }
 
   paper-spinner-lite {
@@ -79,13 +80,13 @@
 
 
 						<div class="menu" id="tool-menu">
-							<iron-selector id="toolSelector" attr-for-selected="name" fallback-selection="none" selected="compare" on-iron-select="toolChanged">
+							<iron-selector id="toolSelector" attr-for-selected="name" fallback-selection="none" selected="rotate" on-iron-select="toolChanged">
 							<!-- <iron-icon class="tool-box-icon" name="none">click</iron-icon> -->
 							&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
 
-							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="polygon" src="../images/Vector-01.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" name="compare" src="../images/Compare-01.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="point" src="../images/Brush-01.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="polygon" src="../images/path-vector-copy-7.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" name="rotate" src="../images/rotate.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="point" src="../images/selection.svg"></iron-icon>
 
 
 						</iron-selector>

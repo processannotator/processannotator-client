@@ -208,10 +208,7 @@ Polymer({
 		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
 
 		this.savePreferences();
-		// blocking!
-		//let info = await remoteProjectDB.info();
 		let info;
-		console.log('Compare seq?');
 		// console.log(info);
 		sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 			live: true,
@@ -870,7 +867,7 @@ Polymer({
 				this.penStatusPercent = percent;
 				if(status === 'Connecting' || status === 'Discovering Services') {
 					this.penButtonConnecting = true;
-					this.$.toolSelector.selected = 'compare';
+					this.$.toolSelector.selected = 'rotate';
 					this.penButtonText = `${status} (${percent}%)`;
 				} else if (status === 'Connected' && percent === 100) {
 					this.penButtonConnected = true;

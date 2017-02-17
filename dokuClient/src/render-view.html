@@ -462,8 +462,8 @@
 		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
-
-			if (event) {
+			let penActive = event === undefined;
+			if (!penActive) {
 				this.updateMouse(event);
 			}
 
@@ -472,7 +472,7 @@
 			if (this.fileRepresentation) {
 				if (this.tool === 'polygon' || this.tool === 'point') {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
-				} else {
+				} else if(penActive) {
 					const origin = this.physicalPenModel.getWorldPosition();
 					const normalizedDirection = origin.clone().negate().normalize();
 					this.raycaster.set(origin, normalizedDirection);
@@ -482,12 +482,14 @@
 			}
 
 			if (intersections.length !== 0) {
-				if (this.modus.modelGrabbing === false) {
+
+				if (this.modus.modelGrabbing && this.tool !== 'rotate') {
 					Polymer.dom(this).classList.add('polygonCursor');
 				}
 				this.spotLight.target = this.pointerSphere;
 				this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
 				this.render();
+
 			} else {
 				Polymer.dom(this).classList.remove('polygonCursor')
 			}
@@ -700,7 +702,7 @@
 			this.verticesPolygonTool = [];
 
 			switch (this.tool) {
-				case 'polygon':
+				case 'rotate': this.modus.modelGrabbing = true;
 					break;
 				default:
 					break;
