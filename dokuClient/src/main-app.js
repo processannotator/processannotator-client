@@ -38,6 +38,7 @@ Polymer({
 		this.penButtonText = 'Connect Pen';
 		this.objectButtonText = 'Connect Object';
 		this.penButtonConnecting = false;
+		this.penButtonConnected = false;
 		this.objectButtonConnecting = false;
 		this.onlineStatus = false;
 		this.OnlineStatusText = '-';
@@ -869,15 +870,19 @@ Polymer({
 				this.penStatusPercent = percent;
 				if(status === 'Connecting' || status === 'Discovering Services') {
 					this.penButtonConnecting = true;
+					this.$.toolSelector.selected = 'compare';
 					this.penButtonText = `${status} (${percent}%)`;
 				} else if (status === 'Connected' && percent === 100) {
+					this.penButtonConnected = true;
 					this.penButtonConnecting = false;
 					this.penButtonText = 'Disconnect Pen';
 					this.bno055.reset();
 				} else if (status === 'Disconnected') {
+					this.penButtonConnected = false;
 					this.penButtonText = 'Connect Pen';
 				} else if (status === 'Error' || status === 'BluetoothError') {
 					this.penButtonConnecting = false;
+					this.penButtonConnected = false;
 					this.penButtonText = 'Connect Pen';
 				} else {
 					console.warn('Got unrecognized status from bt pen connection process: ', status);

@@ -83,18 +83,17 @@
 							<!-- <iron-icon class="tool-box-icon" name="none">click</iron-icon> -->
 							&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
 
-							<iron-icon class="tool-box-icon" name="polygon" src="../images/Vector-01.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="polygon" src="../images/Vector-01.svg"></iron-icon>
 							<iron-icon class="tool-box-icon" name="compare" src="../images/Compare-01.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" name="point" src="../images/Brush-01.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="point" src="../images/Brush-01.svg"></iron-icon>
 
-              <paper-button id="connectPenButton" class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}<paper-spinner-lite id="penConnectSpinner" alt="Loading contacts list" hidden$="{{!penButtonConnecting}}" active="{{penButtonConnecting}}"></paper-spinner-lite></paper-button>
 
-              <span class="menu-item" id="onlineStatusText">{{onlineStatusText}}</span>
-              <paper-button class="menu-item" id="resetDBButton" on-tap="resetLocalDB">Reset DB</paper-button>
-              <!-- <paper-button class="menu-item" on-tap="connectOrDisconnectObject">{{objectButtonText}}<paper-spinner-lite id="objectConnectSpinner" alt="Loading contacts list" hidden$="{{!objectButtonConnecting}}" active="{{objectButtonConnecting}}"></paper-spinner-lite></paper-button> -->
-
-							<!-- <iron-icon class="tool-box-icon" name="text" src="../images/Text-01.svg"></iron-icon> -->
 						</iron-selector>
+            <paper-button name="point" id="connectPenButton" class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}<paper-spinner-lite id="penConnectSpinner" alt="Loading contacts list" hidden$="{{!penButtonConnecting}}" active="{{penButtonConnecting}}"></paper-spinner-lite></paper-button>
+
+            <span class="menu-item" id="onlineStatusText">{{onlineStatusText}}</span>
+            <paper-button class="menu-item" id="resetDBButton" on-tap="resetLocalDB">Reset DB</paper-button>
+
 						</div>
 
 
@@ -106,7 +105,7 @@
 						<!-- <div class="tutorial">
 						<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
 					</div> -->
-          
+
 					<render-view id="renderView" annotations="[[annotations]]" on-create-annotation="addAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}">
 					</render-view>
 
