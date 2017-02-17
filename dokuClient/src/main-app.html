@@ -90,9 +90,10 @@
 
 
 						</iron-selector>
-            <paper-button name="point" id="connectPenButton" class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}<paper-spinner-lite id="penConnectSpinner" alt="Loading contacts list" hidden$="{{!penButtonConnecting}}" active="{{penButtonConnecting}}"></paper-spinner-lite></paper-button>
+            <paper-button name="point" id="connectPenButton" class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}<paper-spinner-lite id="penConnectSpinner" alt="connecting with pen" hidden$="{{!penButtonConnecting}}" active="{{penButtonConnecting}}"></paper-spinner-lite></paper-button>
 
-            <span class="menu-item" id="onlineStatusText">{{onlineStatusText}}</span>
+            <span class="menu-item" id="onlineStatusText">{{onlineStatusText}}<paper-spinner-lite id="dbSyncSpinner" alt="db sync active" active="{{dbSyncActive}}"></paper-spinner-lite></span>
+
             <paper-button class="menu-item" id="resetDBButton" on-tap="resetLocalDB">Reset DB</paper-button>
 
 						</div>
