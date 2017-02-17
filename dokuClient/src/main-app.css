@@ -211,6 +211,8 @@ iron-icon:not(.iron-selected):hover {
 
 #onlineStatusText {
   cursor: default;
+  display: inline-flex;
+  align-items: center;
 }
 
 #onlineStatusText, #connectPenButton {
