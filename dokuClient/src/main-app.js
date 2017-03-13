@@ -1,11 +1,7 @@
 /* eslint no-alert:0*/
 'use strict'; /*eslint global-strict:0*/
 
-import BNO055 from './bno055';
 // import SpeechRecognition from './speechRecognition'
-const electron = require('electron');
-const ipc = electron.ipcRenderer;
-const { dialog } = electron.remote;
 const SERVERADDR = '141.20.168.11';
 const PORT = '80';
 
@@ -32,8 +28,6 @@ Polymer({
 
 	attached: async function () {
 		document.app = this;
-		console.log(this);
-		this.setupPenEventHandlers();
 
 		this.penButtonText = 'Connect Pen';
 		this.objectButtonText = 'Connect Object';
@@ -84,7 +78,7 @@ Polymer({
 
 					if(await this.updateOnlineStatus() === false) {
 						dialog.showErrorBox('DokuClient', 'Error connecting to the database for new user registration. Please check if you are connected to the internet and try again.');
-						ipc.send('quit');
+						// ipc.send('quit');
 					}
 
 					let profileOverlay = document.querySelector('#profileSetupOverlay');
@@ -148,17 +142,6 @@ Polymer({
 			return status;
 	},
 
-	connectOrDisconnectPen: function () {
-
-		if (this.penStatus === 'Connected') {
-			ipc.send('disconnectPen');
-			console.log('trying to disconnect pen');
-		} else {
-			this.penButtonConnecting = true;
-			ipc.send('startScan');
-			console.log('trying to connect pen');
-		}
-	},
 
 	deleteProjectDB: async function (project) {
 
@@ -815,7 +798,7 @@ Polymer({
 		},
 
 		resetLocalDB: function (e) {
-			ipc.send('resetLocalDB');
+			// ipc.send('resetLocalDB');
 		},
 
 		mouseOutAnnotationLabel: function (e) {
@@ -843,62 +826,5 @@ Polymer({
 		toolChanged: function (e) {
 			this.objectTool = this.$.toolSelector.selected;
 			console.log(this.objectTool);
-		},
-
-		setupPenEventHandlers() {
-			const callback = state => {
-				if (!renderView) return;
-				this.renderView.physicalModelState = state;
-			};
-
-			let annotationIndex = 0;
-
-			const penCallback = (eventName) => {
-				if (eventName === 'buttonDown') {
-					this.addAnnotation({
-						detail: {
-							description: `Annotation #${++annotationIndex}`,
-							position: this.renderView.pointerSphere.getWorldPosition(),
-							cameraPosition: this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
-							// cameraRotation: camera.rotation,
-							cameraUp: this.renderView.camera.up,
-						},
-					});
-				}
-			};
-
-			this.bno055 = new BNO055(callback, penCallback);
-			ipc.on('connectStatus', (emitter, status, percent=0) => {
-				this.penStatus = status;
-				this.penStatusPercent = percent;
-				if(status === 'Connecting' || status === 'Discovering Services') {
-					this.penButtonConnecting = true;
-					this.$.toolSelector.selected = 'rotate';
-					this.penButtonText = `${status} (${percent}%)`;
-				} else if (status === 'Connected' && percent === 100) {
-					this.penButtonConnected = true;
-					this.penButtonConnecting = false;
-					this.penButtonText = 'Disconnect Pen';
-					this.bno055.reset();
-				} else if (status === 'Disconnected') {
-					this.penButtonConnected = false;
-					this.penButtonText = 'Connect Pen';
-				} else if (status === 'Error' || status === 'BluetoothError') {
-					this.penButtonConnecting = false;
-					this.penButtonConnected = false;
-					this.penButtonText = 'Connect Pen';
-				} else {
-					console.warn('Got unrecognized status from bt pen connection process: ', status);
-				}
-
-
-				console.log('Connect status:', status, percent);
-				// setTimeout(() => {
-				// 	this.bno055.straighten();
-				// }, 5000);
-
-			});
-
-			ipc.on('uartRx', (emitter, data) => this.bno055.push(data));
 		}
 	});

@@ -16,20 +16,13 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "dev": "npm run build && (electron . --dev &) && rollup -c --watch",
-    "install": "./node_modules/.bin/electron-rebuild && bower install --verbose",
-    "start": "npm run build && electron .",
-    "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
+    "dev": "npm run build && rollup -c && python -m SimpleHTTPServer",
+    "install": "bower install --verbose"
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.18.0",
     "babel-preset-env": "^1.1.8",
     "babel-watch": "^2.0.3",
-    "devtron": "^1.1.1",
-    "electron": "^1.4.8",
-    "electron-packager": "^8.2.0",
-    "electron-rebuild": "^1.2.1",
-    "electron-reload": "^1.0.2",
     "rollup": "^0.36.4",
     "rollup-plugin-babel": "^2.7.1",
     "rollup-watch": "^2.5.0"

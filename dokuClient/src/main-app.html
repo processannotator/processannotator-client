@@ -84,13 +84,8 @@
 							<!-- <iron-icon class="tool-box-icon" name="none">click</iron-icon> -->
 							&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
 
-							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="polygon" src="../images/path-vector-copy-7.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" name="rotate" src="../images/rotate.svg"></iron-icon>
-							<iron-icon class="tool-box-icon" hidden$={{penButtonConnected}} name="point" src="../images/selection.svg"></iron-icon>
-
 
 						</iron-selector>
-            <paper-button name="point" id="connectPenButton" class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}<paper-spinner-lite id="penConnectSpinner" alt="connecting with pen" hidden$="{{!penButtonConnecting}}" active="{{penButtonConnecting}}"></paper-spinner-lite></paper-button>
 
             <span class="menu-item" id="onlineStatusText">{{onlineStatusText}}<paper-spinner-lite id="dbSyncSpinner" alt="db sync active" active="{{dbSyncActive}}"></paper-spinner-lite></span>
 
