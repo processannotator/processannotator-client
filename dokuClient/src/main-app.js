@@ -714,7 +714,7 @@ Polymer({
 				try {
 					let info = await localProjectDB.get('info');
 					let blob = await localProjectDB.getAttachment(info.activeTopic, 'file');
-					this.renderView.file = blob;
+					// this.renderView.file = blob;
 				} catch (err) {
 					console.log(err);
 				}
@@ -724,6 +724,7 @@ Polymer({
 		},
 
 		handleResize: function(event) {
+			console.log('resize!');
 			if(this.renderView) {
 				this.renderView.resize();
 			}

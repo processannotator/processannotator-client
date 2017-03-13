@@ -144,17 +144,31 @@ side-panel {
 #workspace {
   display: flex;
   flex-direction: column;
-  width: 100%;
+
   position: relative;
   min-height: 50vh;
-  flex: 1 1 auto;
+  flex: 1;
   background-color: #d2d1d1;
+}
+
+
+#tool-menu {
+  /*dashboard is above objectview:*/
+  height: 2.5em;
+  z-index: 3;
+  width: 100%;
+  color: rgb(249, 249, 251);
+  background-color: rgb(7, 20, 26);
 }
 
 #renderview {
 z-index: 1;
-height: 100%;
 width: 100%;
+height: auto;
+min-height: 5vh;
+min-width: 5vw;
+flex: 1;
+overflow: auto;
 }
 
 #dashboard {
@@ -164,14 +178,6 @@ width: 100%;
 
 }
 
-#tool-menu {
-  /*dashboard is above objectview:*/
-  height: 2.8em;
-  z-index: 3;
-  width: 100%;
-  color: rgb(249, 249, 251);
-  background-color: rgb(7, 20, 26);
-}
 
 
 

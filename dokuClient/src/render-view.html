@@ -1,7 +1,3 @@
-<script src="../libs/three/three.min.js"></script>
-<script src="../libs/three/controls/TrackballControls.js"></script>
-<script src="../libs/three/renderers/CSS3DRenderer.js"></script>
-<script src="../libs/three/loaders/STLLoader.js"></script>
 
 <dom-module id="render-view">
 
@@ -11,27 +7,27 @@
 
 			:host {
 				margin: 0;
-				cursor: -webkit-grab;
-				min-height: 100%;
-				min-width: 100%;
-			}
-
-			:host.track {
-				cursor: -webkit-grabbing;
-			}
-
-			:host:hover {}
-
-			canvas {
 				width: 100%;
 				height: 100%;
 			}
 
-			:host.polygonCursor {
-				cursor: crosshair;
+			#canvas {
+				width: 100%;
+				height: 100%;
+
 			}
+
 		</style>
+
+		<a-scene embedded id="canvas">
+		<a-box color="#6173F4" opacity="0.8" depth="2"></a-box>
+		<a-sphere radius="2" position="1 1 -10"></a-sphere>
+		<a-sky color="#fb6dd8"></a-sky>
+		</a-scene>
+
 	</template>
+
+
 
 	<script>
 	'use strict' /*eslint global-strict:0*/
@@ -39,8 +35,6 @@
 	// FIXME: shouldnt those global variables better reside inside the element
 	// vis this.glRenderer = ...
 
-	var glScene = new THREE.Scene();
-	var cssScene = new THREE.Scene();
 	var controls;
 	var cssObject;
 	var glRenderer;
@@ -79,11 +73,7 @@
 		},
 
 		listeners: {
-			'tap': 'tap',
-			'up': 'toggleTrack',
-			'down': 'toggleTrack',
-			'track': 'track',
-			'mousemove': 'mouseOrPenMoved'
+
 		},
 
 		ready: function() {
@@ -92,7 +82,6 @@
 			console.log('renderview ready');
 			this.ready = true;
 			this.rendering = false;
-			document.addEventListener('keydown', this.keydown.bind(this));
 		},
 
 		startRendering: function() {
@@ -109,11 +98,6 @@
 			this.spotLight.position.copy(this.camera.position);
 
 			controls.update();
-		},
-
-		render: function() {
-			glRenderer.render(glScene, this.camera);
-			cssRenderer.render(cssScene, this.camera);
 		},
 
 		resetGroups: function () {
@@ -134,50 +118,6 @@
 
 		},
 
-		createPen() {
-			// Nesting: Offset -> Orientation -> Object
-
-			// Add physical pen model
-			this.penGroupGLOffset = new THREE.Group();
-			this.penGroupGLOffset.rotateX(-0.5 * Math.PI);
-			this.penGroupGLOrientation = new THREE.Group();
-			this.penGroupGLOffset.add(this.penGroupGLOrientation);
-			this.penGroupGL = new THREE.Object3D();
-			this.penGroupGLOrientation.add(this.penGroupGL);
-
-			glScene.add(this.penGroupGLOffset);
-			let penGeometry = new THREE.BoxBufferGeometry(
-				0.4 * this.standardDistance,
-				0.1 * this.standardDistance,
-				0.1 * this.standardDistance
-			);
-			let penMaterial = new THREE.MeshStandardMaterial({
-				side: THREE.DoubleSide,
-				color: 0x333333,
-				roughness: 0.75,
-				metalness: 0.2
-			});
-
-			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
-			this.physicalPenSpotLight = new THREE.SpotLight( 0xffeedd, 1, 0, 0.5, 0.3, 2.0 );
-
-			this.physicalPenModel.position.set(
-				1.5 * this.standardDistance,
-				// 0,
-				0,
-				0
-			);
-			const penAxisHelper = new THREE.AxisHelper(0.3 * this.standardDistance);
-			penAxisHelper.position.copy(this.physicalPenModel.position);
-			this.penGroupGL.add(penAxisHelper);
-			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
-			this.penGroupGL.add( this.physicalPenModel );
-			this.penGroupGL.add( this.physicalPenSpotLight );
-
-			let center = new THREE.Vector3(0, 0, 0);
-			this.physicalPenSpotLight.worldToLocal(center);
-			this.physicalPenSpotLight.lookAt(center);
-		},
 
 		physicalModelStateChanged: function () {
 			if (this.penGroupGLOrientation) {
@@ -189,7 +129,6 @@
 				// }
 				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
 				this.mouseOrPenMoved();
-				requestAnimationFrame(() => this.render());
 				// this.render();
 			}
 		},
@@ -199,107 +138,7 @@
 			this.modus = {modelGrabbing: false};
 
 
-			let width = this.parentNode.getBoundingClientRect().width;
-			let height = this.parentNode.getBoundingClientRect().height;
-			this.standardDistance = 500;
-			this.camera = new THREE.PerspectiveCamera(50, width / height, this.standardDistance / 100, this.standardDistance * 100);
-			this.camera.position.set(
-				2 * this.standardDistance,
-				2 * this.standardDistance,
-				2 * this.standardDistance
-			);
 
-			glRenderer = new THREE.WebGLRenderer({
-				antialias: false,
-				alpha: true
-			});
-			glRenderer.setClearColor(0x00ff00, 0.0);
-			glRenderer.setSize(width, height);
-			glRenderer.shadowMapEnabled = true;
-
-			// cssRenderer is used for font rendering
-			cssRenderer = new THREE.CSS3DRenderer();
-			cssRenderer.setSize(width, height);
-
-			// let both renderers/canvases overlap
-			glRenderer.domElement.style.position = 'absolute';
-			glRenderer.domElement.style.top = 0;
-			cssRenderer.domElement.style.position = 'absolute';
-			cssRenderer.domElement.style.top = 0;
-
-
-			this.meshMaterial = new THREE.MeshLambertMaterial({
-				side: THREE.DoubleSide,
-				color: 0x787878,
-				roughness: 0.75,
-				metalness: 0.02
-			})
-
-			this.atmosphericLight = new THREE.DirectionalLight( 0x336699, 0.5);
-			this.atmosphericLight.castShadow = true;
-			this.atmosphericLight.shadowDarkness = 0.5;
-			this.atmosphericLight.shadowMapSoft = true;
-			this.atmosphericLight.shadowMapWidth = 1024;
-			this.atmosphericLight.shadowMapHeight = 1024
-			this.atmosphericLight.position.set(5 * this.standardDistance, 10 * this.standardDistance, -2.5 * this.standardDistance);
-
-			this.atmosphericLight2 = new THREE.DirectionalLight( 0x336699, 0.5);
-			this.atmosphericLight2.castShadow = true;
-			this.atmosphericLight2.shadowDarkness = 0.5;
-			this.atmosphericLight2.shadowMapSoft = true;
-			this.atmosphericLight2.shadowMapWidth = 1024;
-			this.atmosphericLight2.shadowMapHeight = 1024
-			this.atmosphericLight2.position.set(-5 * this.standardDistance, 10 * this.standardDistance, 2.5 * this.standardDistance);
-
-			this.light = new THREE.PointLight( 0xffeedd, 1, 0 );
-			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.5, 1, 2.0 );
-
-			glScene.add(this.atmosphericLight);
-			glScene.add(this.light);
-			glScene.add(this.spotLight);
-
-			glRenderer.domElement.id = 'glRenderer';
-			cssRenderer.domElement.id = 'cssRenderer';
-			Polymer.dom(this.root).appendChild(glRenderer.domElement);
-			Polymer.dom(this.root).appendChild(cssRenderer.domElement);
-
-			if (this.labelGroup === undefined)
-				this.labelGroup = new THREE.Object3D();
-			if (this.annotationGlGroups === undefined)
-				this.annotationGlGroups = new THREE.Object3D();
-
-			this.createPen();
-
-			//cssScene.add(this.labelGroup);
-			//glScene.add(this.annotationGlGroups);
-			this.resetGroups();
-
-			// setup 3d-controls (rotating the camera with cursor)
-			controls = new THREE.TrackballControls(this.camera, this);
-			controls.rotateSpeed = 1.0;
-			controls.zoomSpeed = 1.2;
-			controls.panSpeed = 0.8;
-			controls.noZoom = false;
-			controls.noPan = false;
-			controls.staticMoving = true;
-			controls.dynamicDampingFactor = 0.3;
-			controls.keys = [65, 83, 68];
-
-			// add cursor pointer to 3D scene
-			var sphereGeometry = new THREE.SphereGeometry( this.standardDistance / 45, 6, 6 );
-			var sphereMaterial = new THREE.MeshLambertMaterial( {color: 0xff0000} );
-			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
-			glScene.add(this.pointerSphere);
-
-			var axisHelper = new THREE.AxisHelper( this.standardDistance );
-			glScene.add( axisHelper );
-
-			// create Raycaster used for polygon editing tool
-			this.raycaster = new THREE.Raycaster()
-
-			controls.addEventListener('change', this.render.bind(this))
-			controls.addEventListener('change', this.updateAnnotationVisibility.bind(this))
-			controls.handleResize()
 
 			// init annotations to empty array
 			this.annotations = [];
@@ -313,65 +152,73 @@
 		},
 
 		resize: function(event) {
+
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
-			glRenderer.setSize(width, height);
-			cssRenderer.setSize(width, height);
-			this.camera.aspect = width / height;
-			this.camera.updateProjectionMatrix();
-			controls.handleResize();
-			this.render();
+			// // console.log(width, height);
+			// this.style.width = width + 'px';
+			// this.style.height = height + 'px';
+			// // Make it visually fill the positioned parent
+		  this.$.canvas.style.width ='100%';
+		  this.$.canvas.style.height='100%';
+		  // // ...then set the internal size to match
+		  // this.$.canvas.width  = this.$.canvas.offsetWidth;
+		  // this.$.canvas.height = this.$.canvas.offsetHeight;
+
+
+			// // this.$.canvas.style.width = width + 'px';
+			// this.$.canvas.style.height = (height - 27) + 'px';
+
 		},
 
 		_fileChanged: function () {
-			console.log('fileChanged')
-			console.log(this.file)
-
-			this.resetGroups();
-			this.annotations = [];
-
-			// load the file and use it for display
-			var loader = new THREE.STLLoader()
-			var filepath = URL.createObjectURL(this.file)
-			loader.load(filepath,
-				geometry  => {
-					const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
-					meshFromFile.castShadow = true;
-					meshFromFile.receiveShadow = true;
-					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
-					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
-					// TODO: Save scale factor in DB.
-					meshFromFile.scale.set(this.standardDistance/this.maxLength, this.standardDistance/this.maxLength, this.standardDistance/this.maxLength);
-					var height = this.boundingBox.size().y;
-					var pos = glScene.position;
-
-
-					// swap existing mesh with new mesh
-					if (this.fileRepresentation !== undefined)
-						this.mainGroupGL.remove(this.fileRepresentation);
-
-					this.fileRepresentation = meshFromFile;
-					this.mainGroupCSS = new THREE.Object3D();
-					this.mainGroupGL = new THREE.Object3D();
-
-
-					// create group for text annotations in 3D
-					if (this.labelGroup === undefined)
-						this.labelGroup = new THREE.Object3D();
-					if (this.annotationGlGroups === undefined)
-						this.annotationGlGroups = new THREE.Object3D();
-
-					this.mainGroupCSS.add(this.labelGroup);
-					this.mainGroupGL.add(this.annotationGlGroups);
-					this.mainGroupGL.add(this.fileRepresentation);
-					glScene.add(this.mainGroupGL);
-					glScene.add(this.penGroupGLOffset);
-					cssScene.add(this.mainGroupCSS);
-
-					this.render();
-					this.animate();
-				}
-			);
+			// console.log('fileChanged')
+			// console.log(this.file)
+			//
+			// this.resetGroups();
+			// this.annotations = [];
+			//
+			// // load the file and use it for display
+			// var loader = new THREE.STLLoader()
+			// var filepath = URL.createObjectURL(this.file)
+			// loader.load(filepath,
+			// 	geometry  => {
+			// 		const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
+			// 		meshFromFile.castShadow = true;
+			// 		meshFromFile.receiveShadow = true;
+			// 		this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
+			// 		this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
+			// 		// TODO: Save scale factor in DB.
+			// 		meshFromFile.scale.set(this.standardDistance/this.maxLength, this.standardDistance/this.maxLength, this.standardDistance/this.maxLength);
+			// 		var height = this.boundingBox.size().y;
+			// 		var pos = glScene.position;
+			//
+			//
+			// 		// swap existing mesh with new mesh
+			// 		if (this.fileRepresentation !== undefined)
+			// 			this.mainGroupGL.remove(this.fileRepresentation);
+			//
+			// 		this.fileRepresentation = meshFromFile;
+			// 		this.mainGroupCSS = new THREE.Object3D();
+			// 		this.mainGroupGL = new THREE.Object3D();
+			//
+			//
+			// 		// create group for text annotations in 3D
+			// 		if (this.labelGroup === undefined)
+			// 			this.labelGroup = new THREE.Object3D();
+			// 		if (this.annotationGlGroups === undefined)
+			// 			this.annotationGlGroups = new THREE.Object3D();
+			//
+			// 		this.mainGroupCSS.add(this.labelGroup);
+			// 		this.mainGroupGL.add(this.annotationGlGroups);
+			// 		this.mainGroupGL.add(this.fileRepresentation);
+			// 		glScene.add(this.mainGroupGL);
+			// 		glScene.add(this.penGroupGLOffset);
+			// 		cssScene.add(this.mainGroupCSS);
+			//
+			// 		this.animate();
+			// 	}
+			// );
 		},
 
 		_annotationsChanged: function() {
@@ -379,13 +226,12 @@
 			// debug output of annotations
 			// first remove all previous annotations
 			// FIXME: only update modified ones, instead of removing and completely re-creating
-			this.resetGroups();
+			// this.resetGroups();
+			//
+			// for (let annotation of this.annotations) {
+			// 	this.addAnnotationObject(annotation);
+			// }
 
-			for (let annotation of this.annotations) {
-				this.addAnnotationObject(annotation);
-			}
-
-			this.render();
 		},
 
 		addAnnotationObject: function (annotation) {
@@ -442,7 +288,6 @@
 					label.element.style.opacity = 0.8
 				}
 			}
-			this.render()
 
 		},
 
@@ -452,14 +297,15 @@
 		},
 
 		updateMouse: function (mouseEvent) {
-			let canvas = this.$$('canvas');
-			this.mouse = new THREE.Vector2(
-				(mouseEvent.layerX / canvas.width) * 2 - 1,
-				-((mouseEvent.layerY / canvas.height) * 2 - 1)
-			);
+			// let canvas = this.$$('canvas');
+			// this.mouse = new THREE.Vector2(
+			// 	(mouseEvent.layerX / canvas.width) * 2 - 1,
+			// 	-((mouseEvent.layerY / canvas.height) * 2 - 1)
+			// );
 		},
 
 		mouseOrPenMoved(event) {
+			console.log('hello');
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
 			let penActive = event === undefined;
@@ -488,7 +334,6 @@
 				}
 				this.spotLight.target = this.pointerSphere;
 				this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
-				this.render();
 
 			} else {
 				Polymer.dom(this).classList.remove('polygonCursor')
@@ -542,7 +387,6 @@
 						}
 
 						this.verticesPolygonTool = [];
-						requestAnimationFrame(this.render.bind(this));
 					break;
 				default:
 
@@ -553,7 +397,7 @@
 
 		},
 		tap: function(e) {
-
+			console.log('tap');
 			if (jsonEqual(this.previousCameraPosition, this.camera.position) === false || jsonEqual(this.previousCameraRotation, this.camera.rotation) == false) {
 				console.log('moved! return!');
 			}
@@ -623,7 +467,6 @@
 						});
 					}
 
-					this.render();
 				break;
 				default:
 			}
@@ -692,22 +535,6 @@
 			return new THREE.Line( geometry, material )
 		},
 
-		_toolChanged: function(e) {
-			// this is render-view's event listener on the toolBox
-			// when a different tool is selected, this function is triggered
-			console.log('tool changed.');
-			//do some cleanup/inits
-			glScene.remove(this.previewPolygon);
-			this.previewPolygon = undefined;
-			this.verticesPolygonTool = [];
-
-			switch (this.tool) {
-				case 'rotate': this.modus.modelGrabbing = true;
-					break;
-				default:
-					break;
-			}
-		},
 		focusAnnotation: function (annotation) {
 			if (annotation.cameraPosition !== undefined) {
 				// The resetFrom function was added by me (modified .reset()) to allow
