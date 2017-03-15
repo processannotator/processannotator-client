@@ -217,8 +217,10 @@ Polymer({
 		.on('change', (info_) => {
 			console.log(info);
 			// Deactivate sync status after 100ms
+			clearTimeout(this.dbSyncSpinnerTimeout);
+
 			if(!this.dbSyncActive) {
-				setTimeout(() => {this.dbSyncActive = false}, 100);
+				this.dbSyncSpinnerTimeout = setTimeout(() => {this.dbSyncActive = false}, 100);
 			}
 			this.dbSyncActive = true;
 
