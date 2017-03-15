@@ -1,7 +1,7 @@
 {
 	"env": {
 		"browser": true,
-		"es6": true
+		"es6": true,
 	},
 	"parserOptions": {
 		"sourceType": "module"
@@ -19,6 +19,7 @@
 		"camelcase": [0],
 		"no-underscore-dangle": [0]
 	},
+  "ecmaFeatures": { modules: true },
 	"globals": {
 		"angular": false
 	}
