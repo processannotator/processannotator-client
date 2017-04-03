@@ -232,7 +232,9 @@
 				side: THREE.DoubleSide,
 				color: 0x787878,
 				roughness: 0.75,
-				metalness: 0.02
+				metalness: 0.02,
+				transparent: true,
+				opacity: 0.9
 			})
 
 			this.atmosphericLight = new THREE.DirectionalLight( 0x336699, 0.5);
@@ -257,6 +259,29 @@
 			glScene.add(this.atmosphericLight);
 			glScene.add(this.light);
 			glScene.add(this.spotLight);
+
+			this.floorMaterial = new THREE.MeshStandardMaterial({
+				color: 0xb9b9b9,
+				transparent: true,
+				opacity: 0.5,
+				side: THREE.DoubleSide
+			});
+			this.floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(this.standardDistance * 4, this.standardDistance * 4, 2, 2), this.floorMaterial);
+			glScene.add(this.floor);
+			console.log(this.floor.up);
+			this.floor.rotateX(-0.5 * Math.PI);
+			// console.log(this.floor.up);
+			// setInterval(() => {
+			// 	this.floor.rotateX(Math.random() * Math.PI);
+			// 	this.floor.rotateX(Math.random() * Math.PI);
+			// 	this.floor.rotateX(Math.random() * Math.PI);
+			// 	console.log('localup:', JSON.stringify(this.floor.up));
+			// 	let up2 = this.floor.up.clone();
+			// 	this.floor.localToWorld(up2);
+			// 	console.log('worldup:', JSON.stringify(up2));
+			// 	this.render();
+			// }, 100);
+			// // console.log(this.floor.rotation.z);
 
 			glRenderer.domElement.id = 'glRenderer';
 			cssRenderer.domElement.id = 'cssRenderer';
@@ -351,8 +376,10 @@
 						this.mainGroupGL.remove(this.fileRepresentation);
 
 					this.fileRepresentation = meshFromFile;
+
 					this.mainGroupCSS = new THREE.Object3D();
 					this.mainGroupGL = new THREE.Object3D();
+
 
 
 					// create group for text annotations in 3D
@@ -367,6 +394,8 @@
 					glScene.add(this.mainGroupGL);
 					glScene.add(this.penGroupGLOffset);
 					cssScene.add(this.mainGroupCSS);
+					this.mainGroupCSS.rotateX(-0.5 * Math.PI);
+					this.mainGroupGL.rotateX(-0.5 * Math.PI);
 
 					this.render();
 					this.animate();
@@ -503,7 +532,6 @@
 
 			switch (e.which) {
 				case 13: /*Enter*/
-					console.log('pressed enter');
 					if (this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						event.preventDefault();
 						// TODO: finish shape and create annotation
@@ -571,7 +599,8 @@
 			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
-			this.mainGroupGL.worldToLocal(intersection.point);
+			let localIntersectionPoint = intersection.point.clone();
+			this.mainGroupGL.worldToLocal(localIntersectionPoint);
 
 			switch (this.tool) {
 
@@ -581,8 +610,8 @@
 						// TODO: finish shape and create annotation
 						this.fire('create-annotation', {
 							description: '',
-							polygon: [intersection.point.clone()],
-							position: intersection.point.clone(),
+							polygon: [localIntersectionPoint.clone()],
+							position: localIntersectionPoint.clone(),
 							cameraPosition: controls.object.position.clone(),
 							// cameraRotation: camera.rotation,
 							cameraUp: this.camera.up
@@ -601,7 +630,7 @@
 					break;
 
 				case 'polygon':
-					this.verticesPolygonTool.push(intersection.point.clone());
+					this.verticesPolygonTool.push(localIntersectionPoint.clone());
 
 					// create new preview polygon/shape when enough points are available
 					if (this.verticesPolygonTool.length >= 3) {
@@ -617,13 +646,81 @@
 							status: 'comment',
 							statusColor: 'blue',
 							description: "Press Enter to edit/create. Esc to cancel.",
-							position: intersection.point.clone(),
+							position: localIntersectionPoint.clone(),
 							cameraPosition: controls.object.position.clone(),
 							cameraUp: this.camera.up
 						});
 					}
 
 					this.render();
+				break;
+
+				case 'setCamera':
+					console.log(this.camera.quaternion, this.camera.position, this.camera.up);
+					this.resetCamera = this.camera.clone();
+
+				break;
+
+				case 'resetCamera':
+					console.log(this.camera.quaternion, this.camera.position, this.camera.up);
+					this.camera.quaternion.copy(this.resetCamera.quaternion);
+					this.camera.position.copy(this.resetCamera.position);
+					this.camera.up.copy(this.resetCamera.up);
+
+				break;
+
+				case 'bottom':
+					// HACK: for testing
+					//
+					let normals = this.fileRepresentation.geometry.getAttribute('normal').array;
+					let faces = this.fileRepresentation.geometry.getAttribute('normal').array;
+					console.log(this.fileRepresentation.geometry);
+					let localIntersection = new THREE.Object3D();
+
+					localIntersection.position.copy(intersection.point);
+					this.mainGroupGL.add(localIntersection);
+					console.log(localIntersection.getWorldPosition());
+
+					let bottomNormal = new THREE.Vector3(
+						normals[(intersection.faceIndex*3)],
+						normals[(intersection.faceIndex*3) + 1],
+						normals[(intersection.faceIndex*3) + 2]
+					);
+
+					// console.log(this.fileRepresentation.geometry.getAttribute('faces'));
+					let face = new THREE.Face3(
+						faces[(intersection.faceIndex*3)],
+						faces[(intersection.faceIndex*3) + 1],
+						faces[(intersection.faceIndex*3) + 2]
+					);
+
+
+					this.mainGroupGL.quaternion.setFromUnitVectors(bottomNormal, new THREE.Vector3(0, -1, 0));
+					this.mainGroupGL.updateMatrixWorld();
+					this.mainGroupGL.updateMatrix();
+					localIntersection.updateMatrix();
+					localIntersection.updateMatrixWorld();
+
+					// TODO: Rotation works. Position has yet to be done correctly!
+
+					// console.log(localIntersection.getWorldPosition(), localIntersection.position);
+					// let dist = localIntersection.position.distanceTo(this.floor.position);
+					// if(localIntersection.position.y > 0) {
+					// 	console.log('tiefer bringen');
+					// 	this.mainGroupGL.position.y -= dist;
+					// } else {
+					// 	console.log('höher bringen');
+					// 	this.mainGroupGL.position.y += dist;
+					// }
+
+					this.render();
+
+
+
+
+
+					// this.mainGroupGL.position.sub(norm);
+
 				break;
 				default:
 			}

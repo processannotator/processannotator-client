@@ -12,7 +12,6 @@ const PORT = '80';
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
 
-
 Polymer({
 	is: 'main-app',
 
