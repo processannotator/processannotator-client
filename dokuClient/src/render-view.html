@@ -19,11 +19,13 @@
 
 		</style>
 
-		<a-scene embedded id="canvas">
+		<a-scene embedded debug id="canvas">
 		<a-box color="#6173F4" opacity="0.8" depth="2"></a-box>
+		<a-obj-model id="fileRepresentation" src$="[[filePath]]"></a-obj-model>
 		<a-sphere radius="2" position="1 1 -10"></a-sphere>
-		<a-sky color="#fb6dd8"></a-sky>
+		<a-sky color="#123456"></a-sky>
 		</a-scene>
+		<span>[[filePath]]</span>
 
 	</template>
 
@@ -50,7 +52,7 @@
 		is: "render-view",
 
 		properties: {
-			fileRepresentation: Object,
+
 			file: {
 				type: Object,
 				observer: '_fileChanged'
@@ -58,6 +60,11 @@
 			tool: {
 				type: 'Object',
 				observer: '_toolChanged'
+			},
+			filePath: {
+				type: String,
+				notify: true,
+				observer: '_filePathChanged'
 			},
 			annotations: {
 				type: Array,
@@ -82,6 +89,7 @@
 			console.log('renderview ready');
 			this.ready = true;
 			this.rendering = false;
+
 		},
 
 		startRendering: function() {
@@ -136,7 +144,10 @@
 		attached: function() {
 
 			this.modus = {modelGrabbing: false};
-
+			this.filePath = '';
+			console.log('attached');
+			console.log(this.$.canvas);
+			console.log(this.$.fileRepresentation);
 
 
 
@@ -152,7 +163,8 @@
 		},
 
 		resize: function(event) {
-
+			console.log(this.$.canvas);
+			console.log(this.$.fileRepresentation);
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
 			// // console.log(width, height);
@@ -170,8 +182,15 @@
 			// this.$.canvas.style.height = (height - 27) + 'px';
 
 		},
+		_filePathChanged: function () {
+			console.log('filePath changed!! \n\n');
+		},
 
 		_fileChanged: function () {
+
+			this.filePath = 'http://localhost:8000/images/box.obj'; //URL.createObjectURL(this.file);
+
+
 			// console.log('fileChanged')
 			// console.log(this.file)
 			//
@@ -546,5 +565,6 @@
 		}
 	})
 	</script>
+
 
 </dom-module>

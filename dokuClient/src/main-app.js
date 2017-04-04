@@ -77,7 +77,7 @@ Polymer({
 					console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
 
 					if(await this.updateOnlineStatus() === false) {
-						dialog.showErrorBox('DokuClient', 'Error connecting to the database for new user registration. Please check if you are connected to the internet and try again.');
+						alert('Error connecting to the database for new user registration. Please check if you are connected to the internet and try again.');
 						// ipc.send('quit');
 					}
 
@@ -393,7 +393,7 @@ Polymer({
 			this.updateProjectList();
 		} catch (err) {
 			console.log('Error signup new user', err);
-			dialog.showErrorBox('DokuClient', 'Error: Could not signup/login new user:\n', err);
+			alert('Error: Could not signup/login new user:\n' + err);
 		}
 
 	},
@@ -408,7 +408,7 @@ Polymer({
 		// at a later time when the server is offline.
 
 		if(await this.updateOnlineStatus() === false) {
-			dialog.showErrorBox('DokuClient', 'Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
+			alert('Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
 			return;
 		}
 
@@ -714,7 +714,7 @@ Polymer({
 				try {
 					let info = await localProjectDB.get('info');
 					let blob = await localProjectDB.getAttachment(info.activeTopic, 'file');
-					// this.renderView.file = blob;
+					this.renderView.file = blob;
 				} catch (err) {
 					console.log(err);
 				}
@@ -739,7 +739,7 @@ Polymer({
 
 		handleCreateProject: async function() {
 			if(await this.updateOnlineStatus() === false) {
-				dialog.showErrorBox('DokuClient', 'Error connecting to the database for new Project creation. Please check if you are connected to the internet and try again.');
+				alert('Error connecting to the database for new Project creation. Please check if you are connected to the internet and try again.');
 				return;
 			}
 
