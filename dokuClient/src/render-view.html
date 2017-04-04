@@ -20,10 +20,15 @@
 		</style>
 
 		<a-scene embedded debug id="canvas">
-		<a-box color="#6173F4" opacity="0.8" depth="2"></a-box>
+		<!-- <a-box color="#6173F4" opacity="0.8" depth="2"></a-box> -->
 		<a-obj-model id="fileRepresentation" src$="[[filePath]]"></a-obj-model>
-		<a-sphere radius="2" position="1 1 -10"></a-sphere>
-		<a-sky color="#123456"></a-sky>
+
+		<template is="dom-repeat" items="[[annotations]]">
+			<a-entity color$="[[item.statusColor]]" text$="value:[[item._id]]"></a-entity>
+		</template>
+
+		<!-- <a-sphere radius="2" position="1 1 -10"></a-sphere> -->
+		<a-sky color="gray"></a-sky>
 		</a-scene>
 		<span>[[filePath]]</span>
 

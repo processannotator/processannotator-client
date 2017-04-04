@@ -654,6 +654,8 @@ Polymer({
 			});
 
 			annotations = result.rows;
+			console.log('ANNOTATIONS!!');
+			console.log(annotations);
 
 			let promiseUserUpdates = [];
 			let updatedAnnotations = [];
