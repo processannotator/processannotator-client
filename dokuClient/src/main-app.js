@@ -48,7 +48,7 @@ Polymer({
 		window.addEventListener("online", this.updateOnlineStatus.bind(this));
 
 
-		this.renderView = document.querySelector('render-view');
+		this.renderView = this.$.renderView;
 
 		localInfoDB = new PouchDB('info');
 		remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
