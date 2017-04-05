@@ -81,8 +81,7 @@ Polymer({
 						// ipc.send('quit');
 					}
 
-					let profileOverlay = document.querySelector('#profileSetupOverlay');
-
+					let profileOverlay = this.$.profileSetupOverlay;
 					profileOverlay.addEventListener('iron-overlay-closed', (e) => {
 						this.setNewProfile({
 							prename: profileOverlay.prename,
