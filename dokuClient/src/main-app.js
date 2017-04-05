@@ -653,8 +653,6 @@ Polymer({
 			});
 
 			annotations = result.rows;
-			console.log('ANNOTATIONS!!');
-			console.log(annotations);
 
 			let promiseUserUpdates = [];
 			let updatedAnnotations = [];
@@ -676,9 +674,8 @@ Polymer({
 
 		onAnnotationEdit: async function(evt) {
 
-			// If edit is temporary, don't inform the database
+			// If edit is temporary, don't inform the database yet
 			if(evt.detail.temporary === true) {
-				this.renderView.labels.get(evt.detail.newAnnotation._id).userData.div.innerHTML = evt.detail.newAnnotation.description;
 				return;
 			}
 			console.log('edited annotation, inform database');

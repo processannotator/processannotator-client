@@ -22,15 +22,20 @@
 
 		</style>
 
-		<a-scene debug id="canvas">
-			<a-box color="#6173F4" opacity="0.8" depth="2"></a-box>
+		<a-scene id="canvas">
 
-			<a-obj-model id="fileRepresentation" src$="[[filePath]]"></a-obj-model>
+			<a-entity camera mouse-cursor look-controls wasd-controls user-height="1.6">
+				<a-entity raycaster="objects: #fileRepresentation" position="0 0 0.5" rotation="0 180 0"></a-entity>
+				<!-- <a-text value="Hello. Please move around and take a look." position="0 0 -5"> </a-text> -->
+			</a-entity>
+
+
+			<a-obj-model id="fileRepresentation" src$="[[filePath]]" on-tap="clicked"></a-obj-model>
 			<a-entity id="annotations">
 			<!-- fill will annotations -->
 			</a-entity>
-			<a-entity vive-controls="hand: left"></a-entity>
-			<a-entity vive-controls="hand: right"></a-entity>
+			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left"></a-entity>
+			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown"></a-entity>
 
 
 		<template is="dom-repeat" items="[[annotations]]">
@@ -123,6 +128,20 @@
 		},
 		attached: function () {
 			this.annotationGroup = this.$.canvas.annotations;
+		},
+		clicked: function (evt) {
+			console.log('click', evt);
+		},
+		onTriggerDown: function (evt) {
+			console.log('trigger down. Create annotation in place.');
+			console.log('position:', rightVRController);
+				this.fire('create-annotation', {
+					description: 'New VR Annotation' + Math.round(Math.random() * 100),
+					position: this.$.rightVRController.position
+				});
+		},
+		raycasterIntersection: function (evt) {
+			console.log(evt);
 		},
 
 		startRendering: function() {
@@ -232,47 +251,17 @@
 		},
 
 		_fileChanged: function () {
-
-			// this.filePath = 'http://localhost:8000/images/box.obj'; //URL.createObjectURL(this.file);
 			this.filePath = URL.createObjectURL(this.file);
 		},
 
 		_annotationsChanged: function() {
 			console.log('_annotationsChanged');
-			// first remove all previous annotations
-			// FIXME: only update modified ones, instead of removing and completely re-creating
-			// this.resetGroups();
-			//
-			// for (let annotation of this.annotations) {
-			// 	this.addAnnotationObject(annotation);
-			// }
-
 		},
 
 		addAnnotationObject: function (annotation) {
 
 		},
 
-		updateAnnotationVisibility: function () {
-			// TODO: there is a PR on threejs for raycasting in css renderer, use it once ready
-			// triggered on controls update
-			let raycaster = new THREE.Raycaster()
-
-			if (this.labelGroup.children === undefined) return
-
-			for(let label of this.labelGroup.children) {
-				let normalizedDirection = (label.position.clone().sub(this.camera.position)).normalize()
-				raycaster.set(this.camera.position.clone(), normalizedDirection)
-				raycaster.far = this.camera.position.distanceTo(label.position)
-				let intersections = raycaster.intersectObject(this.fileRepresentation)
-				if (intersections.length !== 0) {
-					label.element.style.opacity = 0.0
-				} else {
-					label.element.style.opacity = 0.8
-				}
-			}
-
-		},
 
 		toggleTrack: function(e) {
 			this.modus.modelGrabbing = !this.modus.modelGrabbing;
@@ -280,11 +269,6 @@
 		},
 
 		updateMouse: function (mouseEvent) {
-			// let canvas = this.$$('canvas');
-			// this.mouse = new THREE.Vector2(
-			// 	(mouseEvent.layerX / canvas.width) * 2 - 1,
-			// 	-((mouseEvent.layerY / canvas.height) * 2 - 1)
-			// );
 		},
 
 		mouseOrPenMoved(event) {
@@ -327,6 +311,7 @@
 		track: function (e) {
 
 		},
+
 		tap: function(e) {
 			console.log('tap');
 			if (jsonEqual(this.previousCameraPosition, this.camera.position) === false || jsonEqual(this.previousCameraRotation, this.camera.rotation) == false) {
