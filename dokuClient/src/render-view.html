@@ -1,4 +1,7 @@
 
+<link rel="import" href="a-annotation.html">
+
+
 <dom-module id="render-view">
 
 	<template>
@@ -19,13 +22,12 @@
 
 		</style>
 
-		<a-scene embedded debug id="canvas">
+		<a-scene embedded id="canvas">
 		<!-- <a-box color="#6173F4" opacity="0.8" depth="2"></a-box> -->
 		<a-obj-model id="fileRepresentation" src$="[[filePath]]"></a-obj-model>
-
-		<template is="dom-repeat" items="[[annotations]]">
-			<a-entity color$="[[item.statusColor]]" text$="value:[[item._id]]"></a-entity>
-		</template>
+		<!-- <template is="dom-repeat" items="[[annotations]]">
+			<a-annotation></a-annotation>
+		</template> -->
 
 		<!-- <a-sphere radius="2" position="1 1 -10"></a-sphere> -->
 		<a-sky color="gray"></a-sky>
@@ -88,12 +90,23 @@
 
 		},
 
+		// _concat: function (...items) {
+		// 	console.log(items);
+		// 	let result = '';
+		// 	for (let item of items) {
+		// 		result += item;
+		// 	}
+		// 	console.log(result);
+		// 	return "width: 2; color: white; value: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam";
+		// 	},
+
 		ready: function() {
 			// doesnt work with listeners on this very element
 			// so create start event listener
 			console.log('renderview ready');
 			this.ready = true;
 			this.rendering = false;
+			console.log('FOOBAR1');
 
 		},
 
