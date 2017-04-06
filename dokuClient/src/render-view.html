@@ -14,15 +14,18 @@
 				height: 100%;
 			}
 
-			#canvas {
+			/*#canvas {
 				width: 100%;
 				height: 100%;
-
+			}*/
+			a-scene {
+				width: 100%;
+				height: 100%;
 			}
 
 		</style>
-
-		<a-scene id="canvas">
+		<span>{{cameraRotation}}</span>
+		<a-scene embedded id="canvas">
 
 			<a-entity camera mouse-cursor look-controls wasd-controls user-height="1.6">
 				<a-entity raycaster="objects: #fileRepresentation" position="0 0 0.5" rotation="0 180 0"></a-entity>
@@ -30,18 +33,19 @@
 			</a-entity>
 
 
-			<a-obj-model id="fileRepresentation" src$="[[filePath]]" on-tap="clicked"></a-obj-model>
-			<a-entity id="annotations">
-			<!-- fill will annotations -->
-			</a-entity>
-			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left"></a-entity>
+			<a-obj-model id="fileRepresentation" src$="[[filePath]]" on-click="clicked" opacity="1.0"
+				animation__mouseenter="startEvents: mouseenter; property: opacity; to:0.5; dur:3000"
+				animation__mouseleave="startEvents: mouseleave; property: opacity; to:1.0; dur:3000">
+			</a-obj-model>
+
+			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" vive-cursor></a-entity>
 			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown"></a-entity>
 
 
-		<template is="dom-repeat" items="[[annotations]]">
-			<a-entity position$="[[_parsePos(item.position)]]">
-				<a-box id="[[item.description]]" color$="[[item.statusColor]]" scale="0.1 0.1 0.1" opacity="0.8" depth="2"></a-box>
-			<a-text value$="[[item.description]]"></a-text>
+		<template id="annotationList" is="dom-repeat" items="[[annotations]]">
+			<a-entity position$="[[_parsePos(item.position)]]" opacity="0.0">
+				<a-box id="[[item.description]]" color$="[[item.statusColor]]" scale="0.1 0.1 0.1" depth="2" animation__created="property: opacity; dur:5000; to: 1.0; loop:false;"></a-box>
+			<a-text value$="[[item.description]]" animation__created="property: opacity; dur:1000; to: 1.0; loop:false;"></a-text>
 			</a-entity>
 
 		</template>
@@ -115,7 +119,7 @@
 			console.log(result);
 			return result;
 			},
-		_parsePos: ({x,y,z}) => {let result = `${x/100} ${y/100} ${z/100}`; console.log(result); return result },
+		_parsePos: ({x,y,z}) => {let result = `${x/1} ${y/1} ${z/1}`; console.log(result); return result },
 
 		ready: function() {
 			// doesnt work with listeners on this very element
@@ -130,14 +134,20 @@
 			this.annotationGroup = this.$.canvas.annotations;
 		},
 		clicked: function (evt) {
-			console.log('click', evt);
+			console.log(evt.detail.intersection[0].point);
+			this.fire('create-annotation', {
+				description: '',
+				position: evt.detail.intersection[0].point
+			});
+
+
 		},
 		onTriggerDown: function (evt) {
 			console.log('trigger down. Create annotation in place.');
 			console.log('position:', rightVRController);
 				this.fire('create-annotation', {
 					description: 'New VR Annotation' + Math.round(Math.random() * 100),
-					position: this.$.rightVRController.position
+					position: this.camera.position//this.$.rightVRController.position
 				});
 		},
 		raycasterIntersection: function (evt) {
@@ -269,6 +279,10 @@
 		},
 
 		updateMouse: function (mouseEvent) {
+			this.mouse = new THREE.Vector2(
+				(mouseEvent.layerX / canvas.width) * 2 - 1,
+				-((mouseEvent.layerY / canvas.height) * 2 - 1)
+			);
 		},
 
 		mouseOrPenMoved(event) {
