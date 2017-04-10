@@ -27,8 +27,8 @@
 		<span>{{cameraRotation}}</span>
 		<a-scene embedded id="canvas">
 
-			<a-entity camera mouse-cursor look-controls wasd-controls user-height="1.6">
-				<a-entity raycaster="objects: #fileRepresentation" position="0 0 0.5" rotation="0 180 0"></a-entity>
+			<a-entity camera look-controls wasd-controls user-height="1.6">
+				<!-- <a-entity raycaster="objects: #fileRepresentation" position="0 0 0.5" rotation="0 180 0"></a-entity> -->
 				<!-- <a-text value="Hello. Please move around and take a look." position="0 0 -5"> </a-text> -->
 			</a-entity>
 
@@ -38,7 +38,7 @@
 				animation__mouseleave="startEvents: mouseleave; property: opacity; to:1.0; dur:3000">
 			</a-obj-model>
 
-			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" vive-cursor></a-entity>
+			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left"></a-entity>
 			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown"></a-entity>
 
 
