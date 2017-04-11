@@ -665,7 +665,10 @@
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
 			let localIntersectionPoint = intersection.point.clone();
+			let localCameraPosition = controls.object.position.clone();
+
 			this.mainGroupGL.worldToLocal(localIntersectionPoint);
+			this.mainGroupGL.worldToLocal(localCameraPosition);
 
 			switch (this.tool) {
 
@@ -679,7 +682,7 @@
 							position: localIntersectionPoint.clone(),
 							cameraPosition: controls.object.position.clone(),
 							// cameraRotation: camera.rotation,
-							cameraUp: this.camera.up
+							cameraUp: controls.object.up
 						});
 						if (this.previewAnnotation !== undefined) {
 							this.mainGroupGL.remove(this.previewAnnotation.arrow);
@@ -832,7 +835,8 @@
 			if (annotation.cameraPosition !== undefined) {
 				// Convert x,y,z object into Vector3 object.
 				let camPos = new THREE.Vector3(annotation.cameraPosition.x, annotation.cameraPosition.y, annotation.cameraPosition.z);
-				label.position.copy(annotation.cameraPosition).multiplyScalar(0.6);
+				let labelPos = this.mainGroupGL.worldToLocal(camPos);
+				label.position.copy(labelPos).multiplyScalar(0.6);
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
 				label.position.multiplyScalar(multFactor);
