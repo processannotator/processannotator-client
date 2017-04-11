@@ -832,6 +832,11 @@ Polymer({
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
 			this.$.annotationSelector.select(item);
 		},
+		annotationBoxMouseover: function (e) {
+			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
+			console.log(item);
+			this.hoveredAnnotation = item;
+		},
 
 		_selectedAnnotationChanged: function (e) {
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;

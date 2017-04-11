@@ -79,6 +79,10 @@
 			hoveredAnnotation: {
 				type: Object,
 				observer: "_hoveredAnnotationChanged"
+			},
+			selectedAnnotation: {
+				type: Object,
+				observer: "_selectedAnnotationChanged"
 			}
 		},
 
@@ -204,7 +208,7 @@
 
 		attached: function() {
 
-			this.modus = {modelGrabbing: false, hiddenLabels: true};
+			this.modus = {modelGrabbing: false, hiddenLabels: false};
 
 
 			let width = this.parentNode.getBoundingClientRect().width;
@@ -429,7 +433,7 @@
 			let annotation3DObject = {};
 			let annotationGlGroup = new THREE.Object3D();
 			annotationGlGroup.userData = {_id: annotation._id};
-			let multFactor = 2;
+			let multFactor = 2.0;
 			let label = this.createLabel(annotation, multFactor);
 
 			this.labels.set(annotation._id, label);
@@ -473,7 +477,7 @@
 			// TODO: there is a PR on threejs for raycasting in css renderer, use it once ready
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster();
-
+			console.log(this.selectedAnnotation);
 			if(this.modus.hiddenLabels) {
 				// Hide all Annotations (except red pinpoint) by default
 				// and conditionally unhide the hovered annotation
@@ -485,13 +489,17 @@
 					arrow.visible = false;
 				}
 
-				if(this.hoveredAnnotation) {
-					let {label, arrow} = this.annotation3DObjects.get(this.hoveredAnnotation.userData._id);
+				let visibleAnnotations = [];
+				if(this.hoveredAnnotation) visibleAnnotations.push(this.hoveredAnnotation.userData);
+				if(this.selectedAnnotation) visibleAnnotations.push(this.selectedAnnotation)
+				for (let annotation of visibleAnnotations) {
+					if(!annotation) continue;
+					let {label, arrow} = this.annotation3DObjects.get(annotation._id);
 					label.element.style.display = 'block';
 					label.element.style.opacity = 0.8;
 					arrow.visible = true;
-					console.log(arrow);
 				}
+
 			}
 
 
@@ -861,6 +869,9 @@
 				default:
 					break;
 			}
+		},
+		_selectedAnnotationChanged: function () {
+
 		},
 		focusAnnotation: function (annotation) {
 			if (annotation.cameraPosition !== undefined) {
