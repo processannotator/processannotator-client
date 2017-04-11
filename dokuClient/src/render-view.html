@@ -75,6 +75,10 @@
 			physicalModelState: {
 				type: Object,
 				observer: "physicalModelStateChanged"
+			},
+			hoveredAnnotation: {
+				type: Object,
+				observer: "_hoveredAnnotationChanged"
 			}
 		},
 
@@ -119,6 +123,9 @@
 		resetGroups: function () {
 			// Remove labels and annotations
 			this.labels = new Map();
+			this.spheres = [];
+			this.annotation3DObjects = new Map();
+
 			if(this.labelGroup && this.annotationGlGroups) {
 
 				for( var i = this.labelGroup.children.length - 1; i >= 0; i--) {
@@ -130,6 +137,7 @@
 					this.annotationGlGroups.remove(this.annotationGlGroups.children[i]);
 					cssScene.remove(this.annotationGlGroups.children[i]);
 				}
+
 			}
 
 		},
@@ -196,7 +204,7 @@
 
 		attached: function() {
 
-			this.modus = {modelGrabbing: false};
+			this.modus = {modelGrabbing: false, hiddenLabels: true};
 
 
 			let width = this.parentNode.getBoundingClientRect().width;
@@ -232,9 +240,7 @@
 				side: THREE.DoubleSide,
 				color: 0x787878,
 				roughness: 0.75,
-				metalness: 0.02,
-				transparent: true,
-				opacity: 0.9
+				metalness: 0.02
 			})
 
 			this.atmosphericLight = new THREE.DirectionalLight( 0x336699, 0.5);
@@ -323,12 +329,14 @@
 			this.raycaster = new THREE.Raycaster()
 
 			controls.addEventListener('change', this.render.bind(this))
-			controls.addEventListener('change', this.updateAnnotationVisibility.bind(this))
+			controls.addEventListener('change', this.updateAllAnnotationVisibility.bind(this))
 			controls.handleResize()
 
 			// init annotations to empty array
 			this.annotations = [];
-			this.annotation3DObjects = [];
+			this.annotation3DObjects = new Map();
+			this.hoveredAnnotation = null;
+
 			this.resize();
 			this.fire('initialized')
 		},
@@ -420,6 +428,7 @@
 		addAnnotationObject: function (annotation) {
 			let annotation3DObject = {};
 			let annotationGlGroup = new THREE.Object3D();
+			annotationGlGroup.userData = {_id: annotation._id};
 			let multFactor = 2;
 			let label = this.createLabel(annotation, multFactor);
 
@@ -430,16 +439,20 @@
 			// TODO: add arrow, label to a group/structure to be selectable
 			let arrow = this.createArrow(annotation.position, label.position, annotation.statusColor);
 			annotationGlGroup.add(arrow);
+			annotation3DObject.arrow = arrow;
 
 
 			let sphere = new THREE.Mesh(
-				new THREE.SphereGeometry(this.standardDistance / 100, 6, 6),
+				new THREE.SphereGeometry(this.standardDistance / 40, 6, 6),
 				new THREE.MeshLambertMaterial({ color: 0xff0000})
 			);
 			sphere.position.copy(annotation.position);
 			annotationGlGroup.add(sphere);
+			annotation3DObject.sphere = sphere;
+			this.spheres.push(sphere);
 
-			annotation3DObject.arrow = arrow;
+
+
 
 			// if annotation has polygon info, create it and add it to the scene
 			if (annotation.polygon !== undefined) {
@@ -449,14 +462,38 @@
 			}
 			this.annotationGlGroups.add(annotationGlGroup);
 			annotation3DObject.glGroup = annotationGlGroup;
-			this.annotation3DObjects.push(annotation3DObject);
+			this.annotation3DObjects.set(annotation._id, annotation3DObject);
 			return annotation3DObject;
 		},
+		_hoveredAnnotationChanged: function () {
 
-		updateAnnotationVisibility: function () {
+		},
+
+		updateAllAnnotationVisibility: function () {
 			// TODO: there is a PR on threejs for raycasting in css renderer, use it once ready
 			// triggered on controls update
-			let raycaster = new THREE.Raycaster()
+			let raycaster = new THREE.Raycaster();
+
+			if(this.modus.hiddenLabels) {
+				// Hide all Annotations (except red pinpoint) by default
+				// and conditionally unhide the hovered annotation
+				// This is not super efficient (toggling all every time) but should suffice in this case
+				// console.log(this.annotation3DObjects.values());
+				for (let {label, arrow} of this.annotation3DObjects.values()) {
+					label.element.style.display = 'none';
+					label.element.style.opacity = 0.0;
+					arrow.visible = false;
+				}
+
+				if(this.hoveredAnnotation) {
+					let {label, arrow} = this.annotation3DObjects.get(this.hoveredAnnotation.userData._id);
+					label.element.style.display = 'block';
+					label.element.style.opacity = 0.8;
+					arrow.visible = true;
+					console.log(arrow);
+				}
+			}
+
 
 			if (this.labelGroup.children === undefined) return
 
@@ -471,6 +508,7 @@
 					label.element.style.opacity = 0.8
 				}
 			}
+
 			this.render()
 
 		},
@@ -491,13 +529,32 @@
 		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
+			let intersections = [];
+
 			let penActive = event === undefined;
 			if (!penActive) {
 				this.updateMouse(event);
 			}
 
-			let intersections = [];
+			// Check if hovering an annotation and set hoveredAnnotation to the intersected
 
+			if(this.modus.hiddenLabels) {
+				this.raycaster.setFromCamera(this.mouse, this.camera);
+				intersections = this.raycaster.intersectObjects(this.spheres);
+				this.hoveredAnnotation = undefined;
+				if(intersections.length !== 0) {
+					// Get new hoveredAnnotation and make it visible
+					this.hoveredAnnotation = intersections[0].object.parent;
+				}
+				// FIXME: update only on actual change
+				this.updateAllAnnotationVisibility();
+			}
+
+
+
+
+
+			intersections = [];
 			if (this.fileRepresentation) {
 				if (this.tool === 'polygon' || this.tool === 'point') {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
