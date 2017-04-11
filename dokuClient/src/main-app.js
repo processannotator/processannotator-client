@@ -292,6 +292,13 @@ Polymer({
 		return localProjectDB.put(annotation)
 		.catch(err => console.log)
 	},
+	editAnnotation: function (evt) {
+		let editedAnnotation = evt.detail;
+		localProjectDB.get(editedAnnotation._id).then((storedAnnotation) => {
+			editedAnnotation = Object.assign(storedAnnotation, editedAnnotation);
+			return localProjectDB.put(editedAnnotation);
+		})
+	},
 
 	deleteAnnotation: function (annotation) {
 		console.log('removing', annotation);

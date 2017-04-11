@@ -30,6 +30,9 @@
 			:host.polygonCursor {
 				cursor: crosshair;
 			}
+			:host.fingerCursor {
+				cursor: pointer;
+			}
 		</style>
 	</template>
 
@@ -341,6 +344,8 @@
 			this.annotation3DObjects = new Map();
 			this.hoveredAnnotation = null;
 
+			this.annotationEditTimeout = undefined;
+
 			this.resize();
 			this.fire('initialized')
 		},
@@ -477,7 +482,6 @@
 			// TODO: there is a PR on threejs for raycasting in css renderer, use it once ready
 			// triggered on controls update
 			let raycaster = new THREE.Raycaster();
-			console.log(this.selectedAnnotation);
 			if(this.modus.hiddenLabels) {
 				// Hide all Annotations (except red pinpoint) by default
 				// and conditionally unhide the hovered annotation
@@ -538,54 +542,60 @@
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
 			let intersections = [];
+			let sphereIntersections = [];
 
 			let penActive = event === undefined;
 			if (!penActive) {
 				this.updateMouse(event);
 			}
 
-			// Check if hovering an annotation and set hoveredAnnotation to the intersected
-
-			if(this.modus.hiddenLabels) {
+			if(this.modus.hiddenLabels || this.tool === 'edit') {
 				this.raycaster.setFromCamera(this.mouse, this.camera);
-				intersections = this.raycaster.intersectObjects(this.spheres);
+				sphereIntersections = this.raycaster.intersectObjects(this.spheres);
 				this.hoveredAnnotation = undefined;
-				if(intersections.length !== 0) {
+				if(sphereIntersections.length !== 0) {
 					// Get new hoveredAnnotation and make it visible
-					this.hoveredAnnotation = intersections[0].object.parent;
+					this.hoveredAnnotation = sphereIntersections[0].object.parent;
 				}
 				// FIXME: update only on actual change
 				this.updateAllAnnotationVisibility();
 			}
 
-
+			Polymer.dom(this).classList.remove('polygonCursor');
+			Polymer.dom(this).classList.remove('fingerCursor');
 
 
 
 			intersections = [];
 			if (this.fileRepresentation) {
-				if (this.tool === 'polygon' || this.tool === 'point') {
+				if (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'edit') {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
 				} else if(penActive) {
 					const origin = this.physicalPenModel.getWorldPosition();
 					const normalizedDirection = origin.clone().negate().normalize();
 					this.raycaster.set(origin, normalizedDirection);
 				}
-				intersections = this.raycaster.intersectObject(this.fileRepresentation);
-
+				if(this.tool !== 'rotate') {
+					intersections = this.raycaster.intersectObject(this.fileRepresentation);
+				}
 			}
 
-			if (intersections.length !== 0) {
+			if (intersections.length !== 0 || sphereIntersections.length !== 0) {
 
 				if (this.modus.modelGrabbing && this.tool !== 'rotate') {
-					Polymer.dom(this).classList.add('polygonCursor');
+					if(this.hoveredAnnotation && this.tool === 'edit') {
+						Polymer.dom(this).classList.add('fingerCursor');
+					} else {
+						Polymer.dom(this).classList.add('polygonCursor');
+					}
+
 				}
 				this.spotLight.target = this.pointerSphere;
-				this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
+				if(intersections.length !== 0) this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
 				this.render();
 
 			} else {
-				Polymer.dom(this).classList.remove('polygonCursor')
+
 			}
 
 		},
@@ -643,7 +653,29 @@
 			}
 		},
 		track: function (e) {
+			controls.enabled = true;
+			if(this.tool === 'edit') {
+				controls.enabled = false;
+				if(this.hoveredAnnotation) {
+					let newPosition = this.pointerSphere.position.clone();
+					this.mainGroupGL.worldToLocal(newPosition);
+					let id = this.hoveredAnnotation.userData._id;
+					clearTimeout(this.annotationEditTimeout);
+					this.annotationEditTimeout = setTimeout(() => {
+						this.fire('edit-annotation', {
+							_id: id,
+							position: newPosition,
+						});
+					}, 4000);
 
+
+					let targetAnnotation = this.annotations.filter(({_id}) => _id === id)[0];
+					targetAnnotation.position = newPosition;
+					this._annotationsChanged();
+
+
+				}
+			}
 		},
 		tap: function(e) {
 
@@ -664,11 +696,14 @@
 			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
-			let localIntersectionPoint = intersection.point.clone();
-			let localCameraPosition = controls.object.position.clone();
+			if(intersection) {
+				var localIntersectionPoint = intersection.point.clone();
+				var localCameraPosition = controls.object.position.clone();
 
-			this.mainGroupGL.worldToLocal(localIntersectionPoint);
-			this.mainGroupGL.worldToLocal(localCameraPosition);
+				this.mainGroupGL.worldToLocal(localIntersectionPoint);
+				this.mainGroupGL.worldToLocal(localCameraPosition);
+			}
+
 
 			switch (this.tool) {
 
@@ -696,7 +731,9 @@
 						console.log('added polygon annotation');
 
 					break;
+				case 'edit':
 
+				break;
 				case 'polygon':
 					this.verticesPolygonTool.push(localIntersectionPoint.clone());
 
