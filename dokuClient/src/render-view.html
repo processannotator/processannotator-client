@@ -244,42 +244,22 @@
 			})
 
 			this.atmosphericLight = new THREE.DirectionalLight(0x556677, 0.5);
-			this.atmosphericLight.castShadow = true;
-			this.atmosphericLight.shadowDarkness = 0.5;
-			this.atmosphericLight.shadowMapSoft = true;
-			this.atmosphericLight.shadowMapWidth = 1024;
-			this.atmosphericLight.shadowMapHeight = 1024;
 			this.atmosphericLight.position.set(10 * this.standardDistance, 20 * this.standardDistance, -2.5 * this.standardDistance);
 
 			this.atmosphericLight2 = new THREE.DirectionalLight(0x1166bb, 0.5);
-			this.atmosphericLight2.castShadow = true;
-			this.atmosphericLight2.shadowDarkness = 0.5;
-			this.atmosphericLight2.shadowMapSoft = true;
-			this.atmosphericLight2.shadowMapWidth = 1024;
-			this.atmosphericLight2.shadowMapHeight = 1024;
 			this.atmosphericLight2.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
 
-			this.atmosphericLight3 = new THREE.DirectionalLight(0xff6600, 0.5);
-			this.atmosphericLight3.castShadow = true;
-			this.atmosphericLight3.shadowDarkness = 0.5;
-			this.atmosphericLight3.shadowMapSoft = true;
-			this.atmosphericLight3.shadowMapWidth = 1024;
-			this.atmosphericLight3.shadowMapHeight = 1024;
-			this.atmosphericLight3.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
-
-			this.atmosphericLight4 = new THREE.DirectionalLight(0xff6600, 0.5);
-			this.atmosphericLight4.castShadow = true;
-			this.atmosphericLight4.shadowDarkness = 0.5;
-			this.atmosphericLight4.shadowMapSoft = true;
-			this.atmosphericLight4.shadowMapWidth = 1024;
-			this.atmosphericLight4.shadowMapHeight = 1024;
-			this.atmosphericLight4.position.set(0, -10 * this.standardDistance, 0);
+			// this.atmosphericLight3 = new THREE.DirectionalLight(0xff6600, 0.5);
+			// this.atmosphericLight3.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
+			//
+			// this.atmosphericLight4 = new THREE.DirectionalLight(0xff6600, 0.5);
+			// this.atmosphericLight4.position.set(0, -10 * this.standardDistance, 0);
 
 			this.light = new THREE.PointLight( 0xccddff, 1, 0 );
 			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.5, 1, 2.0 );
 
-			glScene.add(this.atmosphericLight);
-			glScene.add(this.light);
+			// glScene.add(this.atmosphericLight);
+			// glScene.add(this.light);
 			glScene.add(this.spotLight);
 
 			glRenderer.domElement.id = 'glRenderer';
@@ -490,7 +470,7 @@
 			}
 
 			let intersections = [];
-			console.log(this.tool);
+			// console.log(this.tool);
 
 			if (this.fileRepresentation) {
 				if (this.tool === 'polygon' || this.tool === 'point') {
