@@ -21,14 +21,13 @@ To use *ProjectAnnotator* with your own infrastructure you first need to install
 - nodejs (>5 tested, might or might not work with lower versions)
 - npm (should get installed with nodejs)
 
-On Debian base systems:
-
-`apt-get install couchdb nodejs`
-
 On RedHat/Fedora:
+```.sh
+sudo dnf install nodejs
+sudo dnf install couchdb
 
-`dnf install couchdb nodejs`
-
+# optionally make npm work without sudo, read and follow: https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-2-change-npms-default-directory-to-another-directory
+```
 Please Note: In some distros, the nodejs version is quite old. I recommend using [the node version manager (nvm)](https://github.com/creationix/nvm) if you have version 4.x or older.
 
 
@@ -56,16 +55,15 @@ sudo firewall-cmd --zone=FedoraServer --add-masquerade --permanent
 sudo firewall-cmd --zone=FedoraServer --add-forward-port=port=80:proto=tcp:toport=5984 --permanent
 ```
 
-## Installing ProjectAnnotator
-Clone the repo on your server and execute:
+Now, Clone the repo on your server:
 ```.sh
 git clone git@github.com:nylki/ProjectAnnotator.git
 cd ProjectAnnotator/server
 # Install dependencies
 npm install
-# Start server
-# If you want to start it automatically, I recommend putting it into the crontab, or creating a systemd service
-npm start
+# you can start the server with npm start
+# but the optimal was is to install the systemd unit so it runs each reboot and restarts when crashed
+sudo cp ../systemd/system/processannotator.service /etc/systemd/system/processannotator.service
 ```
 
 ## Running the electron client

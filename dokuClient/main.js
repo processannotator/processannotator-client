@@ -20,6 +20,7 @@ app.commandLine.appendSwitch('enable-file-cookies');
 let mainWindow = null;
 
 let devices = [];             // List of known devices.
+
 const knownDeviceNames = [
   'Project Annotator Pen',
   'Project Annotator Asset',
@@ -35,6 +36,15 @@ let deviceNamesToDeviceInfo = {
   //   uartRx: { ... },
   // }
 };
+
+let selectedIndex = null;     // Currently selected/connected device index.
+let selectedDevice = null;    // Currently selected device.
+let selectedAddress = null;   // MAC address or unique ID of the currently selected device.
+                              // Used when reconnecting to find the device again.
+let uartRx = null;            // Connected device UART RX char.
+let uartTx = null;            // Connected device UART TX char.
+let connectStatus = null;
+let btConnectionTimeout;
 
 function runningAsRoot() {
   // Check if the user is running as root on a POSIX platform (Linux/OSX).
@@ -101,12 +111,12 @@ function disconnectDeviceWithName(deviceName) {
   });
 
   // Connected, now kick off service discovery.
-  setConnectStatus('Discovering Services...', 66);
+  setConnectStatus('Discovering Services', 66);
   selectedDevice.discoverAllServicesAndCharacteristics(function(error_, services, characteristics) {
     // Handle if there was an error.
     if (error_) {
       console.log('Error discovering: ' + error_);
-      setConnectStatus('Error!');
+      setConnectStatus('Error');
       return;
     }
     // Setup the UART characteristics.
@@ -114,6 +124,7 @@ function disconnectDeviceWithName(deviceName) {
     // Service discovery complete, connection is ready to use!
     // Note that setting progress to 100 will cause the page to change to
     // the information page.
+    clearTimeout(btConnectionTimeout);
     setConnectStatus('Connected', 100);
   });
   delete deviceNamesToDeviceInfo[deviceName];
@@ -188,10 +199,19 @@ function setupNoble() {
     // Start scanning only if already powered up.
     if (noble.state === 'poweredOn') {
       console.log('Starting scan... ');
+      setConnectStatus('Connecting', 0);
+      btConnectionTimeout = setTimeout(() => {
+        setConnectStatus('Error');
+        dialog.showErrorBox('DokuClient', 'TIMEOUT: Unfortunately process.annotator was not able to connect the pen. Is it turned on and powered?');
+        console.log('Scan timeout.');
+        disconnect();
+      }, 10000);
       noble.startScanning();
+
     } else {
       // Let the user know the bluetooth module state
       setConnectStatus(null, 'Bluetooth ' + noble.state);
+      dialog.showErrorBox('DokuClient', 'WARNING: Unfortunately process.annotator is not able to connect the pen. Have you activated bluetooth on your computer?');
 			console.log('Bluetooth adapter not powered on. Can\'t start scan.');
 		}
   });
@@ -235,8 +255,10 @@ app.on('ready', function() {
 	mainWindow.loadURL('file://' + __dirname + '/index.html');
 	var session = mainWindow.webContents.session;
 
-	ipc.on('asynchronous-message', function(event, arg) {
-		if(arg === 'resetLocalDB') {
+  ipc.on('quit', app.quit);
+
+	ipc.on('resetLocalDB', function() {
+
 			session.clearStorageData({
 				storages: ['cookies', 'indexdb', 'local storage', 'serviceworkers']
 			}, () => { console.log('session cleared'); });
@@ -246,8 +268,9 @@ app.on('ready', function() {
 					app.quit();
 				});
 			});
-		}
 	});
+
+
 
   // Check running as root on Linux (usually required for noble).
   if (os.platform() === 'linux' && !runningAsRoot()) {

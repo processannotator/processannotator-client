@@ -8,9 +8,9 @@ After=couchdb.service
 User=tom
 Group=tom
 Type=simple
-ExecStart=/home/tom/.nvm/versions/node/v6.1.0/bin/node /home/tom/Programming/ProjectAnnotator/server/server.js
+ExecStart=/usr/bin/node /home/tom/Programming/ProjectAnnotator/server/server.js
 Restart=always
 RestartSec=30s
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
