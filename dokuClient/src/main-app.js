@@ -794,12 +794,12 @@ Polymer({
 
 		setupPenEventHandlers() {
 			const onPenSensorState = state => {
-				if (!renderView) return;
-				renderView.penState = state;
+				if (!this.renderView) return;
+				this.renderView.penState = state;
 			};
 
 			const onPhysicalModelSensorState = state => {
-				if (!renderView) return;
+				if (!this.renderView) return;
 				this.renderView.physicalModelState = state;
 			};
 
