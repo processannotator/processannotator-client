@@ -7,6 +7,8 @@
 
 	<template>
 		<style is="custom-style">
+
+
 			:host {
 				margin: 0;
 				cursor: -webkit-grab;
@@ -27,6 +29,9 @@
 
 			:host.polygonCursor {
 				cursor: crosshair;
+			}
+			:host.fingerCursor {
+				cursor: pointer;
 			}
 		</style>
 	</template>
@@ -77,6 +82,14 @@
 			physicalModelState: {
 				type: Object,
 				observer: "physicalModelStateChanged"
+			},
+			hoveredAnnotation: {
+				type: Object,
+				observer: "_hoveredAnnotationChanged"
+			},
+			selectedAnnotation: {
+				type: Object,
+				observer: "_selectedAnnotationChanged"
 			}
 		},
 
@@ -121,6 +134,9 @@
 		resetGroups: function () {
 			// Remove labels and annotations
 			this.labels = new Map();
+			this.spheres = [];
+			this.annotation3DObjects = new Map();
+
 			if(this.labelGroup && this.annotationGlGroups) {
 
 				for( var i = this.labelGroup.children.length - 1; i >= 0; i--) {
@@ -132,6 +148,7 @@
 					this.annotationGlGroups.remove(this.annotationGlGroups.children[i]);
 					cssScene.remove(this.annotationGlGroups.children[i]);
 				}
+
 			}
 
 		},
@@ -206,7 +223,7 @@
 		},
 
 		attached: function() {
-			this.modus = {modelGrabbing: false};
+			this.modus = {modelGrabbing: false, hiddenLabels: false};
 
 
 			let width = this.parentNode.getBoundingClientRect().width;
@@ -265,6 +282,29 @@
 			// glScene.add(this.light);
 			glScene.add(this.spotLight);
 
+			this.floorMaterial = new THREE.MeshStandardMaterial({
+				color: 0xb9b9b9,
+				transparent: true,
+				opacity: 0.5,
+				side: THREE.DoubleSide
+			});
+			this.floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(this.standardDistance * 4, this.standardDistance * 4, 2, 2), this.floorMaterial);
+			glScene.add(this.floor);
+			console.log(this.floor.up);
+			this.floor.rotateX(-0.5 * Math.PI);
+			// console.log(this.floor.up);
+			// setInterval(() => {
+			// 	this.floor.rotateX(Math.random() * Math.PI);
+			// 	this.floor.rotateX(Math.random() * Math.PI);
+			// 	this.floor.rotateX(Math.random() * Math.PI);
+			// 	console.log('localup:', JSON.stringify(this.floor.up));
+			// 	let up2 = this.floor.up.clone();
+			// 	this.floor.localToWorld(up2);
+			// 	console.log('worldup:', JSON.stringify(up2));
+			// 	this.render();
+			// }, 100);
+			// // console.log(this.floor.rotation.z);
+
 			glRenderer.domElement.id = 'glRenderer';
 			cssRenderer.domElement.id = 'cssRenderer';
 			Polymer.dom(this.root).appendChild(glRenderer.domElement);
@@ -305,12 +345,16 @@
 			this.raycaster = new THREE.Raycaster()
 
 			controls.addEventListener('change', this.render.bind(this))
-			controls.addEventListener('change', this.updateAnnotationVisibility.bind(this))
+			controls.addEventListener('change', this.updateAllAnnotationVisibility.bind(this))
 			controls.handleResize()
 
 			// init annotations to empty array
 			this.annotations = [];
-			this.annotation3DObjects = [];
+			this.annotation3DObjects = new Map();
+			this.hoveredAnnotation = null;
+
+			this.annotationEditTimeout = undefined;
+
 			this.resize();
 			this.fire('initialized')
 		},
@@ -356,8 +400,10 @@
 						this.mainGroupGL.remove(this.fileRepresentation);
 
 					this.fileRepresentation = meshFromFile;
+
 					this.mainGroupCSS = new THREE.Object3D();
 					this.mainGroupGL = new THREE.Object3D();
+
 
 
 					// create group for text annotations in 3D
@@ -372,6 +418,8 @@
 					glScene.add(this.mainGroupGL);
 					glScene.add(this.penGroupGLOffset);
 					cssScene.add(this.mainGroupCSS);
+					this.mainGroupCSS.rotateX(-0.5 * Math.PI);
+					this.mainGroupGL.rotateX(-0.5 * Math.PI);
 
 					this.render();
 					this.animate();
@@ -396,7 +444,8 @@
 		addAnnotationObject: function (annotation) {
 			let annotation3DObject = {};
 			let annotationGlGroup = new THREE.Object3D();
-			let multFactor = 2;
+			annotationGlGroup.userData = {_id: annotation._id};
+			let multFactor = 2.0;
 			let label = this.createLabel(annotation, multFactor);
 
 			this.labels.set(annotation._id, label);
@@ -406,16 +455,20 @@
 			// TODO: add arrow, label to a group/structure to be selectable
 			let arrow = this.createArrow(annotation.position, label.position, annotation.statusColor);
 			annotationGlGroup.add(arrow);
+			annotation3DObject.arrow = arrow;
 
 
 			let sphere = new THREE.Mesh(
-				new THREE.SphereGeometry(this.standardDistance / 100, 6, 6),
+				new THREE.SphereGeometry(this.standardDistance / 40, 6, 6),
 				new THREE.MeshLambertMaterial({ color: 0xff0000})
 			);
 			sphere.position.copy(annotation.position);
 			annotationGlGroup.add(sphere);
+			annotation3DObject.sphere = sphere;
+			this.spheres.push(sphere);
 
-			annotation3DObject.arrow = arrow;
+
+
 
 			// if annotation has polygon info, create it and add it to the scene
 			if (annotation.polygon !== undefined) {
@@ -425,14 +478,41 @@
 			}
 			this.annotationGlGroups.add(annotationGlGroup);
 			annotation3DObject.glGroup = annotationGlGroup;
-			this.annotation3DObjects.push(annotation3DObject);
+			this.annotation3DObjects.set(annotation._id, annotation3DObject);
 			return annotation3DObject;
 		},
+		_hoveredAnnotationChanged: function () {
 
-		updateAnnotationVisibility: function () {
+		},
+
+		updateAllAnnotationVisibility: function () {
 			// TODO: there is a PR on threejs for raycasting in css renderer, use it once ready
 			// triggered on controls update
-			let raycaster = new THREE.Raycaster()
+			let raycaster = new THREE.Raycaster();
+			if(this.modus.hiddenLabels) {
+				// Hide all Annotations (except red pinpoint) by default
+				// and conditionally unhide the hovered annotation
+				// This is not super efficient (toggling all every time) but should suffice in this case
+				// console.log(this.annotation3DObjects.values());
+				for (let {label, arrow} of this.annotation3DObjects.values()) {
+					label.element.style.display = 'none';
+					label.element.style.opacity = 0.0;
+					arrow.visible = false;
+				}
+
+				let visibleAnnotations = [];
+				if(this.hoveredAnnotation) visibleAnnotations.push(this.hoveredAnnotation.userData);
+				if(this.selectedAnnotation) visibleAnnotations.push(this.selectedAnnotation)
+				for (let annotation of visibleAnnotations) {
+					if(!annotation) continue;
+					let {label, arrow} = this.annotation3DObjects.get(annotation._id);
+					label.element.style.display = 'block';
+					label.element.style.opacity = 0.8;
+					arrow.visible = true;
+				}
+
+			}
+
 
 			if (this.labelGroup.children === undefined) return
 
@@ -447,6 +527,7 @@
 					label.element.style.opacity = 0.8
 				}
 			}
+
 			this.render()
 
 		},
@@ -467,35 +548,60 @@
 		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
+			let sphereIntersections = [];
 
-			if (event) {
+			let penActive = event === undefined;
+			if (!penActive) {
 				this.updateMouse(event);
 			}
 
-			let intersections = [];
 			// console.log(this.tool);
 
+			if(this.modus.hiddenLabels || this.tool === 'edit') {
+				this.raycaster.setFromCamera(this.mouse, this.camera);
+				sphereIntersections = this.raycaster.intersectObjects(this.spheres);
+				this.hoveredAnnotation = undefined;
+				if(sphereIntersections.length !== 0) {
+					// Get new hoveredAnnotation and make it visible
+					this.hoveredAnnotation = sphereIntersections[0].object.parent;
+				}
+				// FIXME: update only on actual change
+				this.updateAllAnnotationVisibility();
+			}
+
+			Polymer.dom(this).classList.remove('polygonCursor');
+			Polymer.dom(this).classList.remove('fingerCursor');
+
+			let intersections = [];
 			if (this.fileRepresentation) {
-				if (this.tool === 'polygon' || this.tool === 'point') {
+				if (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'edit') {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
-				} else {
+				} else if(penActive) {
 					const origin = this.physicalPenModel.getWorldPosition();
 					const normalizedDirection = origin.clone().negate().normalize();
 					this.raycaster.set(origin, normalizedDirection);
 				}
-				intersections = this.raycaster.intersectObject(this.fileRepresentation);
-
+				if(this.tool !== 'rotate') {
+					intersections = this.raycaster.intersectObject(this.fileRepresentation);
+				}
 			}
 
-			if (intersections.length !== 0) {
-				if (this.modus.modelGrabbing === false) {
-					Polymer.dom(this).classList.add('polygonCursor');
+			if (intersections.length !== 0 || sphereIntersections.length !== 0) {
+
+				if (this.modus.modelGrabbing && this.tool !== 'rotate') {
+					if(this.hoveredAnnotation && this.tool === 'edit') {
+						Polymer.dom(this).classList.add('fingerCursor');
+					} else {
+						Polymer.dom(this).classList.add('polygonCursor');
+					}
+
 				}
 				this.spotLight.target = this.pointerSphere;
-				this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
+				if(intersections.length !== 0) this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
 				this.render();
+
 			} else {
-				Polymer.dom(this).classList.remove('polygonCursor')
+
 			}
 
 		},
@@ -507,7 +613,6 @@
 
 			switch (e.which) {
 				case 13: /*Enter*/
-					console.log('pressed enter');
 					if (this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						event.preventDefault();
 						// TODO: finish shape and create annotation
@@ -554,7 +659,29 @@
 			}
 		},
 		track: function (e) {
+			controls.enabled = true;
+			if(this.tool === 'edit') {
+				controls.enabled = false;
+				if(this.hoveredAnnotation) {
+					let newPosition = this.pointerSphere.position.clone();
+					this.mainGroupGL.worldToLocal(newPosition);
+					let id = this.hoveredAnnotation.userData._id;
+					clearTimeout(this.annotationEditTimeout);
+					this.annotationEditTimeout = setTimeout(() => {
+						this.fire('edit-annotation', {
+							_id: id,
+							position: newPosition,
+						});
+					}, 4000);
 
+
+					let targetAnnotation = this.annotations.filter(({_id}) => _id === id)[0];
+					targetAnnotation.position = newPosition;
+					this._annotationsChanged();
+
+
+				}
+			}
 		},
 		tap: function(e) {
 
@@ -575,7 +702,14 @@
 			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
-			this.mainGroupGL.worldToLocal(intersection.point);
+			if(intersection) {
+				var localIntersectionPoint = intersection.point.clone();
+				var localCameraPosition = controls.object.position.clone();
+
+				this.mainGroupGL.worldToLocal(localIntersectionPoint);
+				this.mainGroupGL.worldToLocal(localCameraPosition);
+			}
+
 
 			switch (this.tool) {
 
@@ -585,11 +719,11 @@
 						// TODO: finish shape and create annotation
 						this.fire('create-annotation', {
 							description: '',
-							polygon: [intersection.point.clone()],
-							position: intersection.point.clone(),
+							polygon: [localIntersectionPoint.clone()],
+							position: localIntersectionPoint.clone(),
 							cameraPosition: controls.object.position.clone(),
 							// cameraRotation: camera.rotation,
-							cameraUp: this.camera.up
+							cameraUp: controls.object.up
 						});
 						if (this.previewAnnotation !== undefined) {
 							this.mainGroupGL.remove(this.previewAnnotation.arrow);
@@ -603,9 +737,11 @@
 						console.log('added polygon annotation');
 
 					break;
+				case 'edit':
 
+				break;
 				case 'polygon':
-					this.verticesPolygonTool.push(intersection.point.clone());
+					this.verticesPolygonTool.push(localIntersectionPoint.clone());
 
 					// create new preview polygon/shape when enough points are available
 					if (this.verticesPolygonTool.length >= 3) {
@@ -621,13 +757,81 @@
 							status: 'comment',
 							statusColor: 'blue',
 							description: "Press Enter to edit/create. Esc to cancel.",
-							position: intersection.point.clone(),
+							position: localIntersectionPoint.clone(),
 							cameraPosition: controls.object.position.clone(),
 							cameraUp: this.camera.up
 						});
 					}
 
 					this.render();
+				break;
+
+				case 'setCamera':
+					console.log(this.camera.quaternion, this.camera.position, this.camera.up);
+					this.resetCamera = this.camera.clone();
+
+				break;
+
+				case 'resetCamera':
+					console.log(this.camera.quaternion, this.camera.position, this.camera.up);
+					this.camera.quaternion.copy(this.resetCamera.quaternion);
+					this.camera.position.copy(this.resetCamera.position);
+					this.camera.up.copy(this.resetCamera.up);
+
+				break;
+
+				case 'bottom':
+					// HACK: for testing
+					//
+					let normals = this.fileRepresentation.geometry.getAttribute('normal').array;
+					let faces = this.fileRepresentation.geometry.getAttribute('normal').array;
+					console.log(this.fileRepresentation.geometry);
+					let localIntersection = new THREE.Object3D();
+
+					localIntersection.position.copy(intersection.point);
+					this.mainGroupGL.add(localIntersection);
+					console.log(localIntersection.getWorldPosition());
+
+					let bottomNormal = new THREE.Vector3(
+						normals[(intersection.faceIndex*3)],
+						normals[(intersection.faceIndex*3) + 1],
+						normals[(intersection.faceIndex*3) + 2]
+					);
+
+					// console.log(this.fileRepresentation.geometry.getAttribute('faces'));
+					let face = new THREE.Face3(
+						faces[(intersection.faceIndex*3)],
+						faces[(intersection.faceIndex*3) + 1],
+						faces[(intersection.faceIndex*3) + 2]
+					);
+
+
+					this.mainGroupGL.quaternion.setFromUnitVectors(bottomNormal, new THREE.Vector3(0, -1, 0));
+					this.mainGroupGL.updateMatrixWorld();
+					this.mainGroupGL.updateMatrix();
+					localIntersection.updateMatrix();
+					localIntersection.updateMatrixWorld();
+
+					// TODO: Rotation works. Position has yet to be done correctly!
+
+					// console.log(localIntersection.getWorldPosition(), localIntersection.position);
+					// let dist = localIntersection.position.distanceTo(this.floor.position);
+					// if(localIntersection.position.y > 0) {
+					// 	console.log('tiefer bringen');
+					// 	this.mainGroupGL.position.y -= dist;
+					// } else {
+					// 	console.log('höher bringen');
+					// 	this.mainGroupGL.position.y += dist;
+					// }
+
+					this.render();
+
+
+
+
+
+					// this.mainGroupGL.position.sub(norm);
+
 				break;
 				default:
 			}
@@ -674,7 +878,8 @@
 			if (annotation.cameraPosition !== undefined) {
 				// Convert x,y,z object into Vector3 object.
 				let camPos = new THREE.Vector3(annotation.cameraPosition.x, annotation.cameraPosition.y, annotation.cameraPosition.z);
-				label.position.copy(annotation.cameraPosition).multiplyScalar(0.6);
+				let labelPos = this.mainGroupGL.worldToLocal(camPos);
+				label.position.copy(labelPos).multiplyScalar(0.6);
 			} else {
 				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
 				label.position.multiplyScalar(multFactor);
@@ -706,11 +911,14 @@
 			this.verticesPolygonTool = [];
 
 			switch (this.tool) {
-				case 'polygon':
+				case 'rotate': this.modus.modelGrabbing = true;
 					break;
 				default:
 					break;
 			}
+		},
+		_selectedAnnotationChanged: function () {
+
 		},
 		focusAnnotation: function (annotation) {
 			if (annotation.cameraPosition !== undefined) {

@@ -12,16 +12,15 @@ const PORT = '80';
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
 
-
 Polymer({
 	is: 'main-app',
 
 	properties: {
 		objectTool: {
-			type: 'Object'
+			type: Object
 		},
 		selectedAnnotation: {
-			type: 'Object',
+			type: Object,
 			notify: true,
 			observer: '_selectedAnnotationChanged'
 		}
@@ -32,18 +31,26 @@ Polymer({
 
 	attached: async function () {
 		document.app = this;
-
+		console.log(this);
 		this.setupPenEventHandlers();
+
 		this.penButtonText = 'Connect Pen';
+		this.objectButtonText = 'Connect Object';
+		this.penButtonConnecting = false;
+		this.penButtonConnected = false;
+		this.objectButtonConnecting = false;
+		this.onlineStatus = false;
+		this.OnlineStatusText = '-';
+
+
 		this.projects = [];
 		this.activeProject = {_id: 'collabdb', activeTopic: 'topic_1'};
 		this.hasCachedUserDB = false;
 		this.lastUserCacheUpdate = -1;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
 		this.isOnline = window.navigator.onLine;
-		window.addEventListener("offline", this.updateOnlineStatus);
-		window.addEventListener("online", this.updateOnlineStatus);
-		setInterval(this.updateOnlineStatus, 1000 * 60);
+		window.addEventListener("offline", this.updateOnlineStatus.bind(this));
+		window.addEventListener("online", this.updateOnlineStatus.bind(this));
 
 
 		this.renderView = document.querySelector('render-view');
@@ -54,7 +61,12 @@ Polymer({
 		this.updateProjectList();
 		localInfoDB.changes( {live: true, since: 'now'} )
 		.on('change', this.updateProjectList)
-		.on('error', err => console.log);
+		.on('error', err => {
+			console.log('ERROR');
+		});
+
+		setInterval(this.updateOnlineStatus.bind(this), 1000 * 30);
+		this.updateOnlineStatus();
 
 
 		// Contains public user info (color, name) and is used for offline situations
@@ -63,9 +75,16 @@ Polymer({
 		userDB = new PouchDB(this.remoteUrl + '/_users');
 
 		this.loadPreferences().then(() => {
-			return new Promise((resolve, reject) => {
-				if(this.activeProfile === ''){
+			return new Promise(async (resolve, reject) => {
+				console.log('Loaded preferences.');
+
+				if(this.activeProfile === '' || this.activeProfile === undefined){
 					console.log('NO ACTIVE PROFIL found in the preferences! creating one now.');
+
+					if(await this.updateOnlineStatus() === false) {
+						dialog.showErrorBox('DokuClient', 'Error connecting to the database for new user registration. Please check if you are connected to the internet and try again.');
+						ipc.send('quit');
+					}
 
 					let profileOverlay = document.querySelector('#profileSetupOverlay');
 
@@ -112,7 +131,7 @@ Polymer({
 				status = false;
 			} else {
 				try {
-					let info = await userDB.info();
+					let info = await remoteInfoDB.info();
 					console.log(info);
 					status = true;
 				} catch (err) {
@@ -120,8 +139,11 @@ Polymer({
 				}
 			}
 
+
 			this.onlineStatus = status;
-			console.log('status change', this.onlineStatus);
+			this.onlineStatusText = status ? 'DB ONLINE ⦿' : 'DB OFFLINE ○';
+
+			console.log('online status change', this.onlineStatus);
 			return status;
 	},
 
@@ -131,6 +153,7 @@ Polymer({
 			ipc.send('disconnectPen');
 			console.log('trying to disconnect pen');
 		} else {
+			this.penButtonConnecting = true;
 			ipc.send('startScan');
 			console.log('trying to connect pen');
 		}
@@ -184,11 +207,21 @@ Polymer({
 		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
 
 		this.savePreferences();
-
+		let info;
+		// console.log(info);
 		sync = PouchDB.sync(localProjectDB, remoteProjectDB, {
 			live: true,
 			retry: true
-		}).on('error', err => {
+		})
+		.on('change', (info_) => {
+			console.log(info);
+			// Deactivate sync status after 100ms
+			clearTimeout(this.dbSyncSpinnerTimeout);
+			this.dbSyncSpinnerTimeout = setTimeout(() => {this.dbSyncActive = false}, 500);
+			this.dbSyncActive = true;
+
+		})
+		.on('error', err => {
 			console.log('sync error', err);
 		});
 
@@ -205,14 +238,16 @@ Polymer({
 			// as we would have to notify updateElements about the actual changed docs. this is not true yet and may never be, just wanted to note this here in case we ever decide to do so:)
 			clearTimeout(this.updateTimeout);
 			this.updateTimeout = setTimeout(() => {
+				this.updateOnlineStatus();
 				this.updateElements({updateFile: updateFile});
 			}, 30);
 
 		})
 		.on('complete', function(info) {})
+		.on('active', () => {console.log('active...');})
 		.on('error', function (err) {console.log(err)});
 
-		let info = await localProjectDB.get('info');
+		info = await localProjectDB.get('info');
 		this.activeProject.activeTopic = info.activeTopic;
 		await this.updateElements({updateFile: true});
 
@@ -256,6 +291,13 @@ Polymer({
 
 		return localProjectDB.put(annotation)
 		.catch(err => console.log)
+	},
+	editAnnotation: function (evt) {
+		let editedAnnotation = evt.detail;
+		localProjectDB.get(editedAnnotation._id).then((storedAnnotation) => {
+			editedAnnotation = Object.assign(storedAnnotation, editedAnnotation);
+			return localProjectDB.put(editedAnnotation);
+		})
 	},
 
 	deleteAnnotation: function (annotation) {
@@ -338,7 +380,8 @@ Polymer({
 
 	},
 
-	setNewProfile: function({prename, surname, email, color}) {
+	setNewProfile: async function({prename, surname, email, color}) {
+
 		let metadata = {
 			surname: surname,
 			prename: prename,
@@ -357,26 +400,27 @@ Polymer({
 		// will need to redo the signup once possible
 
 		// Before trying any network stuff, save preferences with locally created profile.
-		return this.savePreferences()
-		.then(() => {
-			// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
-			metadata.testkey = 'testuserkey';
-			metadata.projects = [];
-			return userDB.signup( name, password, {metadata} );
-		})
-		.then( response => { return userDB.login(name, password) })
-		.then( response => {
+		await this.savePreferences();
+
+		// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
+		metadata.testkey = 'testuserkey';
+		metadata.projects = [];
+
+		try {
+			await userDB.signup( name, password, {metadata} );
+			let response = userDB.login(name, password);
+			let profile = await userDB.getUser(name);
+			this.activeProfile = Object.assign(this.activeProfile, profile);
 			console.log('succesfully created user and logged in.', response);
-			return userDB.getUser(name);
-		})
-		.then( response => {
-			this.activeProfile = Object.assign(this.activeProfile, response);
 			this.updateProjectList();
-		})
-		.catch(err => console.error);
+		} catch (err) {
+			console.log('Error signup new user', err);
+			dialog.showErrorBox('DokuClient', 'Error: Could not signup/login new user:\n', err);
+		}
+
 	},
 
-	setNewProject: function({projectname, topicname, file, emails}) {
+	setNewProject: async function({projectname, topicname, file, emails}) {
 		// Assumes current activeProfile as the creator.
 		// We will create a new db for the project.
 		// However, only server admins are allowed to create db's in couchdb,
@@ -384,6 +428,11 @@ Polymer({
 
 		// FIXME: create some kind of queue in the preferences to send out the request
 		// at a later time when the server is offline.
+
+		if(await this.updateOnlineStatus() === false) {
+			dialog.showErrorBox('DokuClient', 'Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
+			return;
+		}
 
 		function normalizeCouchDBName(name) {
 			return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_$()+/-]/g, '$');
@@ -709,7 +758,12 @@ Polymer({
 			// }
 		},
 
-		handleCreateProject: function() {
+		handleCreateProject: async function() {
+			if(await this.updateOnlineStatus() === false) {
+				dialog.showErrorBox('DokuClient', 'Error connecting to the database for new Project creation. Please check if you are connected to the internet and try again.');
+				return;
+			}
+
 			let projectOverlay = document.createElement('project-setup-overlay');
 			projectOverlay.classList.add("fullbleed");
 			projectOverlay['with-back-drop'] = true;
@@ -717,6 +771,7 @@ Polymer({
 			Polymer.dom(this.root).appendChild(projectOverlay);
 
 			projectOverlay.addEventListener('iron-overlay-closed', (e) => {
+				if(projectOverlay.pageNumber !== 2) return;
 
 				this.setNewProject({
 					projectname: projectOverlay.projectname,
@@ -733,13 +788,16 @@ Polymer({
 
 		updateProjectList: async function () {
 			let doc = await localInfoDB.get('projectsInfo');
-			this.set('projects', doc.projects);
+			this.projects = doc.projects;
 
 		},
 
 		toggleDashboard: function (e) {
 			this.$.dashboard.toggle();
 			this.$.projectMenuItem.classList.toggle('selected');
+			this.$.dashboard.addEventListener('switch-project-click', (e) => {
+				this.$.projectMenuItem.classList.toggle('selected');
+			}, {once: true});
 		},
 
 		handleSwitchProject: function (e) {
@@ -762,7 +820,7 @@ Polymer({
 		},
 
 		resetLocalDB: function (e) {
-			ipc.send('asynchronous-message', 'resetLocalDB');
+			ipc.send('resetLocalDB');
 		},
 
 		mouseOutAnnotationLabel: function (e) {
@@ -780,6 +838,11 @@ Polymer({
 			e.target.classList.toggle('selectedAnnotation');
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
 			this.$.annotationSelector.select(item);
+		},
+		annotationBoxMouseover: function (e) {
+			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
+			console.log(item);
+			this.hoveredAnnotation = item;
 		},
 
 		_selectedAnnotationChanged: function (e) {
@@ -844,6 +907,13 @@ Polymer({
 				} else if (status === 'Disconnected') {
 					this.penButtonText = 'Connect Sensors';
 				}
+
+
+				console.log('Connect status:', status, percent);
+				// setTimeout(() => {
+				// 	this.bno055.straighten();
+				// }, 5000);
+
 			});
 
 			ipc.on('uartRx', (emitter, deviceName, data) => {

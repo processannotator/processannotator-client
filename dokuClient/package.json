@@ -8,11 +8,11 @@
     "Sebastian Felix Zappe"
   ],
   "dependencies": {
+    "noble": "^1.1.0",
     "pouchdb": "^6.1.1",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.5",
     "worker-pouch": "^2.0.0",
-    "noble": "^1.1.0",
     "electron-reload": "^1.0.2"
   },
   "scripts": {
@@ -27,7 +27,7 @@
     "babel-preset-env": "^1.1.8",
     "babel-watch": "^2.0.3",
     "devtron": "^1.1.1",
-    "electron": "^1.4.8",
+    "electron": "^1.6.2",
     "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.2.1",
     "electron-reload": "^1.0.2",
