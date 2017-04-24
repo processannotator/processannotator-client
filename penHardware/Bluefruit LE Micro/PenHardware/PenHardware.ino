@@ -2,8 +2,8 @@
 // IMPORTANT!
 //
 // XXX: Change this to let the software know which device is which.
-//#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Asset"
-#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Pen"
+#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Asset"
+//#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Pen"
 //
 
 

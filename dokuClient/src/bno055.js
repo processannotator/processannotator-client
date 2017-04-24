@@ -83,7 +83,7 @@ export default class BNO055 {
 
     // Now parse the components from the reading.
     const components = line.split(',');
-    console.log(line, components);
+    //console.log(line, components);
     if (components.length !== 5) {
       // Didn't get 5 components, something is wrong.
       return;

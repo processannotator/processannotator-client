@@ -73,9 +73,8 @@ function findUARTCharacteristics(deviceName, services) {
 				console.log('Found RX characteristic');
         characteristics.removeAllListeners('data');
         characteristics.on('data', function(data) {
-					console.log('RX:', String(data));
           if (mainWindow !== null) {
-            console.log(String(data));
+            // console.log(String(data));
             mainWindow.webContents.send('uartRx', deviceName, String(data));
           }
         });
