@@ -22,6 +22,8 @@ let mainWindow = null;
 let devices = [];             // List of known devices.
 
 const knownDeviceNames = [
+  // 'DokuPen',
+  // 'Adafruit Bluefruit LE',
   'Project Annotator Pen',
   'Project Annotator Asset',
   // 'Adafruit Bluefruit LE 5DE4',
@@ -71,8 +73,9 @@ function findUARTCharacteristics(deviceName, services) {
 				console.log('Found RX characteristic');
         characteristics.removeAllListeners('data');
         characteristics.on('data', function(data) {
-					// console.log('RX:', String(data));
+					console.log('RX:', String(data));
           if (mainWindow !== null) {
+            console.log(String(data));
             mainWindow.webContents.send('uartRx', deviceName, String(data));
           }
         });
@@ -112,6 +115,7 @@ function disconnectDeviceWithName(deviceName) {
 
   // Connected, now kick off service discovery.
   setConnectStatus('Discovering Services', 66);
+  if(!selectedDevice) return;
   selectedDevice.discoverAllServicesAndCharacteristics(function(error_, services, characteristics) {
     // Handle if there was an error.
     if (error_) {
@@ -200,12 +204,12 @@ function setupNoble() {
     if (noble.state === 'poweredOn') {
       console.log('Starting scan... ');
       setConnectStatus('Connecting', 0);
-      btConnectionTimeout = setTimeout(() => {
-        setConnectStatus('Error');
-        dialog.showErrorBox('DokuClient', 'TIMEOUT: Unfortunately process.annotator was not able to connect the pen. Is it turned on and powered?');
-        console.log('Scan timeout.');
-        disconnect();
-      }, 10000);
+      // btConnectionTimeout = setTimeout(() => {
+      //   setConnectStatus('Error');
+      //   dialog.showErrorBox('DokuClient', 'TIMEOUT: Unfortunately process.annotator was not able to connect the pen. Is it turned on and powered?');
+      //   console.log('Scan timeout.');
+      //   disconnectAllDevices();
+      // }, 10000);
       noble.startScanning();
 
     } else {

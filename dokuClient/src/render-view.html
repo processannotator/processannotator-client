@@ -201,21 +201,22 @@
 		penStateChanged: function () {
 			if (this.penGroupGLOrientation) {
 				const quaternion = this.penState.quat.clone();
-				// this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
-				this.mainGroupGL.setRotationFromQuaternion(quaternion);
-				this.mainGroupCSS.setRotationFromQuaternion(quaternion);
+				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
+
 				this.mouseOrPenMoved();
 				requestAnimationFrame(() => this.render());
 			}
 		},
 
 		physicalModelStateChanged: function () {
+
 			if (this.mainGroupGL) {
 				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
 				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
-				// this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
-				// this.mainGroupGL.setRotationFromQuaternion(quaternion);
-				// this.mainGroupCSS.setRotationFromQuaternion(quaternion);
+
+
+				this.mainGroupGL.setRotationFromQuaternion(quaternion);
+				this.mainGroupCSS.setRotationFromQuaternion(quaternion);
 				// console.log('Rotated model:', quaternion);
 				// this.mouseOrPenMoved();
 				// requestAnimationFrame(() => this.render());
