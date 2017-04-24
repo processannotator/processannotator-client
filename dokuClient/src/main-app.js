@@ -858,11 +858,13 @@ Polymer({
 		setupPenEventHandlers() {
 			const onPenSensorState = state => {
 				if (!this.renderView) return;
+				console.log('penstate:', state);
 				this.renderView.penState = state;
 			};
 
 			const onPhysicalModelSensorState = state => {
 				if (!this.renderView) return;
+				console.log('physical model state:', state);
 				this.renderView.physicalModelState = state;
 			};
 
@@ -891,9 +893,13 @@ Polymer({
 			this.parsers = {
 				'Project Annotator Pen': new BNO055(onPenSensorState, onPenEvent),
 				'Project Annotator Asset': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
+				// 'DokuPen': new BNO055(onPenSensorState, onPenEvent),
+				// 'Adafruit Bluefruit LE': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
+
 			};
 
 			ipc.on('connectStatus', (emitter, deviceName, status, percent) => {
+				console.log('\n\ndevicename:', deviceName);
 				this.penStatus = status;
 				this.penStatusPercent = percent;
 				this.penButtonText = status === 'Connecting' ? `${status} (${percent}%)` : `${status}`;

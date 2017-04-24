@@ -2,8 +2,8 @@
 // IMPORTANT!
 //
 // XXX: Change this to let the software know which device is which.
-#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Asset"
-// #define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Pen"
+//#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Asset"
+#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Pen"
 //
 
 
@@ -259,7 +259,7 @@ void handleButtonPress() {
 void setup(void)
 {
   setupButtonPressHandler();
-  
+
   // while (!Serial);  // required for Flora & Micro
   delay(500);
 
@@ -349,6 +349,8 @@ void loop(void)
     ble.print(quat.x(), 4);
     ble.print(",");
     ble.println(quat.z(), 4);
+    // FIXME: add this line for proper line ending??
+    // ble.print("\\r\\n");
     if (! ble.waitForOK() )
     {
       Serial.println(F("Failed to send?"));
@@ -373,7 +375,7 @@ void loop(void)
     */
 
     handleButtonPress();
-    
+
     // Wait a bit ...
     delay(BNO055_SAMPLERATE_DELAY_MS);
   }
