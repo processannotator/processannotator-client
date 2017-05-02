@@ -243,7 +243,8 @@
 			});
 			glRenderer.setClearColor(0x00ff00, 0.0);
 			glRenderer.setSize(width, height);
-			glRenderer.setPixelRatio(window.devicePixelRatio);
+			// QUESTION: when to do the following?
+			//glRenderer.setPixelRatio(window.devicePixelRatio);
 			glRenderer.shadowMapEnabled = true;
 
 			// cssRenderer is used for font rendering
@@ -541,8 +542,8 @@
 		updateMouse: function (mouseEvent) {
 			let canvas = this.$$('canvas');
 			this.mouse = new THREE.Vector2(
-				(mouseEvent.layerX / canvas.width) * window.devicePixelRatio - 1,
-				-((mouseEvent.layerY / canvas.height) * window.devicePixelRatio - 1)
+				(mouseEvent.layerX / canvas.width) * 2/*window.devicePixelRatio*/ - 1,
+				-((mouseEvent.layerY / canvas.height) * 2/*window.devicePixelRatio*/ - 1)
 			);
 		},
 
@@ -699,10 +700,14 @@
 
 			// Calculate objects intersecting the picking ray
 			// only use the first/frontmost intersection  -> [0]
-			const intersections = this.raycaster.intersectObject(this.fileRepresentation);
-			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
+			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
+
+
+			var localIntersectionPoint;
+			var localCameraPosition;
 			if(intersection) {
 				var localIntersectionPoint = intersection.point.clone();
 				var localCameraPosition = controls.object.position.clone();
@@ -710,6 +715,8 @@
 				this.mainGroupGL.worldToLocal(localIntersectionPoint);
 				this.mainGroupGL.worldToLocal(localCameraPosition);
 			}
+
+			console.log(localIntersectionPoint);
 
 
 			switch (this.tool) {
@@ -791,7 +798,6 @@
 
 					localIntersection.position.copy(intersection.point);
 					this.mainGroupGL.add(localIntersection);
-					console.log(localIntersection.getWorldPosition());
 
 					let bottomNormal = new THREE.Vector3(
 						normals[(intersection.faceIndex*3)],
