@@ -871,10 +871,13 @@ Polymer({
 
 			const onPenEvent = (eventName) => {
 				if (eventName === 'buttonDown') {
+					// this.renderView.tap(eventName);
+					let position = this.renderView.pointerSphere.getWorldPosition();
+					this.renderView.mainGroupGL.worldToLocal(position);
 					this.addAnnotation({
 						detail: {
 							description: `Annotation #${++annotationIndex}`,
-							position: this.renderView.pointerSphere.getWorldPosition(),
+							position: position,
 							cameraPosition: this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
 							// cameraRotation: camera.rotation,
 							cameraUp: this.renderView.camera.up,
