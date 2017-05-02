@@ -149,7 +149,8 @@ Polymer({
 
 	connectOrDisconnectPen: function () {
 
-		if (this.penStatus === 'Connected') {
+		if (this.penStatus === 'connected') {
+			this.penButtonConnecting = false;
 			ipc.send('disconnectPen');
 			console.log('trying to disconnect pen');
 		} else {
@@ -858,13 +859,11 @@ Polymer({
 		setupPenEventHandlers() {
 			const onPenSensorState = state => {
 				if (!this.renderView) return;
-				console.log('penstate:', state);
 				this.renderView.penState = state;
 			};
 
 			const onPhysicalModelSensorState = state => {
 				if (!this.renderView) return;
-				console.log('physical model state:', state);
 				this.renderView.physicalModelState = state;
 			};
 
@@ -894,24 +893,28 @@ Polymer({
 				'Project Annotator Pen': new BNO055(onPenSensorState, onPenEvent),
 				'Project Annotator Asset': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
 				// 'DokuPen': new BNO055(onPenSensorState, onPenEvent),
-				// 'Adafruit Bluefruit LE': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
+				'Adafruit Bluefruit LE': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
 
 			};
 
 			ipc.on('connectStatus', (emitter, deviceName, status, percent) => {
 				console.log('\n\ndevicename:', deviceName);
+				console.log('status:', status);
 				this.penStatus = status;
 				this.penStatusPercent = percent;
-				this.penButtonText = status === 'Connecting' ? `${status} (${percent}%)` : `${status}`;
+				this.penButtonText = status === 'connecting' ? `${status} (${percent}%)` : `${status}`;
 				console.log('Connect status:', status, percent);
-				if (status === 'Connected' && percent === 100) {
+				if (status === 'connected' && percent === 100) {
 					this.penButtonText = 'Disconnect Sensors';
 					this.parsers[deviceName].reset();
-					// setTimeout(() => {
-					// 	this.penSensorDataParser.straighten();
-					// }, 5000);
-				} else if (status === 'Disconnected') {
+					this.penButtonConnected = true;
+					this.penButtonConnecting = false;
+					setTimeout(() => {
+						this.penSensorDataParser.straighten();
+					}, 5000);
+				} else if (status === 'disconnecting') {
 					this.penButtonText = 'Connect Sensors';
+					this.penButtonConnected = false;
 				}
 
 
