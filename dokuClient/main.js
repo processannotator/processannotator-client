@@ -23,7 +23,7 @@ let devices = [];             // List of known devices.
 
 const knownDeviceNames = [
   // 'DokuPen',
-  // 'Adafruit Bluefruit LE',
+  'Adafruit Bluefruit LE',
   'Project Annotator Pen',
   'Project Annotator Asset',
   // 'Adafruit Bluefruit LE 5DE4',
@@ -113,13 +113,13 @@ function disconnectDeviceWithName(deviceName) {
   });
 
   // Connected, now kick off service discovery.
-  setConnectStatus('Discovering Services', 66);
+  setConnectStatus('discovering services', 66);
   if(!selectedDevice) return;
   selectedDevice.discoverAllServicesAndCharacteristics(function(error_, services, characteristics) {
     // Handle if there was an error.
     if (error_) {
       console.log('Error discovering: ' + error_);
-      setConnectStatus('Error');
+      setConnectStatus('error');
       return;
     }
     // Setup the UART characteristics.
@@ -128,7 +128,7 @@ function disconnectDeviceWithName(deviceName) {
     // Note that setting progress to 100 will cause the page to change to
     // the information page.
     clearTimeout(btConnectionTimeout);
-    setConnectStatus('Connected', 100);
+    setConnectStatus('connected', 100);
   });
   delete deviceNamesToDeviceInfo[deviceName];
 }
@@ -151,6 +151,7 @@ function onDeviceDiscovered(device) {
   }
 
   if (deviceNamesToDeviceInfo[deviceName]) {
+    console.log('Device:', deviceName, ' is known, but already connected');
     return; // Device is known, but already connected
   }
 
@@ -159,30 +160,31 @@ function onDeviceDiscovered(device) {
   device.connect(function(error) {
     if (error) {
       console.log('Error connecting: ' + error);
-      setConnectStatus(deviceName, 'Error!');
+      setConnectStatus(deviceName, 'error');
       return;
     }
     deviceNamesToDeviceInfo[deviceName] = {
-      device,
+      device
     };
     device.removeAllListeners('disconnect');
     device.on('disconnect', function() {
       console.log('Reconnecting to device with address: ' + device);
-      setConnectStatus(deviceName, 'Reconnecting...');
+      setConnectStatus(deviceName, 'reconnecting');
       disconnectDeviceWithName(deviceName);
       noble.startScanning();
     });
-    setConnectStatus(deviceName, 'Setup…', 66);
-    device.discoverAllServicesAndCharacteristics(function(error, services, characteristics) {
-      if (error) {
-        console.log('Error discovering services: ' + error);
-        setConnectStatus(deviceName, 'Error!');
+    setConnectStatus(deviceName, 'setup', 66);
+    device.discoverAllServicesAndCharacteristics(function(error_, services, characteristics) {
+      if (error_) {
+        console.log('Error discovering services: ' + error_);
+        setConnectStatus(deviceName, 'error');
         return;
       }
       findUARTCharacteristics(deviceName, services);
-      setConnectStatus(deviceName, 'Connected', 100);
+      setConnectStatus(deviceName, 'connected', 100);
     });
   });
+
 
   if (Object.keys(deviceNamesToDeviceInfo).length === knownDeviceNames.length) {
     console.log('Everything connected:', deviceNamesToDeviceInfo);
@@ -202,7 +204,7 @@ function setupNoble() {
     // Start scanning only if already powered up.
     if (noble.state === 'poweredOn') {
       console.log('Starting scan... ');
-      setConnectStatus('Connecting', 0);
+      setConnectStatus('connecting', 0);
       // btConnectionTimeout = setTimeout(() => {
       //   setConnectStatus('Error');
       //   dialog.showErrorBox('DokuClient', 'TIMEOUT: Unfortunately process.annotator was not able to connect the pen. Is it turned on and powered?');
