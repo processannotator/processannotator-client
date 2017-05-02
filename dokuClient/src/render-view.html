@@ -159,12 +159,14 @@
 			// Add physical pen model
 			this.penGroupGLOffset = new THREE.Group();
 			this.penGroupGLOffset.rotateX(-0.5 * Math.PI);
+
 			this.penGroupGLOrientation = new THREE.Group();
 			this.penGroupGLOffset.add(this.penGroupGLOrientation);
 			this.penGroupGL = new THREE.Object3D();
 			this.penGroupGLOrientation.add(this.penGroupGL);
 
 			glScene.add(this.penGroupGLOffset);
+
 			let penGeometry = new THREE.BoxBufferGeometry(
 				0.4 * this.standardDistance,
 				0.1 * this.standardDistance,
@@ -211,15 +213,9 @@
 		physicalModelStateChanged: function () {
 
 			if (this.mainGroupGL) {
-				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
-				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
-
-
+				const quaternion = this.physicalModelState.quat.clone();
 				this.mainGroupGL.setRotationFromQuaternion(quaternion);
 				this.mainGroupCSS.setRotationFromQuaternion(quaternion);
-				// console.log('Rotated model:', quaternion);
-				// this.mouseOrPenMoved();
-				// requestAnimationFrame(() => this.render());
 			}
 		},
 
@@ -403,10 +399,20 @@
 
 					this.fileRepresentation = meshFromFile;
 
+
 					this.mainGroupCSS = new THREE.Object3D();
 					this.mainGroupGL = new THREE.Object3D();
+					this.mainGroupGLOffset = new THREE.Group();
+					this.mainGroupCSSOffset = new THREE.Group();
 
+					this.mainGroupGLOffset.rotateX(-0.5 * Math.PI);
+					this.mainGroupCSSOffset.rotateX(-0.5 * Math.PI);
 
+					glScene.add(this.mainGroupGLOffset);
+					glScene.add(this.mainGroupCSSOffset);
+
+					this.mainGroupCSSOffset.add(this.mainGroupCSS);
+					this.mainGroupGLOffset.add(this.mainGroupGL);
 
 					// create group for text annotations in 3D
 					if (this.labelGroup === undefined)
@@ -414,14 +420,14 @@
 					if (this.annotationGlGroups === undefined)
 						this.annotationGlGroups = new THREE.Object3D();
 
+					let mainGroupAxisHelper = new THREE.AxisHelper( this.standardDistance );
+					this.mainGroupGL.add(mainGroupAxisHelper)
 					this.mainGroupCSS.add(this.labelGroup);
 					this.mainGroupGL.add(this.annotationGlGroups);
 					this.mainGroupGL.add(this.fileRepresentation);
-					glScene.add(this.mainGroupGL);
 					glScene.add(this.penGroupGLOffset);
-					cssScene.add(this.mainGroupCSS);
-					this.mainGroupCSS.rotateX(-0.5 * Math.PI);
-					this.mainGroupGL.rotateX(-0.5 * Math.PI);
+					cssScene.add(this.mainGroupCSSOffset);
+
 
 					this.render();
 					this.animate();
@@ -553,7 +559,6 @@
 			let sphereIntersections = [];
 
 			let penActive = event === undefined;
-			console.log('penActive', penActive);
 			if (!penActive) {
 				this.updateMouse(event);
 			}
@@ -577,12 +582,12 @@
 
 			let intersections = [];
 			if (this.fileRepresentation) {
-				console.log('tool',this.tool);
+				// console.log('tool',this.tool);
 				if (!penActive && (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'edit')) {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
 					console.log('use camera for raycaster');
 				} else if(penActive) {
-					console.log('use pen position for raycaster');
+					// console.log('use pen position for raycaster');
 					const origin = this.physicalPenModel.getWorldPosition();
 					const normalizedDirection = origin.clone().negate().normalize();
 					this.raycaster.set(origin, normalizedDirection);
