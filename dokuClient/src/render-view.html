@@ -553,6 +553,7 @@
 			let sphereIntersections = [];
 
 			let penActive = event === undefined;
+			console.log('penActive', penActive);
 			if (!penActive) {
 				this.updateMouse(event);
 			}
@@ -576,14 +577,17 @@
 
 			let intersections = [];
 			if (this.fileRepresentation) {
-				if (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'edit') {
+				console.log('tool',this.tool);
+				if (!penActive && (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'edit')) {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
+					console.log('use camera for raycaster');
 				} else if(penActive) {
+					console.log('use pen position for raycaster');
 					const origin = this.physicalPenModel.getWorldPosition();
 					const normalizedDirection = origin.clone().negate().normalize();
 					this.raycaster.set(origin, normalizedDirection);
 				}
-				if(this.tool !== 'rotate') {
+				if(penActive || this.tool !== 'rotate') {
 					intersections = this.raycaster.intersectObject(this.fileRepresentation);
 				}
 			}
