@@ -2,6 +2,7 @@
 <script src="../libs/three/controls/TrackballControls.js"></script>
 <script src="../libs/three/renderers/CSS3DRenderer.js"></script>
 <script src="../libs/three/loaders/STLLoader.js"></script>
+<link rel="import" href="annotation-box-3d.html">
 
 <dom-module id="render-view">
 
@@ -872,15 +873,12 @@
 		},
 
 		createLabel: function (annotation, multFactor) {
-			let div = document.createElement('div');
-			let textElement = document.createElement('span');
-			div.style.opacity = '0.85';
-			div.style.fontSize = '30px';
-			div.style.padding = "0.35em";
-			div.style.background = "rgb(255, 255, 255)";
-			div.style.border = annotation.statusColor + " solid 0.125em";
-			div.style.transition = "opacity 0.5s";
-			div.innerHTML = annotation.description;
+			let div = document.createElement('annotation-box-3d');
+			// let div = document.createElement('div');
+			// let textElement = document.createElement('span');
+
+			div.annotation = annotation;
+			// div.innerHTML = annotation.description;
 			// div.addEventListener('mouseover', () => {
 			// 	this.fire('label-over', annotation._id);
 			// });

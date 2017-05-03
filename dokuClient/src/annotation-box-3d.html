@@ -1,0 +1,194 @@
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
+
+<dom-module id="annotation-box-3d">
+
+	<template>
+
+
+	<style>
+	:host {
+		margin: 0;
+		padding: 0;
+		background-color: none;
+		font-size: 20px;
+	}
+
+	.toolbar {
+		border-top: 0.1em solid rgba(90, 141, 173, 1.0);
+		min-height: 2em;
+	}
+
+	#container {
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		border: 0.1em solid;
+		background-color: rgba(255, 255, 255, 0.7);
+	}
+
+	#container:hover {
+		background-color: rgba(255, 255, 255, 1.0);
+	}
+
+	#annotation {
+		font-size: 1rem;
+	}
+
+	#responses {
+		font-size: 1rem;
+	}
+
+	#newResponse {
+		display: flex;
+		flex-direction: column;
+	}
+
+
+
+	</style>
+		<div id="container">
+
+			<div id="annotation">
+				<span>[[annotation.description]]</span>
+			</div>
+			<br>
+			<div id="responses">
+				<template is="dom-repeat" items="{{annotation.responses}}">
+					<div class="response">
+						<span></span>
+					</div>
+				</template>
+				<div id="newResponse" hidden$="[[!responseActive]]">
+					<iron-autogrow-textarea>
+						{{newResponse.text}}
+					</iron-autogrow-textarea>
+
+					<!-- <input type="text" name="" value=""> -->
+					<div class="responseButtons">
+						<button type="button" name="cancelResponse" on-tap="cancelResponse">CANCEL</button>
+						<button type="button" name="submitResponse" on-tap="submitResponse">DONE</button>
+					</div>
+
+				</div>
+			</div>
+			<br>
+			<div class="toolbar">
+				<button disabled type="button" name="button" >link</button>
+				<button type="button" name="button" on-tap="showResponseCreationBox">comment</button>
+			</div>
+
+		</div>
+
+
+
+
+	</template>
+
+	<script>
+		Polymer({
+			is: "annotation-box-3d",
+			listeners: {
+				mouseenter: 'mouseEnter'
+			},
+			properties: {
+				annotation: {
+					type: Object,
+					observer: "_annotationChanged",
+					notify: true
+				},
+				newResponse: {
+					type: Object
+				},
+				responseActive: {
+					type: Boolean
+				}
+			},
+			attached: function () {
+				// // HACK: this should work without $$('input')
+				// // see: https://github.com/PolymerElements/iron-autogrow-textarea/issues/92
+				//
+				// this.$.annotationText.$$('textarea').focus();
+				// if(this.annotation.description === '') {
+				//
+				// }
+				this.responseActive = false;
+			},
+			_annotationChanged: function() {
+				// this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
+				// this.$.header.style.color = this.annotation.statusColor;
+				this.$.container.style.border.color = this.annotation.statusColor;
+				console.log(this.annotation);
+			},
+
+			showResponseCreationBox: function (event) {
+
+				// this.newResponse.text = 'comment';
+				this.responseActive = !this.responseActive;
+				event.stopPropagation();
+
+				// this.push('annotation.responses', {
+				// 	text: '',
+				// 	creator: this.a,
+				// 	creationDate: new Date(2018, 4, 20, 7, 10, 20)
+				// });
+
+			},
+
+			cancelResponse: function () {
+				// this.newResponse.text = '';
+				this.responseActive = false;
+			},
+
+			submitResponse: function () {
+				this.fire('submitResponse', {annotation, response: this.newResponse})
+				this.responseActive = false;
+			},
+
+			keydown: function (event) {
+				// this.editAnnotation({text: this.annotation.description, temporary: true});
+				// if (event.defaultPrevented)
+				// 	return; // Should do nothing if the key event was already consumed.
+				//
+				//
+				// // Reatime inform app about keypress, to update 3D-labels especially, before
+				// // DB update kicks in (editAnnotation)
+				//
+				//
+				// clearTimeout(this.editTimeOut);
+				// this.editTimeOut = setTimeout(() => {
+				// 	this.editAnnotation({text: this.annotation.description});
+				// }, 2500);
+			},
+
+			editAnnotation: function({text, temporary=false}) {
+				// this.annotation.description = text;
+				// this.fire('annotation-edited-by-user', {temporary, newAnnotation: this.annotation, elem: this});
+			},
+			deleteAnnotation(event) {
+				// this.fire('annotation-deleted-by-user', {annotation: this.annotation, elem: this});
+				// event.preventDefault();
+				// event.stopPropagation();
+			},
+			computeNameLetters: function (prename, surname) {
+				return prename[0] + surname[0];
+			},
+			tap: function () {
+				// this.fire('annotation-box-mouse-enter', this.annotation);
+			},
+			clickedStatusList: function (e) {
+				// this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
+			},
+			statusChanged: function (e) {
+				// this.$.statusDropdown.close();
+				// console.log('status changed...');
+
+			},
+			openStatusDropdown: function (e) {
+					// this.$.statusDropdown.toggle();
+			}
+		})
+	</script>
+
+</dom-module>
