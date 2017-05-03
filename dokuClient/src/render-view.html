@@ -147,11 +147,23 @@
 
 				for( var i = this.annotationGlGroups.children.length - 1; i >= 0; i--) {
 					this.annotationGlGroups.remove(this.annotationGlGroups.children[i]);
-					cssScene.remove(this.annotationGlGroups.children[i]);
+					glScene.remove(this.annotationGlGroups.children[i]);
 				}
 
 			}
 
+		},
+
+		removeAnnotationObjects: function (annotations) {
+			for (let annotation of annotations) {
+				let label = this.labels.get(annotation._id);
+				let glGroup = this.labels.get(annotation._id);
+				this.labelGroup.remove(label);
+				this.annotationGlGroups.remove(glGroup);
+				cssScene.remove(label);
+				glScene.remove(glGroup);
+
+			}
 		},
 
 		createPen() {
@@ -436,11 +448,45 @@
 			);
 		},
 
-		_annotationsChanged: function() {
+		_annotationsChanged: function(newAnnotations, oldAnnotations) {
+			console.log(this.annotations);
+			console.log(newAnnotations);
+			console.log(oldAnnotations);
 			console.log('_annotationsChanged');
 			// debug output of annotations
 			// first remove all previous annotations
-			// FIXME: only update modified ones, instead of removing and completely re-creating
+			//
+			// !!!IMPORTANT FIXME!!!: only update modified ones, instead of removing and completely re-creating
+			//
+			//
+			let changedAnnotations = [];
+			let addedAnnotations = [];
+			let removedAnnotations = [];
+
+			// Get changed and new annotations
+			for (let newAnnotation of this.annotations) {
+				let oldAnnotation = oldAnnotations.find(({_id}) => _id === newAnnotation._id);
+
+				if(oldAnnotation && oldAnnotation._rev !== newAnnotation._rev) {
+					// changd annotation
+					changedAnnotations.push(newAnnotation)
+				} else if (oldAnnotation === undefined) {
+					// new annotation
+					addedAnnotations.push(newAnnotation)
+				}
+			}
+
+			// Get removed annotations
+			removedAnnotations = oldAnnotations.filter((oldAnnotation) => {
+				return this.annotations.find((annotation) => annotation._id === oldAnnotation._id) === undefined;
+			}) || [];
+			console.log('changedAnnotations', changedAnnotations);
+			console.log('removedAnnotations', removedAnnotations);
+			console.log('addedAnnotations', addedAnnotations);
+
+			// this.removeAnnotationObjects(changedAnnotations);
+
+			// console.log(newAnnotations, oldAnnotations);
 			this.resetGroups();
 
 			for (let annotation of this.annotations) {
@@ -878,7 +924,9 @@
 			// let textElement = document.createElement('span');
 
 			div.annotation = annotation;
-			// div.innerHTML = annotation.description;
+
+			// TODO: disable any raycaster stuff etc. when interacting with label
+
 			// div.addEventListener('mouseover', () => {
 			// 	this.fire('label-over', annotation._id);
 			// });
