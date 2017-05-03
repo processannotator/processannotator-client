@@ -199,7 +199,7 @@
 		Polymer({
 			is: "annotation-box",
 			listeners: {
-				mouseenter: 'mouseEnter'
+				// mouseenter: 'mouseEnter'
 			},
 			properties: {
 				annotation: {
@@ -222,19 +222,20 @@
 				this.$.header.style.color = this.annotation.statusColor;
 			},
 			keydown: function (event) {
-				this.editAnnotation({text: this.annotation.description, temporary: true});
 				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
+				this.editAnnotation({text: this.annotation.description, temporary: true});
 
 
-				// Reatime inform app about keypress, to update 3D-labels especially, before
+
+				// Realtime inform app about keypress, to update 3D-labels especially, before
 				// DB update kicks in (editAnnotation)
 
-
 				clearTimeout(this.editTimeOut);
+				let text = this.annotation.description;
 				this.editTimeOut = setTimeout(() => {
-					this.editAnnotation({text: this.annotation.description});
-				}, 2500);
+					this.editAnnotation({text});
+				}, 2000);
 			},
 
 			editAnnotation: function({text, temporary=false}) {
