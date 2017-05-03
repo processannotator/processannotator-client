@@ -230,7 +230,8 @@ Polymer({
 		.on('change', (info) => {
 			// only update also the file (for the renderer) if it's not an annotation
 			let updateFile = false;
-			if(info.doc.type !== 'annotation') {
+			if(info.doc.type !== 'annotation' && !info._deleted && !info.deleted) {
+				console.log('\n\nUpdate file because:',info, info.doc.type);
 				updateFile = true;
 			}
 			// Reduce calls to this.updateElements if there are many simultaneous changes!
@@ -241,7 +242,7 @@ Polymer({
 			this.updateTimeout = setTimeout(() => {
 				this.updateOnlineStatus();
 				this.updateElements({updateFile: updateFile});
-			}, 30);
+			}, 10);
 
 		})
 		.on('complete', function(info) {})
