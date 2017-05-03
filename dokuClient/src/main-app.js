@@ -686,6 +686,18 @@ Polymer({
 
 			for (let {doc} of annotations) {
 				doc.creatorProfile = await this.getUserProfile(doc.creator);
+				doc.responses = [
+					{
+						text: 'This is the first response.',
+						creator: 'responsetester',
+						creationDate: new Date()
+					},
+					{
+						text: 'And a second one..',
+						creator: 'responseresponsetester',
+						creationDate: new Date(2018, 4, 20, 5, 10, 20)
+					}
+				]
 				updatedAnnotations.push(doc);
 			}
 
@@ -700,7 +712,9 @@ Polymer({
 
 			// If edit is temporary, don't inform the database
 			if(evt.detail.temporary === true) {
-				this.renderView.labels.get(evt.detail.newAnnotation._id).userData.div.innerHTML = evt.detail.newAnnotation.description;
+				let annotationBox3D = this.renderView.labels.get(evt.detail.newAnnotation._id).userData.div;
+				let annotation3D = annotationBox3D.annotation;
+				annotationBox3D.set('annotation.description', evt.detail.newAnnotation.description);
 				return;
 			}
 			console.log('edited annotation, inform database');
@@ -842,7 +856,6 @@ Polymer({
 		},
 		annotationBoxMouseover: function (e) {
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
-			console.log(item);
 			this.hoveredAnnotation = item;
 		},
 
