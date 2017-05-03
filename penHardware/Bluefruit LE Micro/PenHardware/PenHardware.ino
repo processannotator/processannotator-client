@@ -1,3 +1,12 @@
+//
+// IMPORTANT!
+//
+// XXX: Change this to let the software know which device is which.
+#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Asset"
+//#define DEVICE_NAME_COMMAND "AT+GAPDEVNAME=Project Annotator Pen"
+//
+
+
 /*********************************************************************
  This is an example for our nRF51822 based Bluefruit LE modules
 
@@ -14,46 +23,20 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-#if not defined (_VARIANT_ARDUINO_DUE_X_) && not defined (_VARIANT_ARDUINO_ZERO_)
+
+/*#if not defined (_VARIANT_ARDUINO_DUE_X_)
   #include <SoftwareSerial.h>
-#endif
+#endif*/
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
 
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
-
 #include "BluefruitConfig.h"
-
-/*=========================================================================
-    APPLICATION SETTINGS
-
-    FACTORYRESET_ENABLE     Perform a factory reset when running this sketch
-   
-                            Enabling this will put your Bluefruit LE module
-                            in a 'known good' state and clear any config
-                            data set in previous sketches or projects, so
-                            running this at least once is a good idea.
-   
-                            When deploying your project, however, you will
-                            want to disable factory reset by setting this
-                            value to 0.  If you are making changes to your
-                            Bluefruit LE device via AT commands, and those
-                            changes aren't persisting across resets, this
-                            is the reason why.  Factory reset will erase
-                            the non-volatile memory where config data is
-                            stored, setting it back to factory default
-                            values.
-       
-                            Some sketches that require you to bond to a
-                            central device (HID mouse, keyboard, etc.)
-                            won't work at all with this feature enabled
-                            since the factory reset will clear all of the
-                            bonding data stored on the chip, meaning the
-                            central device won't be able to reconnect.
-    -----------------------------------------------------------------------*/
-    #define FACTORYRESET_ENABLE      1
-/*=========================================================================*/
-
 
 // Create the bluefruit object, either software serial...uncomment these lines
 /*
@@ -74,13 +57,199 @@ Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_
 //                             BLUEFRUIT_SPI_MOSI, BLUEFRUIT_SPI_CS,
 //                             BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 
+/* Set the delay between fresh samples (not too fast, BLE UART is slow!) */
+/* Firware <=0.6.6 should use 500ms, >=0.6.7 can use 200ms */
+#define BNO055_SAMPLERATE_DELAY_MS (50)
 
-// A small helper
-void error(const __FlashStringHelper*err) {
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
+
+boolean buttonDownState = false;
+
+/**************************************************************************/
+/*!
+    @brief  A small helper function for error messages
+*/
+/**************************************************************************/
+void error(const __FlashStringHelper*err)
+{
   Serial.println(err);
   while (1);
 }
 
+/**************************************************************************/
+/*
+    Displays some basic information on this sensor from the unified
+    sensor API sensor_t type (see Adafruit_Sensor for more information)
+*/
+/**************************************************************************/
+void displaySensorDetails(void)
+{
+  sensor_t sensor;
+  bno.getSensor(&sensor);
+  Serial.println("------------------------------------");
+  Serial.print  ("Sensor:       "); Serial.println(sensor.name);
+  Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);
+  Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
+  Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" xxx");
+  Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" xxx");
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" xxx");
+  Serial.println("------------------------------------");
+  Serial.println("");
+  delay(500);
+}
+
+/**************************************************************************/
+/*
+    Display some basic info about the sensor status
+*/
+/**************************************************************************/
+void displaySensorStatus(void)
+{
+  // Get the system status values (mostly for debugging purposes)
+  uint8_t system_status, self_test_results, system_error;
+  system_status = self_test_results = system_error = 0;
+  bno.getSystemStatus(&system_status, &self_test_results, &system_error);
+
+  // Display the results in the Serial Monitor
+  Serial.print("System Status: 0x");
+  Serial.println(system_status, HEX);
+  Serial.print("Self Test:     0x");
+  Serial.println(self_test_results, HEX);
+  Serial.print("System Error:  0x");
+  Serial.println(system_error, HEX);
+  Serial.println("");
+  delay(500);
+}
+
+/**************************************************************************/
+/*
+    Display sensor calibration status
+*/
+/**************************************************************************/
+void displayCalStatus(void)
+{
+  // Get the four calibration values (0..3)
+  // 3 means 'fully calibrated"
+  uint8_t system, gyro, accel, mag;
+  system = gyro = accel = mag = 0;
+  bno.getCalibration(&system, &gyro, &accel, &mag);
+
+  // The data should be ignored until the system calibration is > 0
+  Serial.print("\t");
+  if (!system)
+  {
+    Serial.print("! ");
+  }
+
+  // Display the individual values
+  Serial.print("Sys:");
+  Serial.print(system, DEC);
+  Serial.print(" G:");
+  Serial.print(gyro, DEC);
+  Serial.print(" A:");
+  Serial.print(accel, DEC);
+  Serial.print(" M:");
+  Serial.print(mag, DEC);
+}
+
+/**************************************************************************/
+/*
+    Sends sensor calibration status out over BLE UART
+*/
+/**************************************************************************/
+void transmitCalStatus(void)
+{
+  uint8_t system, gyro, accel, mag;
+  system = gyro = accel = mag = 0;
+
+  // Get the four calibration values (0..3)
+  // 3 means 'fully calibrated"
+  bno.getCalibration(&system, &gyro, &accel, &mag);
+
+  /* Prepare the AT command */
+  ble.print("AT+BLEUARTTX=");
+
+  // Transmit individual values
+  // Note: The values are abbreviated compared to the Serial Monitor
+  // to save space since BLE UART is quite slow */
+  ble.print(",");
+  ble.print(system, DEC);
+  ble.print(gyro, DEC);
+  ble.print(accel, DEC);
+  ble.println(mag, DEC);
+
+  if (! ble.waitForOK() )
+  {
+    Serial.println(F("Failed to send?"));
+  }
+}
+
+/**************************************************************************/
+/*!
+    @brief  Initializes the one wire temperature sensor
+*/
+/**************************************************************************/
+void initSensor(void)
+{
+  if(!bno.begin())
+  {
+    // There was a problem detecting the BNO055 ... check your connections
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while(1);
+  }
+
+  delay(1000);
+
+  // Display some basic information on this sensor
+  displaySensorDetails();
+
+  // Optional: Display current status
+  displaySensorStatus();
+
+  bno.setExtCrystalUse(true);
+}
+
+/**************************************************************************/
+/*  INTERRUPT SECTION                                                     */
+/**************************************************************************/
+
+//  pin-change interrupt flag
+volatile bool buttonPressed = true;
+const byte ButtonPin = 10;
+const byte LowVoltagePin = 12;
+const byte LedPin = 13;
+
+
+void pressButton() {
+    buttonPressed = !buttonPressed;
+}
+
+void setupButtonPressHandler() {
+  pinMode(LedPin, OUTPUT);
+  digitalWrite(LedPin, LOW);
+
+  pinMode(LowVoltagePin, OUTPUT);
+  digitalWrite(LowVoltagePin, LOW); // output 0V to read on button pin when switch is closed
+
+  pinMode(ButtonPin, INPUT_PULLUP);
+//  attachInterrupt(PCINT6, pressButton, FALLING);
+}
+
+void handleButtonPress() {
+  boolean newState = digitalRead(ButtonPin);
+  if (buttonDownState != newState) {
+    if (newState == LOW) {
+      ble.println("AT+BLEUARTTX=buttonDown\\r\\n");
+    } else {
+      ble.println("AT+BLEUARTTX=buttonUp\\r\\n");
+    }
+    if (! ble.waitForOK() )
+    {
+      Serial.println(F("Failed to send?"));
+    }
+    buttonDownState = newState;
+  }
+}
 /**************************************************************************/
 /*!
     @brief  Sets up the HW an the BLE module (this function is called
@@ -89,14 +258,16 @@ void error(const __FlashStringHelper*err) {
 /**************************************************************************/
 void setup(void)
 {
-  while (!Serial);  // required for Flora & Micro
+  setupButtonPressHandler();
+
+  // while (!Serial);  // required for Flora & Micro
   delay(500);
 
   Serial.begin(115200);
-  Serial.println(F("Adafruit Bluefruit AT Command Example"));
-  Serial.println(F("-------------------------------------"));
+  Serial.println(F("Adafruit Bluefruit BNO Example"));
+  Serial.println(F("---------------------------------------"));
 
-  /* Initialise the module */
+  // Initialise the module
   Serial.print(F("Initialising the Bluefruit LE module: "));
 
   if ( !ble.begin(VERBOSE_MODE) )
@@ -105,27 +276,40 @@ void setup(void)
   }
   Serial.println( F("OK!") );
 
-  if ( FACTORYRESET_ENABLE )
-  {
-    /* Perform a factory reset to make sure everything is in a known state */
-    Serial.println(F("Performing a factory reset: "));
-    if ( ! ble.factoryReset() ){
-      error(F("Couldn't factory reset"));
-    }
+  // Perform a factory reset to make sure everything is in a known state
+  Serial.println(F("Performing a factory reset: "));
+  if (! ble.factoryReset()) {
+    error(F("Couldn't factory reset"));
   }
 
-  /* Disable command echo from Bluefruit */
+  // Disable command echo from Bluefruit
   ble.echo(false);
 
   Serial.println("Requesting Bluefruit info:");
-  /* Print Bluefruit information */
+  // Print Bluefruit information
   ble.info();
-  
-  // Send command
-  ble.println("AT+GAPDEVNAME=Project Annotator Pen");
 
-  // Check response status
-  ble.waitForOK();
+  Serial.print(F("Setting device name: "));
+
+  if (!ble.sendCommandCheckOK(F(DEVICE_NAME_COMMAND))) {
+    Serial.println(F("Could not set device name. Stopped operation."));
+    while(1);
+  }
+
+  ble.verbose(false);  // debug info is a little annoying after this point!
+
+  // Setup the BNO055 sensor
+  initSensor();
+
+  Serial.println("Waiting for a BLE connection to continue ...");
+
+  // Wait for connection to finish
+  while (! ble.isConnected()) {
+    delay(5000);
+  }
+
+  Serial.println(F("CONNECTED!"));
+  Serial.println(F("**********"));
 }
 
 /**************************************************************************/
@@ -135,37 +319,78 @@ void setup(void)
 /**************************************************************************/
 void loop(void)
 {
-  // Display command prompt
-  Serial.print(F("AT > "));
+  // Check for user input
+  char inputs[BUFSIZE+1];
 
-  // Check for user input and echo it back if anything was found
-  char command[BUFSIZE+1];
-  getUserInput(command, BUFSIZE);
+  // Send sensor data out
+  if (ble.isConnected())
+  {
+    // Get Quaternion data (no 'Gimbal Lock' like with Euler angles)
+    imu::Quaternion quat = bno.getQuat();
 
-  // Send command
-  ble.println(command);
+    // Display the full data in Serial Monitor
+//    Serial.print("qW: ");
+//    Serial.print(quat.w(), 4);
+//    Serial.print(" qX: ");
+//    Serial.print(quat.y(), 4);
+//    Serial.print(" qY: ");
+//    Serial.print(quat.x(), 4);
+//    Serial.print(" qZ: ");
+//    Serial.print(quat.z(), 4);
+//    displayCalStatus();
+//    Serial.println("");
 
-  // Check response status
-  ble.waitForOK();
-}
+    // Send abbreviated integer data out over BLE UART
+    ble.print("AT+BLEUARTTX=");
+    ble.print(quat.w(), 4);
+    ble.print(",");
+    ble.print(quat.y(), 4);
+    ble.print(",");
+    ble.print(quat.x(), 4);
+    ble.print(",");
+    ble.println(quat.z(), 4);
+    // FIXME: add this line for proper line ending??
+    // ble.print("\\r\\n");
+    if (! ble.waitForOK() )
+    {
+      Serial.println(F("Failed to send?"));
+    }
 
-/**************************************************************************/
-/*!
-    @brief  Checks for user input (via the Serial Monitor)
-*/
-/**************************************************************************/
-void getUserInput(char buffer[], uint8_t maxSize)
-{
-  memset(buffer, 0, maxSize);
-  while( Serial.available() == 0 ) {
-    delay(1);
+    // Optional: Send the calibration data as well
+    transmitCalStatus();
+
+    // Send a new line character for the next record
+    ble.println("AT+BLEUARTTX=\\r\\n");
+    if (! ble.waitForOK() )
+    {
+      Serial.println(F("Failed to send?"));
+    }
+
+    /*
+    // Display the buffer size (firmware 0.6.7 and higher only!)
+    ble.println("AT+BLEUARTFIFO=TX");
+    ble.readline();
+    Serial.print("TX FIFO: ");
+    Serial.println(ble.buffer);
+    */
+
+    handleButtonPress();
+
+    // Wait a bit ...
+    delay(BNO055_SAMPLERATE_DELAY_MS);
   }
 
-  uint8_t count=0;
-
-  do
+  // Check for incoming characters from Bluefruit
+  if (ble.isConnected())
   {
-    count += Serial.readBytes(buffer+count, maxSize);
-    delay(2);
-  } while( (count < maxSize) && !(Serial.available() == 0) );
+    ble.println("AT+BLEUARTRX");
+    ble.readline();
+    if (strcmp(ble.buffer, "OK") == 0) {
+      // no data
+      return;
+    }
+    // Some data was found, its in the buffer
+    Serial.print(F("[Recv] ")); Serial.println(ble.buffer);
+    ble.waitForOK();
+  }
 }
