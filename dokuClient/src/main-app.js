@@ -23,6 +23,11 @@ Polymer({
 			type: Object,
 			notify: true,
 			observer: '_selectedAnnotationChanged'
+		},
+		annotations: {
+			type: Array,
+			notify: true,
+			observer: 'annotationsChangedObserver'
 		}
 
 	},
@@ -713,6 +718,10 @@ Polymer({
 
 			// If edit is temporary, don't inform the database
 			if(evt.detail.temporary === true) {
+				// TODO:
+				// Not optimal right now, because it s hacky and limits the edits
+				// to text edits for now, better would be to replace annotation with evt.detail.newAnnotation
+				// and then update renderview automatically via an observer
 				let annotationBox3D = this.renderView.labels.get(evt.detail.newAnnotation._id).userData.div;
 				let annotation3D = annotationBox3D.annotation;
 				annotationBox3D.set('annotation.description', evt.detail.newAnnotation.description);
