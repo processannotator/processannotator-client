@@ -149,7 +149,8 @@ Polymer({
 
 	connectOrDisconnectPen: function () {
 
-		if (this.penStatus === 'Connected') {
+		if (this.penStatus === 'connected') {
+			this.penButtonConnecting = false;
 			ipc.send('disconnectPen');
 			console.log('trying to disconnect pen');
 		} else {
@@ -856,19 +857,27 @@ Polymer({
 		},
 
 		setupPenEventHandlers() {
-			const callback = state => {
-				if (!renderView) return;
+			const onPenSensorState = state => {
+				if (!this.renderView) return;
+				this.renderView.penState = state;
+			};
+
+			const onPhysicalModelSensorState = state => {
+				if (!this.renderView) return;
 				this.renderView.physicalModelState = state;
 			};
 
 			let annotationIndex = 0;
 
-			const penCallback = (eventName) => {
+			const onPenEvent = (eventName) => {
 				if (eventName === 'buttonDown') {
+					// this.renderView.tap(eventName);
+					let position = this.renderView.pointerSphere.getWorldPosition();
+					this.renderView.mainGroupGL.worldToLocal(position);
 					this.addAnnotation({
 						detail: {
 							description: `Annotation #${++annotationIndex}`,
-							position: this.renderView.pointerSphere.getWorldPosition(),
+							position: position,
 							cameraPosition: this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
 							// cameraRotation: camera.rotation,
 							cameraUp: this.renderView.camera.up,
@@ -877,28 +886,38 @@ Polymer({
 				}
 			};
 
-			this.bno055 = new BNO055(callback, penCallback);
-			ipc.on('connectStatus', (emitter, status, percent=0) => {
+			const onPhysicalModelSensorEvent = (eventName) => {
+				if (eventName === 'buttonDown') {
+					this.parsers['Project Annotator Asset'].straighten();
+				}
+			};
+
+			this.parsers = {
+				'Project Annotator Pen': new BNO055(onPenSensorState, onPenEvent),
+				'Project Annotator Asset': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
+				// 'DokuPen': new BNO055(onPenSensorState, onPenEvent),
+				'Adafruit Bluefruit LE': new BNO055(onPhysicalModelSensorState, onPhysicalModelSensorEvent),
+
+			};
+
+			ipc.on('connectStatus', (emitter, deviceName, status, percent) => {
+				console.log('\n\ndevicename:', deviceName);
+				console.log('status:', status);
 				this.penStatus = status;
 				this.penStatusPercent = percent;
-				if(status === 'Connecting' || status === 'Discovering Services') {
-					this.penButtonConnecting = true;
-					this.$.toolSelector.selected = 'rotate';
-					this.penButtonText = `${status} (${percent}%)`;
-				} else if (status === 'Connected' && percent === 100) {
+				this.penButtonText = status === 'connecting' ? `${status} (${percent}%)` : `${status}`;
+				console.log('Connect status:', status, percent);
+				if (status === 'connected' && percent === 100) {
+					this.penButtonText = 'Disconnect Sensors';
+					this.parsers[deviceName].reset();
 					this.penButtonConnected = true;
 					this.penButtonConnecting = false;
-					this.penButtonText = 'Disconnect Pen';
-					this.bno055.reset();
-				} else if (status === 'Disconnected') {
+					setTimeout(() => {
+						this.penSensorDataParser.straighten();
+					}, 5000);
+				} else if (status === 'disconnecting') {
+					this.penButtonText = 'Connect Sensors';
 					this.penButtonConnected = false;
-					this.penButtonText = 'Connect Pen';
-				} else if (status === 'Error' || status === 'BluetoothError') {
-					this.penButtonConnecting = false;
-					this.penButtonConnected = false;
-					this.penButtonText = 'Connect Pen';
-				} else {
-					console.warn('Got unrecognized status from bt pen connection process: ', status);
 				}
 
 
@@ -909,6 +928,8 @@ Polymer({
 
 			});
 
-			ipc.on('uartRx', (emitter, data) => this.bno055.push(data));
+			ipc.on('uartRx', (emitter, deviceName, data) => {
+				this.parsers[deviceName].push(data);
+			});
 		}
 	});
