@@ -10,7 +10,7 @@ function radToDeg(radians) {
 }
 
 export default class BNO055 {
-  constructor(callback, penCallback) {
+  constructor(onSensorState, onEvent) {
     // Set initial state.
     this.state = {
       quatX: 0,
@@ -27,8 +27,8 @@ export default class BNO055 {
     };
 
     this.reset();
-    this.callback = callback;
-    this.penCallback = penCallback;
+    this.onSensorState = onSensorState;
+    this.onEvent = onEvent;
   }
 
   reset() {
@@ -54,28 +54,36 @@ export default class BNO055 {
     if (data === null) {
       return;
     }
+
     this.buffer += data;
     // Look for a newline in the buffer that signals a complete reading.
+    // TODO: may regex to parse for newline instead of just \n or \r
+
     const newLine = this.buffer.indexOf('\n');
+    // const newLine = /[\t \n \r]/.test(this.buffer);
     if (newLine === -1) {
       // New line not found, stop processing until more data is received.
       return;
     }
     // Found a new line, pull it out of the buffer.
     const line = this.buffer.slice(0, newLine);
+    // console.log(line);
     this.buffer = this.buffer.slice(newLine+1);
     if (line === 'buttonDown\r') {
       console.log('physical button pressed');
-      this.penCallback('buttonDown');
+      this.onEvent('buttonDown');
       return;
     }
     if (line === 'buttonUp\r') {
       console.log('physical button released');
-      this.penCallback('buttonUp');
+      this.onEvent('buttonUp');
       return;
     }
+    // TODO: Investigage here!
+
     // Now parse the components from the reading.
     const components = line.split(',');
+    //console.log(line, components);
     if (components.length !== 5) {
       // Didn't get 5 components, something is wrong.
       return;
@@ -118,6 +126,6 @@ export default class BNO055 {
     };
     // console.log('State:', this.state);
 
-    this.callback(this.state);
+    this.onSensorState(this.state);
   }
 }
