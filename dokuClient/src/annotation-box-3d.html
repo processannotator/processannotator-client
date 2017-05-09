@@ -55,12 +55,12 @@
 			</div>
 			<br>
 			<div id="responses">
-				<template is="dom-repeat" items="{{annotation.responses}}">
+				<template is="dom-repeat" items="[[annotation.responses]]">
 					<div class="response">
-						<span></span>
+						<span>[[item.text]]</span>
 					</div>
 				</template>
-				<div id="newResponse" hidden$="[[!responseActive]]">
+				<!-- <div id="newResponse" hidden$="[[!responseActive]]">
 					<iron-autogrow-textarea>
 						{{newResponse.text}}
 					</iron-autogrow-textarea>
@@ -71,7 +71,7 @@
 						<button type="button" name="submitResponse" on-tap="submitResponse">DONE</button>
 					</div>
 
-				</div>
+				</div> -->
 			</div>
 			<br>
 			<div class="toolbar">

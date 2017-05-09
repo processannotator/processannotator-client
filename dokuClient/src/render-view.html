@@ -36,14 +36,14 @@
 			}
 		</style>
 
-		<div id="annotationBoxes3D" style="display:none">
+		<!-- <div id="annotationBoxes3D" style="display:none">
 
 			<template is="dom-repeat" items="[[annotations]]" as="item">
 
 				<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
 
 			</template>
-		</div>
+		</div> -->
 
 
 
@@ -459,7 +459,7 @@
 		},
 
 		_annotationsChanged: function(newAnnotations, oldAnnotations) {
-			this.async(function() {
+
 
 
 			// debug output of annotations
@@ -493,23 +493,26 @@
 			console.log('removedAnnotations', removedAnnotations);
 			console.log('addedAnnotations', addedAnnotations);
 
-			this.removeAnnotationObjects(removedAnnotations);
-			this.removeAnnotationObjects(changedAnnotations);
+			// Following part has to be async because the annotation-box-3d's are not ready yet in this tick.
+			this.async(function() {
+				this.removeAnnotationObjects(removedAnnotations);
+				this.removeAnnotationObjects(changedAnnotations);
 
-			for (let annotation of addedAnnotations) {
-				this.addAnnotationObject(annotation);
-			}
+				for (let annotation of addedAnnotations) {
+					this.addAnnotationObject(annotation);
+				}
 
-			for (let annotation of changedAnnotations) {
-				this.addAnnotationObject(annotation);
-			}
+				for (let annotation of changedAnnotations) {
+					this.addAnnotationObject(annotation);
+				}
 
-			// console.log(newAnnotations, oldAnnotations);
-			//this.resetGroups();
+				// console.log(newAnnotations, oldAnnotations);
+				//this.resetGroups();
 
 
-			this.render();
-		});
+				this.render();
+			});
+
 		},
 
 		addAnnotationObject: function (annotation) {
@@ -948,12 +951,12 @@
 
 			// TODO: disable any raycaster stuff etc. when interacting with label
 
-			div.addEventListener('mouseover', () => {
-				this.fire('label-over', annotation._id);
-			});
-			div.addEventListener('mouseout', () => {
-				this.fire('label-out', annotation._id);
-			});
+			// div.addEventListener('mouseover', () => {
+			// 	this.fire('label-over', annotation._id);
+			// });
+			// div.addEventListener('mouseout', () => {
+			// 	this.fire('label-out', annotation._id);
+			// });
 
 			let label = new THREE.CSS3DSprite(div);
 			label.userData.div = div;
