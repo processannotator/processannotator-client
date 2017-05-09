@@ -113,9 +113,7 @@
 					</div> -->
 
 					<render-view id="renderView" annotations="[[annotations]]" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
-            <template is="dom-repeat" items="{{annotations}}" as="item">
-              <annotation-box-3d id="annotationbox3d_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
-            </template>
+
           </render-view>
 
 
