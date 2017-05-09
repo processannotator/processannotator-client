@@ -36,14 +36,13 @@
 			}
 		</style>
 
-		<!-- <div id="annotationBoxes3D" style="display:none">
 
-			<template is="dom-repeat" items="[[annotations]]" as="item">
+				<template is="dom-repeat" items="{{annotations}}" as="item">
 
-				<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" annotation="[[item]]" index="[[index]]" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
+					<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" annotation="{{item}}" index="[[index]]" on-edit-annotation="onAnnotationBoxEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
 
-			</template>
-		</div> -->
+				</template>
+
 
 
 
@@ -163,16 +162,6 @@
 			}
 		},
 
-		removeAnnotationObjects: function (annotations) {
-			for (let annotation of annotations) {
-				let label = this.labels.get(annotation._id);
-				let glGroup = this.annotation3DObjects.get(annotation._id).glGroup;
-				this.labelGroup.remove(label);
-				this.annotationGlGroups.remove(glGroup);
-				cssScene.remove(label);
-				glScene.remove(glGroup);
-			}
-		},
 
 
 
@@ -493,21 +482,25 @@
 			console.log('removedAnnotations', removedAnnotations);
 			console.log('addedAnnotations', addedAnnotations);
 
-			// Following part has to be async because the annotation-box-3d's are not ready yet in this tick.
+			// Following part has to be async because the annotation-box-3d's may not ready yet in this tick.
+			// Polymer.dom.flush();
 			this.async(function() {
-				this.removeAnnotationObjects(removedAnnotations);
-				this.removeAnnotationObjects(changedAnnotations);
 
-				for (let annotation of addedAnnotations) {
-					this.addAnnotationObject(annotation);
-				}
+				// this.removeAnnotationObjects(removedAnnotations);
+				// // For changed annotations, only remove the GL objects that are not created via dom-repeat
+				// // and keep labels intact when an annotation is just changed
+				// this.changeAnnotationObjects(changedAnnotations);
+				//
+				// for (let annotation of addedAnnotations) {
+				// 	this.addAnnotationObject(annotation);
+				// }
 
-				for (let annotation of changedAnnotations) {
-					this.addAnnotationObject(annotation);
-				}
 
 				// console.log(newAnnotations, oldAnnotations);
-				//this.resetGroups();
+				this.resetGroups();
+				for (let annotation of this.annotations) {
+					this.addAnnotationObject(annotation);
+				}
 
 
 				this.render();
@@ -515,11 +508,43 @@
 
 		},
 
+
+		removeAnnotationObjects: function (annotations) {
+			for (let annotation of annotations) {
+				let glGroup = this.annotation3DObjects.get(annotation._id).glGroup;
+				this.annotationGlGroups.remove(glGroup);
+
+				console.log('also remove the labels please!');
+				let label = this.labels.get(annotation._id);
+				console.log(label);
+				this.labelGroup.remove(label);
+				cssScene.remove(label);
+
+				glScene.remove(glGroup);
+			}
+		},
+
+		changeAnnotationObjects: function (annotations) {
+			for (let annotation of annotations) {
+				let glGroup = this.annotation3DObjects.get(annotation._id).glGroup;
+				this.annotationGlGroups.remove(glGroup);
+
+				console.log('also remove the labels please!');
+				let label = this.labels.get(annotation._id);
+				console.log(label);
+				this.labelGroup.remove(label);
+				cssScene.remove(label);
+
+				glScene.remove(glGroup);
+			}
+		},
+
 		addAnnotationObject: function (annotation) {
 			let annotation3DObject = {};
 			let annotationGlGroup = new THREE.Object3D();
 			annotationGlGroup.userData = {_id: annotation._id};
 			let multFactor = 2.0;
+
 			let label = this.createLabel(annotation, multFactor);
 
 			this.labels.set(annotation._id, label);
@@ -735,6 +760,11 @@
 					break;
 			}
 		},
+		onAnnotationBoxEdit: function (e) {
+			console.log('onAnnotationBoxEdit', e);
+			this.fire('edit-annotation', e.detail);
+		},
+
 		track: function (e) {
 			controls.enabled = true;
 			if(this.tool === 'edit') {
@@ -745,10 +775,8 @@
 					let id = this.hoveredAnnotation.userData._id;
 					clearTimeout(this.annotationEditTimeout);
 					this.annotationEditTimeout = setTimeout(() => {
-						this.fire('edit-annotation', {
-							_id: id,
-							position: newPosition,
-						});
+						this.fire('edit-annotation',
+							{temporary, newAnnotation: {_id: id, position: newPosition,}, elem: this});
 					}, 4000);
 
 
@@ -940,13 +968,18 @@
 		},
 
 		createLabel: function (annotation, multFactor) {
-			let div = document.createElement('annotation-box-3d');
+			// let div = document.createElement('annotation-box-3d');
 			// let div = document.createElement('div');
 			// let textElement = document.createElement('span');
 
-			div.annotation = annotation;
-			// let div = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
-
+			// div.annotation = annotation;
+			Polymer.dom.flush();
+			let div = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
+			console.log(div);
+			setTimeout(() => {
+				let div2 = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
+				console.log(div2);
+			}, 100);
 
 
 			// TODO: disable any raycaster stuff etc. when interacting with label

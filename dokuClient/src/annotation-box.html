@@ -224,9 +224,6 @@
 			keydown: function (event) {
 				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
-				this.editAnnotation({text: this.annotation.description, temporary: true});
-
-
 
 				// Realtime inform app about keypress, to update 3D-labels especially, before
 				// DB update kicks in (editAnnotation)
@@ -234,14 +231,10 @@
 				clearTimeout(this.editTimeOut);
 				let text = this.annotation.description;
 				this.editTimeOut = setTimeout(() => {
-					this.editAnnotation({text});
-				}, 2000);
+					this.fire('annotation-edited-by-user', {newAnnotation: this.annotation, elem: this});
+				}, 1000);
 			},
 
-			editAnnotation: function({text, temporary=false}) {
-				this.annotation.description = text;
-				this.fire('annotation-edited-by-user', {temporary, newAnnotation: this.annotation, elem: this});
-			},
 			deleteAnnotation(event) {
 				this.fire('annotation-deleted-by-user', {annotation: this.annotation, elem: this});
 				event.preventDefault();
