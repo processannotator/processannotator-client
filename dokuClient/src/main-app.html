@@ -112,7 +112,7 @@
 						<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
 					</div> -->
 
-					<render-view id="renderView" annotations="[[annotations]]" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
+					<render-view id="renderView" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
 
           </render-view>
 
@@ -152,7 +152,7 @@ The states can be evaluated to trigger extra functionality. We are checking for 
 
   <div id="annotationList" hidden$="[[sidePanelMinimized]]">
     <template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
-      <annotation-box id="annotationbox_{{item._id}}" annotation="{{item}}" index="{{index}}" on-annotation-edited-by-user="onAnnotationEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box>
+      <annotation-box id="annotationbox_[[item._id]]" annotation="{{item}}" index="[[index]]" on-annotation-edited-by-user="editAnnotation" on-annotation-deleted-by-user="deleteAnnotation" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box>
     </template>
   </div>
 

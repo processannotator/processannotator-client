@@ -26,12 +26,13 @@ Polymer({
 		},
 		annotations: {
 			type: Array,
-			notify: true,
-			observer: 'annotationsChangedObserver'
+			notify: true
+			// observer: 'annotationsChangedObserver'
 		}
 
 	},
 	observers: [
+		'annotationsChanged(annotations.*)'
 	],
 
 	attached: async function () {
@@ -126,6 +127,11 @@ Polymer({
 
 		window.addEventListener('resize', this.handleResize.bind(this));
 		window.addEventListener('keyup', this.keyUp.bind(this));
+	},
+	annotationsChanged: function () {
+		// TODO: get database annotations and diff them to new ones
+		// but also to a timeout!
+		console.log('annotations changed');
 	},
 
 	// Return false if either whole computer is offline or databases are unreachable
@@ -299,17 +305,28 @@ Polymer({
 		return localProjectDB.put(annotation)
 		.catch(err => console.log)
 	},
+
 	editAnnotation: function (evt) {
-		let editedAnnotation = evt.detail;
-		localProjectDB.get(editedAnnotation._id).then((storedAnnotation) => {
-			editedAnnotation = Object.assign(storedAnnotation, editedAnnotation);
-			return localProjectDB.put(editedAnnotation);
-		})
+		let editedAnnotation = evt.detail.newAnnotation;
+
+		if(evt.detail.temporary === true) {
+			console.log('is temporary', evt.detail);
+			let index = this.annotations.findIndex((annotation) => annotation._id === editedAnnotation._id);
+			console.log(index);
+			this.splice('annotations', index, editedAnnotation);
+		} else {
+			localProjectDB.get(editedAnnotation._id).then((storedAnnotation) => {
+				editedAnnotation = Object.assign(storedAnnotation, editedAnnotation);
+				return localProjectDB.put(editedAnnotation);
+			})
+		}
+
 	},
 
-	deleteAnnotation: function (annotation) {
-		console.log('removing', annotation);
-		return localProjectDB.remove(annotation)
+	deleteAnnotation: function (e) {
+		console.log('removing', e.detail.annotation);
+		let id = e.detail.annotation._id;
+		return localProjectDB.remove(e.detail.annotation)
 		.catch((err) => {
 			console.error('error deleting', id);
 			console.error(err);
@@ -710,49 +727,7 @@ Polymer({
 			return Promise.all(updatedAnnotations);
 		},
 
-		onAnnotationDeleted(evt) {
-			localProjectDB.remove(evt.detail.annotation);
-		},
 
-		onAnnotationEdit: async function(evt) {
-
-			// If edit is temporary, don't inform the database
-			if(evt.detail.temporary === true) {
-				// TODO:
-				// Not optimal right now, because it s hacky and limits the edits
-				// to text edits for now, better would be to replace annotation with evt.detail.newAnnotation
-				// and then update renderview automatically via an observer
-				let annotationBox3D = this.renderView.labels.get(evt.detail.newAnnotation._id).userData.div;
-				let annotation3D = annotationBox3D.annotation;
-				annotationBox3D.set('annotation.description', evt.detail.newAnnotation.description);
-				return;
-			}
-			console.log('edited annotation, inform database');
-
-			// emitted when user edits text in annotationbox
-			doc = await localProjectDB.get(evt.detail.newAnnotation._id);
-
-			doc.description = evt.detail.newAnnotation.description;
-			doc.status = evt.detail.newAnnotation.status;
-			// TODO: get colors from CSS, so it stays in one place?
-			switch (doc.status) {
-				case 'comment':
-				doc.statusColor = 'blue';
-				break;
-				case 'task':
-				doc.statusColor = 'yellow';
-				break;
-				case 'problem':
-				doc.statusColor = 'red';
-				break;
-				default:
-				doc.statusColor = 'blue';
- 				break;
-			}
-
-			return localProjectDB.put(doc);
-
-		},
 
 		updateElements: async function(options) {
 			if(localProjectDB === undefined) return;

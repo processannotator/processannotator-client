@@ -51,7 +51,7 @@
 		<div id="container">
 
 			<div id="annotation">
-				<span>[[annotation.description]]</span>
+				<iron-autogrow-textarea bind-value="{{annotation.description}}" on-input="keydown" placeholder="enter text…" id="annotationText"></iron-autogrow-textarea>
 			</div>
 			<br>
 			<div id="responses">
@@ -121,6 +121,22 @@
 				this.$.container.style.border.color = this.annotation.statusColor;
 				// console.log(this.annotation);
 			},
+			keydown: function (event) {
+				if (event.defaultPrevented)
+					return; // Should do nothing if the key event was already consumed.
+				this.editAnnotation({text: this.annotation.description, temporary: true});
+
+
+
+				// Realtime inform app about keypress, to update 3D-labels especially, before
+				// DB update kicks in (editAnnotation)
+
+				clearTimeout(this.editTimeOut);
+				let text = this.annotation.description;
+				this.editTimeOut = setTimeout(() => {
+					this.editAnnotation({text});
+				}, 2000);
+			},
 
 			showResponseCreationBox: function (event) {
 
@@ -147,25 +163,15 @@
 			},
 
 			keydown: function (event) {
-				// this.editAnnotation({text: this.annotation.description, temporary: true});
-				// if (event.defaultPrevented)
-				// 	return; // Should do nothing if the key event was already consumed.
-				//
-				//
-				// // Reatime inform app about keypress, to update 3D-labels especially, before
-				// // DB update kicks in (editAnnotation)
-				//
-				//
-				// clearTimeout(this.editTimeOut);
-				// this.editTimeOut = setTimeout(() => {
-				// 	this.editAnnotation({text: this.annotation.description});
-				// }, 2500);
+				if (event.defaultPrevented)
+					return; // Should do nothing if the key event was already consumed.
+
+				clearTimeout(this.editTimeOut);
+				this.editTimeOut = setTimeout(() => {
+					this.fire('edit-annotation', {temporary, newAnnotation: this.annotation, elem: this});
+				}, 1000);
 			},
 
-			editAnnotation: function({text, temporary=false}) {
-				// this.annotation.description = text;
-				// this.fire('annotation-edited-by-user', {temporary, newAnnotation: this.annotation, elem: this});
-			},
 			deleteAnnotation(event) {
 				// this.fire('annotation-deleted-by-user', {annotation: this.annotation, elem: this});
 				// event.preventDefault();
