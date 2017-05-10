@@ -8,11 +8,22 @@
 
 
 	<style>
+	
+	@font-face {
+	  font-family: "SourceSansPro-Light";
+	  src: url("../fonts/SourceSansPro-Light.otf.woff2");
+	}
+	@font-face {
+	  font-family: "SourceSansPro-Semibold";
+	  src: url("../fonts/SourceSansPro-Semibold.otf.woff2");
+	}
+	
 	:host {
 		margin: 0;
 		padding: 0;
 		background-color: none;
 		font-size: 20px;
+		max-width: 15em;
 	}
 
 	.toolbar {
@@ -33,22 +44,72 @@
 	}
 
 	#annotation {
+		max-width: 100%;
 		font-size: 1rem;
-		font-family: SourceSansPro;
-		font-size: 11px;
+		font-family: 'SourceSansPro-Light';
 		letter-spacing: 0.3px;
 		text-align: left;
 		color: #2d3341;
 	}
+	#annotationText {
 
+	}
+	
+	iron-autogrow-textarea {
+		cursor: text;
+		width: 100%;
+		max-height: auto;
+		background-color: none;
+		border: none;
+		box-shadow: none;
+		outline: none;
+	}
+	
 	#responses {
+		display: flex;
+		flex-direction: column;
+		padding: 0.5em;
+	}
+
+	.response {
 		font-size: 1rem;
+		font-family: 'SourceSansPro-Light';
+		margin-top: 1em;
+	}
+	
+	#responseButtons {
+		display: flex;
+		direction: row;
+	}
+	
+	paper-button {
+		width: 100px;
+		height: 50px;
 	}
 
 	#newResponse {
 		display: flex;
 		flex-direction: column;
 	}
+	
+	#newResponseText {
+		border-radius: 8px;
+  	background-color: #e9e9e9;
+	}
+	
+	paper-icon-button {
+		
+	}
+	
+	iron-icon.iron-selected {
+		background-color: rgba(255, 0, 0, 0.82);
+	}
+
+	iron-icon:not(.iron-selected):hover {
+		/*--iron-icon-fill-color: blue;*/
+		background-color: rgb(0, 255, 223)
+	}
+	
 
 
 
@@ -58,27 +119,27 @@
 			<div id="annotation">
 				<iron-autogrow-textarea bind-value="{{annotation.description}}" on-input="keydown" placeholder="enter text…" id="annotationText"></iron-autogrow-textarea>
 			</div>
-			<br>
+
 			<div id="responses">
 				<template is="dom-repeat" items="[[annotation.responses]]">
 					<div class="response">
 						<span>[[item.text]]</span>
 					</div>
 				</template>
-				<div id="newresponse" hidden$="[[!responseActive]]">
-					<iron-autogrow-textarea bind-value="{{newResponse.text}}" placeholder="enter response…">
+				<div id="newResponse" hidden$="[[!responseActive]]">
+					<iron-autogrow-textarea id="newResponseText" bind-value="{{newResponse.text}}" placeholder="enter response…">
 					</iron-autogrow-textarea>
-					<div class="responseButtons">
-						<button type="button" name="cancelResponse" on-tap="cancelResponse">CANCEL</button>
-						<button type="button" name="submitResponse" on-tap="submitResponse">DONE</button>
+					<div id="responseButtons">
+						<paper-button id="cancelBtn" type="button" name="cancelResponse" on-tap="cancelResponse">CANCEL</paper-button>
+						<paper-button id="submitBtn" type="button" name="submitResponse" on-tap="submitResponse">DONE</paper-button>
 					</div>
 
 				</div>
 			</div>
-			<br>
+
 			<div class="toolbar">
-				<button disabled type="button" name="button" >link</button>
-				<button type="button" name="button" on-tap="showResponseCreationBox">comment</button>
+				<!-- <paper-icon-button src="" disabled type="button" name="button" >link</paper-icon-button> -->
+				<paper-icon-button src="../images/reply-icon.svg" type="button" name="button" on-tap="showResponseCreationBox">comment</paper-icon-button>
 			</div>
 
 		</div>
