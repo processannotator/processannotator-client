@@ -22,20 +22,25 @@
 		margin: 0;
 		padding: 0;
 		background-color: none;
-		font-size: 20px;
-		max-width: 15em;
+		font-size: 22px;
+		max-width: 20em;
+		font-family: 'SourceSansPro-Light';
+
 	}
 
 	.toolbar {
-		border-top: solid 1px #2f8bb7;
+		border-top: solid 0.091em #2f8bb7;
 		min-height: 1em;
+		display: flex;
+		direction: row;
+		justify-content: flex-end;
 	}
 
 	#container {
 		width: 100%;
 		height: auto;
 		margin: 0;
-		border: solid 1px #2f8bb7;
+		border: solid 0.091em #2f8bb7;
 		background-color: rgba(255, 255, 255, 0.8);
 	}
 
@@ -45,7 +50,6 @@
 
 	#annotation {
 		max-width: 100%;
-		font-size: 1rem;
 		font-family: 'SourceSansPro-Light';
 		letter-spacing: 0.3px;
 		text-align: left;
@@ -68,11 +72,12 @@
 	#responses {
 		display: flex;
 		flex-direction: column;
-		padding: 0.5em;
+		margin: 0.5em;
+		padding-left: 1.5em;
+		padding-buttom: 1.5em;
 	}
 
 	.response {
-		font-size: 1rem;
 		font-family: 'SourceSansPro-Light';
 		margin-top: 1em;
 	}
@@ -80,16 +85,32 @@
 	#responseButtons {
 		display: flex;
 		direction: row;
+		justify-content: flex-end;
 	}
+	#responseButtons > * {
+		letter-spacing: 0.0033em;
+  	text-align: center;
+	}
+
 	
 	paper-button {
-		width: 100px;
-		height: 50px;
+		font-size: 0.75em;
+		padding: 0.2rem;
+		min-width: 0px;
+	}
+	
+	#cancelBtn {
+		color: #898989;
+	}
+
+	#submitBtn {
+		color: #50c9ff;
 	}
 
 	#newResponse {
 		display: flex;
 		flex-direction: column;
+		margin: 1em;
 	}
 	
 	#newResponseText {
@@ -126,15 +147,16 @@
 						<span>[[item.text]]</span>
 					</div>
 				</template>
-				<div id="newResponse" hidden$="[[!responseActive]]">
-					<iron-autogrow-textarea id="newResponseText" bind-value="{{newResponse.text}}" placeholder="enter response…">
-					</iron-autogrow-textarea>
-					<div id="responseButtons">
-						<paper-button id="cancelBtn" type="button" name="cancelResponse" on-tap="cancelResponse">CANCEL</paper-button>
-						<paper-button id="submitBtn" type="button" name="submitResponse" on-tap="submitResponse">DONE</paper-button>
-					</div>
 
+			</div>
+			<div id="newResponse" hidden$="[[!responseActive]]">
+				<iron-autogrow-textarea id="newResponseText" bind-value="{{newResponse.text}}" placeholder="enter response…">
+				</iron-autogrow-textarea>
+				<div id="responseButtons">
+					<paper-button id="cancelBtn" type="button" name="cancelResponse" on-tap="cancelResponse">CANCEL</paper-button>
+					<paper-button id="submitBtn" type="button" name="submitResponse" on-tap="submitResponse">DONE</paper-button>
 				</div>
+
 			</div>
 
 			<div class="toolbar">
