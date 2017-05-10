@@ -60,18 +60,15 @@
 						<span>[[item.text]]</span>
 					</div>
 				</template>
-				<!-- <div id="newResponse" hidden$="[[!responseActive]]">
-					<iron-autogrow-textarea>
-						{{newResponse.text}}
+				<div id="newresponse" hidden$="[[!responseActive]]">
+					<iron-autogrow-textarea bind-value="{{newResponse.text}}" placeholder="enter response…">
 					</iron-autogrow-textarea>
-
-					<!-- <input type="text" name="" value=""> -->
 					<div class="responseButtons">
 						<button type="button" name="cancelResponse" on-tap="cancelResponse">CANCEL</button>
 						<button type="button" name="submitResponse" on-tap="submitResponse">DONE</button>
 					</div>
 
-				</div> -->
+				</div>
 			</div>
 			<br>
 			<div class="toolbar">
@@ -99,7 +96,9 @@
 					notify: true
 				},
 				newResponse: {
-					type: Object
+					type: Object,
+					notify: true,
+					observer: "_newResponseChanged"
 				},
 				responseActive: {
 					type: Boolean
@@ -114,6 +113,7 @@
 				//
 				// }
 				this.responseActive = false;
+				this.newResponse = {text: ''	};
 			},
 			_annotationChanged: function() {
 				// this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
@@ -121,21 +121,8 @@
 				this.$.container.style.border.color = this.annotation.statusColor;
 				// console.log(this.annotation);
 			},
-			keydown: function (event) {
-				if (event.defaultPrevented)
-					return; // Should do nothing if the key event was already consumed.
-				this.editAnnotation({text: this.annotation.description, temporary: true});
-
-
-
-				// Realtime inform app about keypress, to update 3D-labels especially, before
-				// DB update kicks in (editAnnotation)
-
-				clearTimeout(this.editTimeOut);
-				let text = this.annotation.description;
-				this.editTimeOut = setTimeout(() => {
-					this.editAnnotation({text});
-				}, 2000);
+			_newResponseChanged: function () {
+				console.log('response changed', this.newResponse);
 			},
 
 			showResponseCreationBox: function (event) {
@@ -153,22 +140,27 @@
 			},
 
 			cancelResponse: function () {
-				// this.newResponse.text = '';
+				this.newResponse.text = '';
 				this.responseActive = false;
 			},
 
 			submitResponse: function () {
-				this.fire('submitResponse', {annotation, response: this.newResponse})
+				console.log(this.newResponse);
+				console.log(this.annotation);
+				this.push('annotation.responses', this.newResponse);
+				this.fire('edit-annotation', {newAnnotation: this.annotation, elem: this});
+				this.newResponse = {text: ''};
 				this.responseActive = false;
 			},
 
 			keydown: function (event) {
 				if (event.defaultPrevented)
 					return; // Should do nothing if the key event was already consumed.
+				console.log('keydown!!');
 
 				clearTimeout(this.editTimeOut);
 				this.editTimeOut = setTimeout(() => {
-					this.fire('edit-annotation', {temporary, newAnnotation: this.annotation, elem: this});
+					this.fire('edit-annotation', {newAnnotation: this.annotation, elem: this});
 				}, 1000);
 			},
 

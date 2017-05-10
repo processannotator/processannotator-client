@@ -283,12 +283,13 @@ Polymer({
 
 	// this is an event handler, triggering on enter-key event in this.renderView
 	// or by a button press on the physical pen.
-	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[]}}) {
+	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[], responses=[]}}) {
 
 		let annotation = {
 			_id: 'annotation_' + new Date().toISOString(),
 			type: 'annotation',
 			status: 'comment',
+			responses,
 			parentProject: this.activeProject._id,
 			parentTopic: this.activeProject.activeTopic,
 			parentObject: this.activeObject_id,
@@ -307,15 +308,21 @@ Polymer({
 	},
 
 	editAnnotation: function (evt) {
+		if (event.defaultPrevented)
+			return; // Should do nothing if the key event was already consumed.
+			
 		let editedAnnotation = evt.detail.newAnnotation;
+		console.log(evt);
+		console.log('\n\n received annotation to be updated!!\n\n', editedAnnotation);
 
-		if(evt.detail.temporary === true) {
+		if(evt.detail.temporary && evt.detail.temporary === true) {
 			console.log('is temporary', evt.detail);
 			let index = this.annotations.findIndex((annotation) => annotation._id === editedAnnotation._id);
 			console.log(index);
 			this.splice('annotations', index, editedAnnotation);
 		} else {
 			localProjectDB.get(editedAnnotation._id).then((storedAnnotation) => {
+				console.log('saving new updated ann');
 				editedAnnotation = Object.assign(storedAnnotation, editedAnnotation);
 				return localProjectDB.put(editedAnnotation);
 			})
@@ -709,18 +716,6 @@ Polymer({
 
 			for (let {doc} of annotations) {
 				doc.creatorProfile = await this.getUserProfile(doc.creator);
-				doc.responses = [
-					{
-						text: 'This is the first response.',
-						creator: 'responsetester',
-						creationDate: new Date()
-					},
-					{
-						text: 'And a second one..',
-						creator: 'responseresponsetester',
-						creationDate: new Date(2018, 4, 20, 5, 10, 20)
-					}
-				]
 				updatedAnnotations.push(doc);
 			}
 

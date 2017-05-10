@@ -760,10 +760,6 @@
 					break;
 			}
 		},
-		onAnnotationBoxEdit: function (e) {
-			console.log('onAnnotationBoxEdit', e);
-			this.fire('edit-annotation', e.detail);
-		},
 
 		track: function (e) {
 			controls.enabled = true;
@@ -975,11 +971,6 @@
 			// div.annotation = annotation;
 			Polymer.dom.flush();
 			let div = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
-			console.log(div);
-			setTimeout(() => {
-				let div2 = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
-				console.log(div2);
-			}, 100);
 
 
 			// TODO: disable any raycaster stuff etc. when interacting with label

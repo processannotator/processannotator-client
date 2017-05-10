@@ -8,12 +8,14 @@
     "Sebastian Felix Zappe"
   ],
   "dependencies": {
+    "bower": "^1.8.0",
+    "electron-reload": "^1.0.2",
+    "global": "^4.3.2",
     "noble": "^1.1.0",
     "pouchdb": "^6.1.1",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.5",
-    "worker-pouch": "^2.0.0",
-    "electron-reload": "^1.0.2"
+    "worker-pouch": "^2.0.0"
   },
   "scripts": {
     "build": "rollup -c",
