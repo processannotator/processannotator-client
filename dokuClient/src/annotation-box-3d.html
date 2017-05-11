@@ -23,13 +23,27 @@
 		padding: 0;
 		background-color: none;
 		font-size: 22px;
+		min-width: 10em;
 		max-width: 20em;
 		font-family: 'SourceSansPro-Light';
-
+	}
+	
+	.comment-color {
+		border-color: #2f8bb7 !important;
+	}
+	
+	
+	.task-color {
+		border-color: #dfd047 !important;
+	}
+	
+	
+	.problem-color {
+		border-color: #b82f2f !important;
 	}
 
 	.toolbar {
-		border-top: solid 0.091em #2f8bb7;
+		border-top: solid 0.091em;
 		min-height: 1em;
 		display: flex;
 		direction: row;
@@ -40,8 +54,8 @@
 		width: 100%;
 		height: auto;
 		margin: 0;
-		border: solid 0.091em #2f8bb7;
-		background-color: rgba(255, 255, 255, 0.8);
+		border: solid 0.091em;
+		background-color: rgba(255, 255, 255, 0.9);
 	}
 
 	#container:hover {
@@ -135,7 +149,7 @@
 
 
 	</style>
-		<div id="container">
+		<div id="container" class$="[[annotation.status]]-color">
 
 			<div id="annotation">
 				<iron-autogrow-textarea bind-value="{{annotation.description}}" on-input="keydown" placeholder="enter text…" id="annotationText"></iron-autogrow-textarea>
@@ -159,7 +173,7 @@
 
 			</div>
 
-			<div class="toolbar">
+			<div class$="toolbar [[annotation.status]]-color">
 				<!-- <paper-icon-button src="" disabled type="button" name="button" >link</paper-icon-button> -->
 				<paper-icon-button src="../images/reply-icon.svg" type="button" name="button" on-tap="showResponseCreationBox">comment</paper-icon-button>
 			</div>
@@ -202,6 +216,7 @@
 				// }
 				this.responseActive = false;
 				this.newResponse = {text: ''	};
+				console.log(this.annotation.status);
 			},
 			_annotationChanged: function() {
 				// this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
