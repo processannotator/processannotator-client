@@ -25,6 +25,7 @@
 
 <link rel="import" href="render-view.html">
 <link rel="import" href="dashboard.html">
+<link rel="import" href="annotation-box.html">
 <link rel="import" href="side-panel.html">
 
 
@@ -47,8 +48,7 @@
   }
 	
 	#projectTitleSidePanel {
-		opacity: 0.5;
-		background-color: #1f660c;
+		background-color: rgba(31, 102, 12, 0.5);
 		font-family: 'SourceSansPro-Semibold';
 		letter-spacing: 0px;
 		text-align: center;
@@ -136,7 +136,7 @@
 						<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
 					</div> -->
 
-					<render-view id="renderView" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
+					<render-view id="renderView" active-profile="[[activeProfile]]" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
 
           </render-view>
 

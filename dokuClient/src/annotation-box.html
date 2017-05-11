@@ -102,7 +102,9 @@
 				font-family: "SourceSansPro-Semibold";
 			}
 
-			#header > #profile_name {
+
+			
+			.profile_name {
 				min-height: 100%;
 				padding-left: 0.5em;
 				padding-top: 0.1em;
@@ -173,6 +175,13 @@
 			}
 			#annotationText:focus {
 			}
+			
+			#responses {
+				margin-top: 1em;
+			}
+			.response .profile_name {
+				font-size: 1.2em;
+			}
 
 
 		</style>
@@ -181,7 +190,7 @@
 
 			<div id="header" class$="[[annotation.status]]-color">
 				<div id="letters_id" class$="[[annotation.status]]-background-color">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
-				<div id="profile_name">
+				<div class="profile_name">
 					<span>[[annotation.creatorProfile.prename]]</span>
 					<span>[[annotation.creatorProfile.surname]]</span>
 				</div>
@@ -191,7 +200,26 @@
 				<span id="creationDate">[[annotation.creationDate]]</span>
 				<br>
 				<iron-autogrow-textarea bind-value="{{annotation.description}}" on-input="keydown" placeholder="enter text…" id="annotationText"></iron-autogrow-textarea>
+			
+			
+			<div id="responses">
+				<!-- <div id="responsesToggle">
+					
+				</div> -->
+				<template is="dom-repeat" items="[[annotation.responses]]">
+					<div class="response">
+						<div class="profile_name">
+							<span>[[item.creatorProfile.prename]]</span>
+							<span>[[item.creatorProfile.surname]]</span>
+						</div>
+						<span>[[item.text]]</span>
+					</div>
+				</template>
+
 			</div>
+			
+			</div>
+			
 			<div id="tagsAndStatus">
 				<paper-button id="tags">Tags</paper-button>
 				<paper-button on-tap="deleteAnnotation" id="delete">Delete</paper-button>
@@ -204,6 +232,8 @@
 					</paper-listbox>
 				</iron-dropdown>
 			</div>
+			
+	
 
 		</div>
 
