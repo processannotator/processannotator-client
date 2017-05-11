@@ -207,6 +207,7 @@ iron-icon:not(.iron-selected):hover {
   border-radius: 50%;
 	width: 0.5em;
 	height: 0.5em;
+  background-color: gray;
 }
 
 #onlineStatusText {

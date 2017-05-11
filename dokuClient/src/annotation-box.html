@@ -19,6 +19,31 @@
 				width: auto;
 				height: auto;*/
 			}
+			
+			.comment-background-color {
+				background-color: #2f8bb7 !important;
+			}
+			.comment-color {
+				color: #2f8bb7 !important;
+			}
+			
+			
+			.task-background-color {
+				background-color: #dfd047 !important;
+			}
+			
+			.task-color {
+				color: #dfd047 !important;
+			}
+			
+			
+			.problem-background-color {
+				background-color: #b82f2f !important;
+			}
+			
+			.problem-color {
+				color: #b82f2f !important;
+			}
 
 			paper-button {
 				border-radius: 0px;
@@ -115,17 +140,6 @@
 				padding: 0;
 			}
 
-			.comment {
-				color: rgb(5, 73, 105);
-			}
-
-			.task {
-				color: yellow;
-			}
-
-			.problem {
-				color: orange;
-			}
 
 			paper-item {
 				font-size: 0.8em;
@@ -165,8 +179,8 @@
 
 		<div id="container" on-tap="tap">
 
-			<div id="header">
-				<div id="letters_id">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
+			<div id="header" class$="[[annotation.status]]-color">
+				<div id="letters_id" class$="[[annotation.status]]-background-color">[[computeNameLetters(annotation.creatorProfile.prename, annotation.creatorProfile.surname)]]</div>
 				<div id="profile_name">
 					<span>[[annotation.creatorProfile.prename]]</span>
 					<span>[[annotation.creatorProfile.surname]]</span>
@@ -184,9 +198,9 @@
 				<paper-button class$="[[annotation.status]]" id="status" dropdown-trigger on-tap="openStatusDropdown">[[annotation.status]]</paper-button>
 				<iron-dropdown always-on-top auto-fit-on-attach id="statusDropdown" horizontal-align="right" vertical-align="top">
 					<paper-listbox on-tap="clickedStatusList" attr-for-selected="label" selected="{{annotation.status}}" fallback-selection="[[annotation.status]]" id="statusList" on-iron-select="statusChanged" class="dropdown-content">
-						<paper-item class="comment" label="comment">COMMENT</paper-item>
-						<paper-item class="task" label="task">TASK</paper-item>
-					<paper-item class="problem" label="problem">PROBLEM</paper-item>
+						<paper-item class="comment-color" label="comment">COMMENT</paper-item>
+						<paper-item class="task-color" label="task">TASK</paper-item>
+					<paper-item class="problem-color" label="problem">PROBLEM</paper-item>
 					</paper-listbox>
 				</iron-dropdown>
 			</div>
@@ -218,8 +232,8 @@
 				}
 			},
 			_annotationChanged: function() {
-				this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
-				this.$.header.style.color = this.annotation.statusColor;
+				// this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
+				// this.$.header.style.color = this.annotation.statusColor;
 			},
 			keydown: function (event) {
 				if (event.defaultPrevented)
