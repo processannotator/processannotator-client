@@ -1,9 +1,7 @@
-<link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="annotation-box.html">
 
 <dom-module id="side-panel">
 
@@ -52,6 +50,11 @@
 		max-width: 10em;
 		right: -9%;
 	}
+	
+	.increase, .decrease {
+		color: rgb(132, 205, 219);
+
+	}
 
 	#contentContainer {
 
@@ -81,8 +84,9 @@
 
 	<div id="contentContainer" class="normal">
 		<div id="menu" class="menu side-menu">
-			<paper-icon-button class="menu-item increase" icon="chevron-left" on-tap="increase"></paper-icon-button>
-			<paper-icon-button class="menu-item decrease" icon="chevron-right" on-tap="decrease"></paper-icon-button>
+			
+			<paper-icon-button src="../images/arrow-left.svg" class="menu-item increase" on-tap="increase"></paper-icon-button>
+			<paper-icon-button src="../images/arrow-right.svg" class="menu-item decrease" on-tap="decrease"></paper-icon-button>
 			<paper-button class="filter menu-item">Filter by</paper-button>
 			<paper-button class="filter menu-item"><i>search for</i></paper-button>
 		</div>

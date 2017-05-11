@@ -192,6 +192,9 @@
 				mouseenter: 'mouseEnter'
 			},
 			properties: {
+				activeProfile: {
+					type: Object
+				},
 				annotation: {
 					type: Object,
 					observer: "_annotationChanged",
@@ -216,7 +219,8 @@
 				// }
 				this.responseActive = false;
 				this.newResponse = {text: ''	};
-				console.log(this.annotation.status);
+				
+				console.log(this.annotation);
 			},
 			_annotationChanged: function() {
 				// this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
@@ -248,9 +252,13 @@
 			},
 
 			submitResponse: function () {
+				this.newResponse.creationDate = new Date();
+				this.newResponse.creatorProfile = this.activeProfile;
+				console.log(this.activeProfile);
 				console.log(this.newResponse);
 				console.log(this.annotation);
 				this.push('annotation.responses', this.newResponse);
+				
 				this.fire('edit-annotation', {newAnnotation: this.annotation, elem: this});
 				this.newResponse = {text: ''};
 				this.responseActive = false;

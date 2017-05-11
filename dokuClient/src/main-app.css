@@ -62,8 +62,8 @@ body {
 }
 
 #main-menu > .menu-item {
-  --paper-button-ink-color: rgb(7, 20, 26);
-  --paper-icon-button-ink-color: rgb(7, 20, 26);
+  /*--paper-button-ink-color: rgb(7, 20, 26);
+  --paper-icon-button-ink-color: rgb(7, 20, 26);*/
   font-size: 1.3em;
   font-family: "SourceSansPro-Semibold";
   border-radius: 0px;
@@ -175,11 +175,11 @@ width: 100%;
 
 
 
-iron-icon.iron-selected {
+.tool-box-icon.iron-selected {
 	background-color: rgba(233, 233, 233, 0.3);
 }
 
-iron-icon:not(.iron-selected):hover {
+.tool-box-icon:not(.iron-selected):hover {
 	/*--iron-icon-fill-color: blue;*/
 	background-color: rgb(98, 98, 98)
 }
@@ -205,6 +205,7 @@ iron-icon:not(.iron-selected):hover {
 
 .annotationCircle {
   border-radius: 50%;
+  min-width: 11px;
 	width: 0.5em;
 	height: 0.5em;
   background-color: gray;

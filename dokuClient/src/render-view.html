@@ -39,7 +39,7 @@
 
 				<template is="dom-repeat" items="{{annotations}}" as="item">
 
-					<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" annotation="{{item}}" index="[[index]]" on-edit-annotation="onAnnotationBoxEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
+					<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" active-profile="[[activeProfile]]" annotation="{{item}}" index="[[index]]" on-edit-annotation="onAnnotationBoxEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
 
 				</template>
 
@@ -79,6 +79,9 @@
 			tool: {
 				type: 'Object',
 				observer: '_toolChanged'
+			},
+			activeProfile: {
+				type: Object
 			},
 			annotations: {
 				type: Array,
@@ -605,9 +608,9 @@
 				for (let annotation of visibleAnnotations) {
 					if(!annotation) continue;
 					let {label, arrow} = this.annotation3DObjects.get(annotation._id);
+					arrow.visible = true;
 					label.element.style.display = 'block';
 					label.element.style.opacity = 0.8;
-					arrow.visible = true;
 				}
 
 			}
@@ -620,6 +623,7 @@
 				raycaster.set(this.camera.position.clone(), normalizedDirection)
 				raycaster.far = this.camera.position.distanceTo(label.position)
 				let intersections = raycaster.intersectObject(this.fileRepresentation)
+				console.log(intersections);
 				if (intersections.length !== 0) {
 					label.element.style.opacity = 0.0
 				} else {
