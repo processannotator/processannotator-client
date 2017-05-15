@@ -11,8 +11,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <!doctype html>
 <html lang="en">
 <head>
+  
 
-  <script src="/libs/aframe-master.js"></script>
+
+  <script src="https://aframe.io/releases/0.5.0/aframe.min.js"></script>
+</head>
   <!-- <script src="../libs/aframe-mouse-cursor-component.min.js"></script> -->
   <script src="../node_modules/aframe-animation-component/dist/aframe-animation-component.min.js" charset="utf-8"></script>
   <!-- <script src="../node_modules/aframe-vive-cursor-component/dist/aframe-vive-cursor-component.min.js" charset="utf-8"></script> -->
@@ -24,20 +27,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <!-- <link rel="manifest" href="/manifest.json"> -->
 	<title>process.annotator</title>
 
-  <script>
-
-  // setup Polymer options
-  window.Polymer = {lazyRegister: true, dom: 'shady'};
-
-
-    // // load pre-caching service worker
-    // if ('serviceWorker' in navigator) {
-    //   window.addEventListener('load', function() {
-    //     navigator.serviceWorker.register('/service-worker.js');
-    //   });
-    // }
-
-  </script>
 
   <link rel="import" href="src/main-app.html">
 
@@ -49,8 +38,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 </head>
 <body>
-
-  <main-app>Hi! Just a moment please :)</main-app>
   <script type="text/javascript">
   (function() {
   if ('registerElement' in document
@@ -63,8 +50,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     e.src = '/bower_components/webcomponentsjs/webcomponents-lite.min.js';
     document.body.appendChild(e);
   }
+  
+  
+    // setup Polymer options
+    window.Polymer = {lazyRegister: true, dom: 'shady'};
+
+
+      // // load pre-caching service worker
+      // if ('serviceWorker' in navigator) {
+      //   window.addEventListener('load', function() {
+      //     navigator.serviceWorker.register('/service-worker.js');
+      //   });
+      // }
+
 })();
   </script>
+
+  <main-app>Hi! Just a moment please :)</main-app>
+
 
 </body>
 </html>

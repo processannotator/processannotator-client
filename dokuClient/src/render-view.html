@@ -38,8 +38,8 @@
 				animation__mouseleave="startEvents: mouseleave; property: opacity; to:1.0; dur:3000">
 			</a-obj-model>
 
-			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left"></a-entity>
-			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown"></a-entity>
+			<a-entity id="rightVRController" class="vrController" hand-controls="right" on-bottondown="onTriggerDown"> </a-entity>
+			<a-entity id="leftVRController" class="vrController" hand-controls="left" on-bottondown="onTriggerDown">   </a-entity>
 
 
 		<template id="annotationList" is="dom-repeat" items="[[annotations]]">
@@ -143,6 +143,7 @@
 
 		},
 		onTriggerDown: function (evt) {
+			console.log('triggerdown');
 			console.log('trigger down. Create annotation in place.');
 			console.log('position:', rightVRController);
 				this.fire('create-annotation', {
