@@ -791,7 +791,7 @@
 			}
 		},
 		tap: function(e) {
-
+			console.log('tap in render view');
 			if (jsonEqual(this.previousCameraPosition, this.camera.position) === false || jsonEqual(this.previousCameraRotation, this.camera.rotation) == false) {
 				console.log('moved! return!');
 			}
