@@ -33,13 +33,13 @@
 			</a-entity>
 
 
-			<a-obj-model id="fileRepresentation" src$="[[filePath]]" on-click="clicked" opacity="1.0"
+			<a-obj-model id="fileRepresentation" src$="[[filePath]]"  position="-3 0 -3" on-click="clicked" opacity="1.0"
 				animation__mouseenter="startEvents: mouseenter; property: opacity; to:0.5; dur:3000"
 				animation__mouseleave="startEvents: mouseleave; property: opacity; to:1.0; dur:3000">
 			</a-obj-model>
 
-			<a-entity id="rightVRController" class="vrController" hand-controls="right" on-bottondown="onTriggerDown"> </a-entity>
-			<a-entity id="leftVRController" class="vrController" hand-controls="left" on-bottondown="onTriggerDown">   </a-entity>
+			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown"> </a-entity>
+			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" on-triggerdown="onTriggerDown">   </a-entity>
 
 
 		<template id="annotationList" is="dom-repeat" items="[[annotations]]">
@@ -145,10 +145,10 @@
 		onTriggerDown: function (evt) {
 			console.log('triggerdown');
 			console.log('trigger down. Create annotation in place.');
-			console.log('position:', rightVRController);
+			console.log(evt.target.position);
 				this.fire('create-annotation', {
 					description: 'New VR Annotation' + Math.round(Math.random() * 100),
-					position: this.camera.position//this.$.rightVRController.position
+					position: this.$.rightVRController.position
 				});
 		},
 		raycasterIntersection: function (evt) {
