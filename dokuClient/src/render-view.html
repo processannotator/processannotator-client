@@ -33,22 +33,31 @@
 			</a-entity>
 
 
-			<a-obj-model id="fileRepresentation" src$="[[filePath]]"  position="-3 0 -3" on-click="clicked" opacity="1.0"
+			<!-- <a-obj-model id="fileRepresentation" src$="[[filePath]]"  position="-3 0 -3" on-click="clicked" opacity="1.0"
 				animation__mouseenter="startEvents: mouseenter; property: opacity; to:0.5; dur:3000"
 				animation__mouseleave="startEvents: mouseleave; property: opacity; to:1.0; dur:3000">
-			</a-obj-model>
+			</a-obj-model> -->
 
 			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown"> </a-entity>
-			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" on-triggerdown="onTriggerDown">   </a-entity>
+			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" on-triggerdown="onTriggerDown">
+				<a-obj-model id="fileRepresentation" src$="[[filePath]]" scale="0.2 0.2 0.2" on-click="clicked" opacity="1.0">
+					
+					
+					<template id="annotationList" is="dom-repeat" items="[[annotations]]">
+						<a-entity position$="[[_parsePos(item.position)]]" opacity="0.0">
+							<!-- <a-sphere scale="0.06 0.06 0.06" color="red"></a-sphere> -->
+							<a-sphere color$="[[item.statusColor]]" scale="0.05 0.05 0.05" depth="2" animation__created="property: opacity; dur:1000; to: 1.0; loop:false;"></a-sphere>
+						<a-text value$="[[item.description]]"></a-text>
+						</a-entity>
 
-
-		<template id="annotationList" is="dom-repeat" items="[[annotations]]">
-			<a-entity position$="[[_parsePos(item.position)]]" opacity="0.0">
-				<a-box id="[[item.description]]" color$="[[item.statusColor]]" scale="0.1 0.1 0.1" depth="2" animation__created="property: opacity; dur:5000; to: 1.0; loop:false;"></a-box>
-			<a-text value$="[[item.description]]" animation__created="property: opacity; dur:1000; to: 1.0; loop:false;"></a-text>
+					</template>
+					
+					
+				</a-obj-model>
 			</a-entity>
 
-		</template>
+
+
 
 		<a-sky color="gray"></a-sky>
 		</a-scene>
@@ -127,11 +136,12 @@
 			console.log('renderview ready');
 			this.ready = true;
 			this.rendering = false;
-			console.log('FOOBAR1');
 
 		},
 		attached: function () {
+			console.log('ATTACHED');
 			this.annotationGroup = this.$.canvas.annotations;
+
 		},
 		clicked: function (evt) {
 			console.log(evt.detail.intersection[0].point);
@@ -143,12 +153,16 @@
 
 		},
 		onTriggerDown: function (evt) {
-			console.log('triggerdown');
-			console.log('trigger down. Create annotation in place.');
-			console.log(evt.target.position);
+			console.log('triggerdown1');
+			console.log(evt);
+			let {x,y,z} = evt.target.getAttribute('position');
+			let pos = new THREE.Vector3(x, y, z);
+			console.log(this.$.fileRepresentation.object3D);
+			this.$.fileRepresentation.object3D.worldToLocal(pos);
+			
 				this.fire('create-annotation', {
 					description: 'New VR Annotation' + Math.round(Math.random() * 100),
-					position: this.$.rightVRController.position
+					position: pos
 				});
 		},
 		raycasterIntersection: function (evt) {

@@ -14,7 +14,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <html lang="en">
 <head>
   <title>Process.Annotator</title>
-  <script src="https://aframe.io/releases/0.5.0/aframe.min.js"></script>
+  <script src="../node_modules/aframe/dist/aframe-master.js"></script>
 </head>
   <!-- <script src="../libs/aframe-mouse-cursor-component.min.js"></script> -->
   <script src="../node_modules/aframe-animation-component/dist/aframe-animation-component.min.js" charset="utf-8"></script>
@@ -38,16 +38,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
 <body>
-  <!-- <script type="text/javascript">
+  <script type="text/javascript">
   (function() {
   if ('registerElement' in document
       && 'import' in document.createElement('link')
       && 'content' in document.createElement('template')) {
-        console.log('hallo 1');
     // platform is good!
   } else {
     // polyfill the platform!
-    console.log('hallo 2');
     var e = document.createElement('script');
     e.src = '/bower_components/webcomponentsjs/webcomponents-lite.min.js';
     document.body.appendChild(e);
@@ -55,7 +53,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 
     // setup Polymer options
-    window.Polymer = {lazyRegister: true, dom: 'shady'};
+    // window.Polymer = {lazyRegister: true, dom: 'shady'};
 
 
       // // load pre-caching service worker
@@ -66,7 +64,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       // }
 
 })();
-  </script> -->
+  </script>
 
   <main-app>Hi! Just a moment please :)</main-app>
 
