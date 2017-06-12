@@ -19,6 +19,7 @@
   },
   "scripts": {
     "build": "rollup -c",
+    "start": "echo -------- executing 'npm run dev' --------; npm run dev",
     "dev": "npm run build && http-server -s",
     "install": "bower install --verbose"
   },
