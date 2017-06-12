@@ -51,6 +51,7 @@ sudo systemctl start couchdb
 npm install -g add-cors-to-couchdb
 add-cors-to-couchdb
 # route port 80 to 5984 (optional)
+# This works on Fedora, use iptables on debian for example
 sudo firewall-cmd --zone=FedoraServer --add-masquerade --permanent
 sudo firewall-cmd --zone=FedoraServer --add-forward-port=port=80:proto=tcp:toport=5984 --permanent
 ```
