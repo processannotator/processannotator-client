@@ -18,17 +18,20 @@
     "worker-pouch": "^2.0.0"
   },
   "scripts": {
-    "build": "rollup -c",
-    "start": "echo -------- executing 'npm run dev' --------; npm run dev",
-    "dev": "npm run build && http-server -s",
+    "dev": "concurrently --kill-others \"rollup --environment dev -c && http-server -s -c-1 -p 12345 -o\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
+    "dev-in-memory": "concurrently --kill-others \"rollup --environment dev -c && http-server -s -c-1 -p 12345 -o\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" --in-memory",
+    "production": "rollup --environment production -c && http-server -s -c-1 -p 8080 -o",
     "install": "bower install --verbose"
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.18.0",
     "babel-preset-env": "^1.1.8",
     "babel-watch": "^2.0.3",
+    "concurrently": "^3.4.0",
+    "pouchdb-server": "^2.3.7",
     "rollup": "^0.36.4",
     "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-replace": "^1.1.1",
     "rollup-watch": "^2.5.0"
   }
 }

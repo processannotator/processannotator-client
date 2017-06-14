@@ -2,8 +2,9 @@
 'use strict'; /*eslint global-strict:0*/
 
 // import SpeechRecognition from './speechRecognition'
-const SERVERADDR = '141.20.168.11';
-const PORT = '80';
+// Uses rollup-replace to replace ENV with the env set when starting rollup
+const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '141.20.168.11';
+const PORT = (ENV === 'dev') ? '5984' : '80';
 
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
@@ -454,6 +455,11 @@ Polymer({
 
 			// independently of internet connection and remote DB already create local DB
 			// and add first topic with object/file
+
+			// TODO: decide mimetype!!
+			let blob = new Blob([file], {type: 'text/plain'});
+
+
 			return new PouchDB(newProjectDescription._id).bulkDocs(
 				[{
 					_id: 'info',
@@ -462,8 +468,8 @@ Polymer({
 				},
 				{
 					_id: 'topic_' + topicname,
-					_attachments: {
-						'file': { type: file.type, data: file, something: 'else'}
+					'_attachments': {
+						'file': { 'content_type': 'text/plain', 'data': blob}
 					}
 				}]);
 			})
