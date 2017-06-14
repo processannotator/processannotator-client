@@ -17,10 +17,11 @@
     "worker-pouch": "^2.0.0"
   },
   "scripts": {
-    "build": "rollup -c",
-    "dev": "npm run build && (electron . --dev &) && rollup -c --watch",
+    "build": "rollup --environment production -c",
+    "build_dev": "concurrently --kill-others \"rollup --environment dev -c\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
     "install": "./node_modules/.bin/electron-rebuild && bower install --verbose",
     "start": "npm run build && electron .",
+    "start_dev": "npm run build_dev && electron .",
     "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
   },
   "devDependencies": {
@@ -32,8 +33,11 @@
     "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.2.1",
     "electron-reload": "^1.0.2",
+    "concurrently": "^3.4.0",
+    "pouchdb-server": "^2.3.7",
     "rollup": "^0.36.4",
     "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-replace": "^1.1.1",
     "rollup-watch": "^2.5.0"
   }
 }
