@@ -11,7 +11,6 @@
     "bower": "^1.8.0",
     "noble": "^1.1.0",
     "pouchdb": "^6.2.0",
-    "pouchdb-adapter-memory": "^6.2.0",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.5",
     "worker-pouch": "^2.0.0"
