@@ -1,7 +1,10 @@
 <script src="../libs/three/three.min.js"></script>
 <script src="../libs/three/controls/TrackballControls.js"></script>
 <script src="../libs/three/renderers/CSS3DRenderer.js"></script>
-<script src="../libs/three/loaders/STLLoader.js"></script>
+<!-- <script src="../libs/three/loaders/STLLoader.js"></script> -->
+<script src="../libs/three/loaders/OBJLoader.js"></script>
+<script src="../libs/three/loaders/ColladaLoader.js"></script>
+
 <link rel="import" href="annotation-box-3d.html">
 
 <dom-module id="render-view">
@@ -75,6 +78,12 @@
 			file: {
 				type: Object,
 				observer: '_fileChanged'
+			},
+			fileName: {
+				type: String,
+			},
+			fileEnding: {
+				type: String,
 			},
 			tool: {
 				type: 'Object',
@@ -395,11 +404,34 @@
 			this.annotations = [];
 
 			// load the file and use it for display
-			var loader = new THREE.STLLoader()
+			var loader;
+			console.log(this.fileEnding);
+			if(this.fileEnding === 'obj') {
+				loader = new THREE.OBJLoader();
+			} else if (this.fileEnding === 'dae') {
+				loader = new THREE.ColladaLoader();
+			} else {
+				console.error('Cannot load file with filending', this.fileEnding, '. This should have been catched at file upload.');
+			}
+
 			var filepath = URL.createObjectURL(this.file)
 			loader.load(filepath,
-				geometry  => {
-					const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
+				model  => {
+					console.log(model);
+					let meshFromFile = new THREE.Object3D();
+					if(this.fileEnding === 'obj') {
+
+						meshFromFile = model;
+					} else if (this.fileEnding === 'dae') {
+
+						for (let geometry of Object.values(model.dae.geometries)	) {
+							console.log(geometry.mesh.geometry3js);
+							meshFromFile.add(new THREE.Mesh(geometry.mesh.geometry3js, this.meshMaterial));
+						}
+
+					}
+
+					// const meshFromFile = new THREE.Mesh(geometry, this.meshMaterial);
 					this.boundingBox = new THREE.Box3().setFromObject(meshFromFile);
 					this.maxLength = Math.max(this.boundingBox.max.x, this.boundingBox.max.y, this.boundingBox.max.z);
 					// TODO: Save scale factor in DB.
@@ -478,7 +510,8 @@
 			}
 
 			// Get removed annotations
-			removedAnnotations = oldAnnotations.filter((oldAnnotation) => {
+
+			removedAnnotations = oldAnnotations === undefined ? [] : oldAnnotations.filter((oldAnnotation) => {
 				return this.annotations.find((annotation) => annotation._id === oldAnnotation._id) === undefined;
 			}) || [];
 			console.log('changedAnnotations', changedAnnotations);
@@ -622,8 +655,7 @@
 				let normalizedDirection = (label.position.clone().sub(this.camera.position)).normalize()
 				raycaster.set(this.camera.position.clone(), normalizedDirection)
 				raycaster.far = this.camera.position.distanceTo(label.position)
-				let intersections = raycaster.intersectObject(this.fileRepresentation)
-				console.log(intersections);
+				let intersections = raycaster.intersectObject(this.fileRepresentation, true)
 				if (intersections.length !== 0) {
 					label.element.style.opacity = 0.0
 				} else {
@@ -688,7 +720,7 @@
 					this.raycaster.set(origin, normalizedDirection);
 				}
 				if(penActive || this.tool !== 'rotate') {
-					intersections = this.raycaster.intersectObject(this.fileRepresentation);
+					intersections = this.raycaster.intersectObject(this.fileRepresentation, true);
 				}
 			}
 
@@ -805,7 +837,8 @@
 
 			// Calculate objects intersecting the picking ray
 			// only use the first/frontmost intersection  -> [0]
-			var intersections = this.raycaster.intersectObject(this.fileRepresentation);
+			var intersections = this.raycaster.intersectObject(this.fileRepresentation, true);
+			console.log(intersections.length);
 			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
 			// Transform intersection point from world coordinates
 			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
