@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 
 <link rel="import" href="a-annotation.html">
 
@@ -40,9 +41,17 @@
 
 			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown"> </a-entity>
 			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" on-triggerdown="onTriggerDown">
-				<a-obj-model id="fileRepresentation" src$="[[filePath]]" scale="0.2 0.2 0.2" on-click="clicked" opacity="1.0">
-					
-					
+
+				<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
+				<a-entity light="type: ambient; color: #BBB"></a-entity>
+
+
+				<!-- The model attribute is added on file change depending on format -->
+				<a-entity id="fileRepresentation" material="color:green"> </a-entity>
+
+
+
+
 					<template id="annotationList" is="dom-repeat" items="[[annotations]]">
 						<a-entity position$="[[_parsePos(item.position)]]" opacity="0.0">
 							<!-- <a-sphere scale="0.06 0.06 0.06" color="red"></a-sphere> -->
@@ -51,9 +60,7 @@
 						</a-entity>
 
 					</template>
-					
-					
-				</a-obj-model>
+
 			</a-entity>
 
 
@@ -92,6 +99,12 @@
 			file: {
 				type: Object,
 				observer: '_fileChanged'
+			},
+			fileName: {
+				type: String
+			},
+			fileEnding: {
+				type: String
 			},
 			tool: {
 				type: 'Object',
@@ -159,7 +172,7 @@
 			let pos = new THREE.Vector3(x, y, z);
 			console.log(this.$.fileRepresentation.object3D);
 			this.$.fileRepresentation.object3D.worldToLocal(pos);
-			
+
 				this.fire('create-annotation', {
 					description: 'New VR Annotation' + Math.round(Math.random() * 100),
 					position: pos
@@ -276,7 +289,18 @@
 		},
 
 		_fileChanged: function () {
+
 			this.filePath = URL.createObjectURL(this.file);
+
+			this.$.fileRepresentation.removeAttribute('obj-model');
+			this.$.fileRepresentation.removeAttribute('collada-model');
+			if(this.fileEnding === 'obj') {
+				this.$.fileRepresentation.setAttribute('obj-model', `obj:url(${this.filePath})`);
+			} else if (this.fileEnding === 'dae') {
+				this.$.fileRepresentation.setAttribute('collada-model', `url(${this.filePath})`);
+			} else {
+				console.error('Cannot load file with filending', this.fileEnding, '. This should have been catched at file upload.');
+			}
 		},
 
 		_annotationsChanged: function() {

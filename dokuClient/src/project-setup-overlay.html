@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
 <link rel="import" href="../bower_components/neon-animation/neon-animatable.html">
@@ -37,9 +39,9 @@
       </neon-animatable>
 
       <neon-animatable>
-        <span class="instruction">Upload your first topic you want to work on and discuss with your team:</span>
+        <span class="instruction">Upload your first topic you want to work on and discuss with your team (.obj or .dae file).</span>
         <input class="textInput" placeholder="main structure" is="iron-input" type="text" bind-value="{{topicname}}">
-        <input id="fileinput" type="file" accept=".stl,.obj,.jpg,.jpeg,.png,.pdf" on-change="fileSelected">
+        <input id="fileinput" type="file" accept=".obj,.dae" on-change="fileSelected">
 
       </neon-animatable>
 
