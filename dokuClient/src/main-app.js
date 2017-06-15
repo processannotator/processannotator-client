@@ -464,10 +464,18 @@ Polymer({
 		// FIXME: create some kind of queue in the preferences to send out the request
 		// at a later time when the server is offline.
 
+		let fileEnding = file.name.split('.').pop();
+		if(fileEnding !== 'obj' && fileEnding !== 'dae') {
+			dialog.showErrorBox('DokuClient', 'For now you can only upload OBJ and DAE files.');
+			return;
+		}
+
 		if(await this.updateOnlineStatus() === false) {
 			dialog.showErrorBox('DokuClient', 'Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
 			return;
 		}
+
+
 
 		function normalizeCouchDBName(name) {
 			return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_$()+/-]/g, '$');
@@ -514,7 +522,16 @@ Polymer({
 			// and add first topic with object/file
 
 			// TODO: decide mimetype!!
-			let blob = new Blob([file], {type: 'text/plain'});
+			// Set appropriate mime type for blob
+			let contentType = 'text/plain';
+
+			if(fileEnding === 'dae') {
+				contentType = 'model/vnd.collada+xml';
+			} else if (fileEnding === 'obj') {
+				contentType = 'text/plain';
+			}
+
+			let blob = new Blob([file], {type: contentType});
 
 
 			return new PouchDB(newProjectDescription._id, POUCHCONF).bulkDocs(
@@ -739,8 +756,12 @@ Polymer({
 			if((options.updateFile && options.updateFile === true)) {
 				try {
 					let info = await localProjectDB.get('info');
+					let activeTopic = await localProjectDB.get(info.activeTopic);
 					let blob = await localProjectDB.getAttachment(info.activeTopic, 'file');
+					this.renderView.fileEnding = activeTopic.fileEnding;
+					this.renderView.fileName = activeTopic.fileName;
 					this.renderView.file = blob;
+
 				} catch (err) {
 					console.log(err);
 				}
