@@ -37,12 +37,14 @@
 			:host.fingerCursor {
 				cursor: pointer;
 			}
+
+
 		</style>
 
 
 				<template is="dom-repeat" items="{{annotations}}" as="item">
 
-					<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" active-profile="[[activeProfile]]" annotation="{{item}}" index="[[index]]" on-edit-annotation="onAnnotationBoxEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
+					<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" active-profile="[[activeProfile]]" annotation="{{item}}" index="[[index]]" selected="[[_isSelected(selectedAnnotation._id, item._id)]]" on-edit-annotation="onAnnotationBoxEdit" on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
 
 				</template>
 
@@ -124,6 +126,10 @@
 			'track': 'track',
 			'mousemove': 'mouseOrPenMoved'
 		},
+		_isSelected: function (selectedAnnotation, annotation) {
+			return selectedAnnotation === annotation;
+		},
+
 
 		ready: function() {
 			// doesnt work with listeners on this very element
@@ -1064,17 +1070,16 @@
 					break;
 			}
 		},
-		_selectedAnnotationChanged: function () {
 
-		},
-		focusAnnotation: function (annotation) {
-			if (annotation.cameraPosition !== undefined) {
+		_selectedAnnotationChanged: function (newSelected, oldSelected) {
+			if (this.selectedAnnotation) {
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)
-				controls.resetFrom(annotation.cameraPosition, annotation.cameraUp);
-			} else {
-				return;
+				if(this.selectedAnnotation.cameraPosition !== undefined){
+					controls.resetFrom(this.selectedAnnotation.cameraPosition, this.selectedAnnotation.cameraUp);
+				}
 			}
+
 		}
 	})
 	</script>

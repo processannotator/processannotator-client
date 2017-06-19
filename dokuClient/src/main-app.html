@@ -116,7 +116,7 @@
 							<iron-icon class="tool-box-icon" title="polygon annotation" hidden$="{{penButtonConnected}}" name="polygon" src="../images/path-vector-copy-7.svg"></iron-icon>
 							<iron-icon class="tool-box-icon" title="move and rotate camera" name="rotate" src="../images/rotate.svg"></iron-icon>
 							<iron-icon class="tool-box-icon" title="add point annotation" hidden$="{{penButtonConnected}}" name="point" src="../images/selection.svg"></iron-icon>
-              <iron-icon class="tool-box-icon" title="move annotation" hidden$="{{penButtonConnected}}" name="edit" src="../images/selection.svg"></iron-icon>
+              <iron-icon class="tool-box-icon" title="move annotation" hidden$="{{penButtonConnected}}" name="edit" src="../images/move-icon.svg"></iron-icon>
 
 
 						</iron-selector>
@@ -138,7 +138,7 @@
 						<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
 					</div> -->
 
-					<render-view id="renderView" active-profile="[[activeProfile]]" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
+					<render-view id="renderView" active-profile="[[activeProfile]]" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" on-toggle-refer-mode="toggleReferMode" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
 
           </render-view>
 

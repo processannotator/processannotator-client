@@ -285,6 +285,8 @@ app.on('ready', function() {
 
 	setupNoble();
 
+  mainWindow.openDevTools();
+
   // Open dev tools if --dev parameter is passed in.
   if (process.argv.indexOf('--dev') !== -1) {
     mainWindow.openDevTools();
