@@ -289,11 +289,19 @@ Polymer({
 	// or by a button press on the physical pen.
 	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[], responses=[]}}) {
 
+		if(this.referingAnnotation) {
+			referingAnnotation = this.referingAnnotation._id;
+
+		}
+
+
+
 		let annotation = {
 			_id: 'annotation_' + new Date().toISOString(),
 			type: 'annotation',
 			status: 'comment',
 			responses,
+			referingAnnotation,
 			parentProject: this.activeProject._id,
 			parentTopic: this.activeProject.activeTopic,
 			parentObject: this.activeObject_id,
@@ -306,6 +314,8 @@ Polymer({
 			position,
 			polygon
 		};
+
+		console.log(annotation);
 
 		return localProjectDB.put(annotation)
 		.catch(err => console.log)
@@ -871,12 +881,25 @@ Polymer({
 
 		_selectedAnnotationChanged: function (e) {
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;
-			this.renderView.focusAnnotation(this.selectedAnnotation);
 		},
 
 		toolChanged: function (e) {
 			this.objectTool = this.$.toolSelector.selected;
 			console.log(this.objectTool);
+		},
+		toggleReferMode: function (e) {
+			console.log('in main.app.js');
+			console.log(e);
+			console.log(e.detail);
+			if(this.referMode) {
+				this.referMode = false;
+				this.referingAnnotation = undefined;
+			} else {
+				this.referMode = true;
+				this.referingAnnotationEl = e.target;
+				this.referingAnnotation = e.detail;
+				this.$.toolSelector.selected = 'point';
+			}
 		},
 
 		setupPenEventHandlers() {
