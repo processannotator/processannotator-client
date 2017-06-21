@@ -289,24 +289,35 @@ Polymer({
 	// or by a button press on the physical pen.
 	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[], responses=[]}}) {
 
+
+
+
+		let created = new Date().toISOString();
+		let _id = `annotation_${created}`;
+		let referedBy;
 		if(this.referingAnnotation) {
-			referingAnnotation = this.referingAnnotation._id;
+			referedBy = this.referingAnnotation._id;
+			// As this annotation is refered by another one, also add
+			// referTo field to the refering annotation:
+			this.referingAnnotation.referTo = _id;
+			this.editAnnotation({detail: {annotation: this.referingAnnotation}});
 
 		}
 
-
-
 		let annotation = {
-			_id: 'annotation_' + new Date().toISOString(),
+			_id,
 			type: 'annotation',
 			status: 'comment',
+			motivation: 'commenting', // web annotation model
 			responses,
-			referingAnnotation,
+			referedBy,
 			parentProject: this.activeProject._id,
 			parentTopic: this.activeProject.activeTopic,
 			parentObject: this.activeObject_id,
+			target: this.activeObject_id,
 			creator: this.activeProfile.name,
-			creationDate: new Date().toISOString(),
+			creationDate: created,
+			created, // same as above, conforms to web-annotation-model
 			cameraPosition,
 			// cameraRotation,
 			cameraUp,
@@ -318,15 +329,19 @@ Polymer({
 		console.log(annotation);
 
 		return localProjectDB.put(annotation)
+		.then(() => {
+
+		})
 		.catch(err => console.log)
 	},
 
 	editAnnotation: function (evt) {
-		if (event.defaultPrevented)
+		if (evt.defaultPrevented)
 			return; // Should do nothing if the key event was already consumed.
 
-		let editedAnnotation = evt.detail.newAnnotation;
-		console.log(evt);
+		let editedAnnotation = Object.assign({}, evt.detail.annotation);
+		delete editedAnnotation.creatorProfile; //purge possibly sensitive info
+
 		console.log('\n\n received annotation to be updated!!\n\n', editedAnnotation);
 
 		if(evt.detail.temporary && evt.detail.temporary === true) {
@@ -336,8 +351,10 @@ Polymer({
 			this.splice('annotations', index, editedAnnotation);
 		} else {
 			localProjectDB.get(editedAnnotation._id).then((storedAnnotation) => {
-				console.log('saving new updated ann');
+				console.log('saving changes to annotation');
+				editedAnnotation.modified = new Date().toISOString();
 				editedAnnotation = Object.assign(storedAnnotation, editedAnnotation);
+
 				return localProjectDB.put(editedAnnotation);
 			})
 		}
@@ -870,9 +887,11 @@ Polymer({
 		},
 
 		annotationBoxClicked: function (e) {
+			console.log('annotation box clicked', e);
+			console.log(e.target);
 			e.target.classList.toggle('selectedAnnotation');
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
-			this.$.annotationSelector.select(item);
+			this.$.annotationSelector.select(e.target.annotation);
 		},
 		annotationBoxMouseover: function (e) {
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);

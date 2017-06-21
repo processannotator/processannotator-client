@@ -192,8 +192,11 @@
 			</div>
 
 			<div id="toolbar" class$="[[_getClass(annotation.status, selected)]]">
+
 				<paper-icon-button class="active" src$="[[referIconSrc]]" type="button" name="toggleReferModeBtn" on-tap="toggleReferMode">refer</paper-icon-button>
+
 				<paper-icon-button src="../images/reply-icon.svg" type="button" name="button" on-tap="showResponseCreationBox">comment</paper-icon-button>
+
 			</div>
 
 		</div>
@@ -301,13 +304,11 @@
 
 			submitResponse: function () {
 				this.newResponse.creationDate = new Date();
-				this.newResponse.creatorProfile = this.activeProfile;
-				console.log(this.activeProfile);
-				console.log(this.newResponse);
-				console.log(this.annotation);
+				this.newResponse.creator = this.activeProfile._id;
+				this.newResponse.creatorProfile = {surname: this.activeProfile.surname, prename: this.activeProfile.prename}
 				this.push('annotation.responses', this.newResponse);
 
-				this.fire('edit-annotation', {newAnnotation: this.annotation, elem: this});
+				this.fire('edit-annotation', {annotation: this.annotation, elem: this});
 				this.newResponse = {text: ''};
 				this.responseActive = false;
 			},
@@ -319,7 +320,7 @@
 
 				clearTimeout(this.editTimeOut);
 				this.editTimeOut = setTimeout(() => {
-					this.fire('edit-annotation', {newAnnotation: this.annotation, elem: this});
+					this.fire('edit-annotation', {annotation: this.annotation, elem: this});
 				}, 1000);
 			},
 
