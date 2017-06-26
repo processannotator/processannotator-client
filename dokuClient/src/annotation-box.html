@@ -180,10 +180,13 @@
 				display: flex;
 				flex-direction: row;
 				margin-top: 1em;
+				height: auto;
+				overflow: hidden;
 			}
 
 			#responsesContainer.hidden {
-				display: none;
+				height: 0;
+				opacity: 0;
 			}
 
 			#toggleResponses {
@@ -195,7 +198,7 @@
 			#toggleResponsesBtn {
 				width: 3em;
 				transform: rotate(90deg);
-				transition: transform 0.375s;
+				transition: transform 0.175s;
 			}
 
 			#toggleResponsesBtn.minimized {
@@ -205,7 +208,8 @@
 			#responseList {
 				max-height: 1000px;
 				opacity: 1;
-				transition: all 0.5s;
+				transition: all 0.25s;
+				transition: height 0.175s;
 
 			}
 			#responseList.minimized {
@@ -214,17 +218,17 @@
 
 
 			}
-			#hiddenRepliesInfo {
+			#hiddenResponses {
 				transition: all 0.25s;
+				transition: height 0.175s;
 				opacity: 0;
 				visibility: visible;
 				height: 0em;
 				color: #c5e3f1;
 			}
 
-			#hiddenRepliesInfo.minimized {
+			#hiddenResponses.minimized {
 				opacity: 0.65;
-				display: block;
 				height: 3em;
 				line-height: 3em;
 				white-space: nowrap;
@@ -268,7 +272,7 @@
 
 				<div id="responses">
 
-					<div id="hiddenRepliesInfo" class="minimized">[[annotation.responses.length]] hidden replies</div>
+					<div id="hiddenResponses" class="minimized">[[annotation.responses.length]] hidden respones</div>
 
 					<div id="responseList" class="minimized">
 
@@ -384,9 +388,14 @@
 					this.$.statusDropdown.toggle();
 			},
 			toggleResponses: function () {
-				this.$.toggleResponsesBtn.classList.toggle('minimized');
+
 				this.$.responseList.classList.toggle('minimized');
-				this.$.hiddenRepliesInfo.classList.toggle('minimized');
+				this.$.toggleResponsesBtn.classList.toggle('minimized');
+
+				setTimeout(() => {
+					this.$.hiddenResponses.classList.toggle('minimized');
+				}, 500);
+
 			}
 		})
 	</script>
