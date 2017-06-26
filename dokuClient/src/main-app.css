@@ -6,6 +6,10 @@
   font-family: "SourceSansPro-Semibold";
   src: url("../fonts/SourceSansPro-Semibold.otf.woff2");
 }
+@font-face {
+  font-family: "SourceSansPro-It";
+  src: url("../fonts/SourceSansPro-It.otf.woff2");
+}
 
 
 body {
