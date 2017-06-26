@@ -126,6 +126,7 @@
 				color: rgb(197, 227, 241);
 				font-size: 0.75em;
 				min-height: 2em;
+				margin-top: 0.5em;
 			}
 
 			#tagsAndStatus > * {
@@ -179,7 +180,6 @@
 			#responsesContainer {
 				display: flex;
 				flex-direction: row;
-				margin-top: 1em;
 				height: auto;
 				overflow: hidden;
 			}
@@ -188,6 +188,8 @@
 				height: 0;
 				opacity: 0;
 			}
+
+
 
 			#toggleResponses {
 				/*min-width: 3em;*/
@@ -198,7 +200,7 @@
 			#toggleResponsesBtn {
 				width: 3em;
 				transform: rotate(90deg);
-				transition: transform 0.175s;
+				transition: transform 0.4s;
 			}
 
 			#toggleResponsesBtn.minimized {
@@ -207,22 +209,26 @@
 
 			#responseList {
 				max-height: 1000px;
-				opacity: 1;
+				opacity: 1.0;
 				transition: all 0.25s;
-				transition: height 0.175s;
+
 
 			}
 			#responseList.minimized {
 				max-height: 0px;
-				opacity: 0;
-
-
+				margin: 0;
+				padding: 0;
+				opacity: 0.0;
 			}
+
+			#responseList.minimized > .response {
+				margin: 0;
+			}
+
 			#hiddenResponses {
 				transition: all 0.25s;
-				transition: height 0.175s;
 				opacity: 0;
-				visibility: visible;
+				margin: 0;
 				height: 0em;
 				color: #c5e3f1;
 			}
@@ -237,8 +243,12 @@
 
 			.response {
 				height: auto;
-				margin-bottom: 1em;
+
 			}
+			.response:nth-of-type(n+1):nth-last-of-type(n+1) {
+				margin-top: 1em;
+			}
+
 			.response .profile_name {
 				font-size: 1.2em;
 
@@ -391,10 +401,8 @@
 
 				this.$.responseList.classList.toggle('minimized');
 				this.$.toggleResponsesBtn.classList.toggle('minimized');
+				this.$.hiddenResponses.classList.toggle('minimized');
 
-				setTimeout(() => {
-					this.$.hiddenResponses.classList.toggle('minimized');
-				}, 500);
 
 			}
 		})
