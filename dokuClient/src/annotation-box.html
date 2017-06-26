@@ -215,22 +215,23 @@
 
 			}
 			#hiddenRepliesInfo {
+				transition: all 0.25s;
 				opacity: 0;
-				display: none;
-				height: 3em;
-  			line-height: 3em;
-  			white-space: nowrap;
+				visibility: visible;
+				height: 0em;
+				color: #c5e3f1;
 			}
 
 			#hiddenRepliesInfo.minimized {
-				opacity: 1;
+				opacity: 0.65;
 				display: block;
+				height: 3em;
+				line-height: 3em;
+				white-space: nowrap;
+				font-family: "SourceSansPro-It";
 			}
 
-
-
 			.response {
-
 				height: auto;
 				margin-bottom: 1em;
 			}
@@ -266,9 +267,7 @@
 				</div>
 
 				<div id="responses">
-					<!-- <div id="responsesToggle">
 
-					</div> -->
 					<div id="hiddenRepliesInfo" class="minimized">[[annotation.responses.length]] hidden replies</div>
 
 					<div id="responseList" class="minimized">
