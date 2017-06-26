@@ -426,7 +426,6 @@
 					console.log(model);
 					let meshFromFile = new THREE.Object3D();
 					if(this.fileEnding === 'obj') {
-
 						meshFromFile = model;
 					} else if (this.fileEnding === 'dae') {
 
@@ -649,7 +648,7 @@
 					let {label, arrow} = this.annotation3DObjects.get(annotation._id);
 					arrow.visible = true;
 					label.element.style.display = 'block';
-					label.element.style.opacity = 0.8;
+					label.element.style.opacity = 0.9;
 				}
 
 			}
@@ -665,7 +664,7 @@
 				if (intersections.length !== 0) {
 					label.element.style.opacity = 0.0
 				} else {
-					label.element.style.opacity = 0.8
+					label.element.style.opacity = 0.9;
 				}
 			}
 
@@ -718,7 +717,6 @@
 				// console.log('tool',this.tool);
 				if (!penActive && (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'edit')) {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
-					console.log('use camera for raycaster');
 				} else if(penActive) {
 					// console.log('use pen position for raycaster');
 					const origin = this.physicalPenModel.getWorldPosition();
@@ -1072,6 +1070,7 @@
 		},
 
 		_selectedAnnotationChanged: function (newSelected, oldSelected) {
+			console.log('SELECTED ANNOTATION CHANGED IN RENDER VIEW');
 			if (this.selectedAnnotation) {
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)

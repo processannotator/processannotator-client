@@ -16,7 +16,7 @@
     "worker-pouch": "^2.0.0"
   },
   "scripts": {
-    "build": "rollup --environment production -c",
+    "build": "rollup -c",
     "build_dev": "rollup --environment dev -c",
     "install": "./node_modules/.bin/electron-rebuild && bower install --verbose",
     "start": "npm run build && electron .",

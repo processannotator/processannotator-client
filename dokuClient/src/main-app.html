@@ -59,17 +59,17 @@
 	}
 
 	.comment-color {
-		background-color: #2f8bb7 !important;
+		color: #2f8bb7 !important;
 	}
 
 
 	.task-color {
-		background-color: #dfd047 !important;
+		color: #dfd047 !important;
 	}
 
 
 	.problem-color {
-		background-color: #b82f2f !important;
+		color: #b82f2f !important;
 	}
   </style>
 
@@ -174,7 +174,7 @@
 The side-panel manages 3 states and their animations: minimized, normal and bigger.
 The states can be evaluated to trigger extra functionality. We are checking for the `minimized` property, to show a different visualization of annotations when the side panel is minimized/narrow.
 -->
-<side-panel project="[[activeProject]]" state="{{sidePanelState}}" minimized="{{sidePanelMinimized}}">
+<side-panel id="sidePanel" project="[[activeProject]]" state="{{sidePanelState}}" minimized="{{sidePanelMinimized}}">
 
 	<div id="projectTitleSidePanel" hidden$="[[sidePanelMinimized]]">
 		[[activeProject.name]]
@@ -186,9 +186,9 @@ The states can be evaluated to trigger extra functionality. We are checking for 
     </template>
   </div>
 
-  <div id="minifiedAnnotationList" hidden$="[[!sidePanelMinimized]]">
+  <div id="minifiedAnnotationList" hidden$="[[!sidePanelMinimized]]" on-tap="showFullAnnotationList">
     <template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
-      <div class$="annotationCircle [[item.status]]-color">
+      <div class$="circle [[item.status]]-color">
       </div>
       <br>
     </template>
