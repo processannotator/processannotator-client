@@ -135,7 +135,6 @@ Polymer({
 	annotationsChanged: function () {
 		// TODO: get database annotations and diff them to new ones
 		// but also to a timeout!
-		console.log('annotations changed');
 	},
 
 	// Return false if either whole computer is offline or databases are unreachable
@@ -330,7 +329,9 @@ Polymer({
 
 		return localProjectDB.put(annotation)
 		.then(() => {
-
+			console.log('Added annotation.');
+			console.log('refer mode active?', this.referMode);
+			if(this.referMode) this.toggleReferMode();
 		})
 		.catch(err => console.log)
 	},
@@ -891,7 +892,8 @@ Polymer({
 			console.log(e.target);
 			e.target.classList.toggle('selectedAnnotation');
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
-			this.$.annotationSelector.select(e.target.annotation);
+			this.$.annotationSelector.select(item);
+			console.log('SELECTED ANNO', this.selectedAnnotation);
 		},
 		annotationBoxMouseover: function (e) {
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
@@ -908,10 +910,12 @@ Polymer({
 		},
 		toggleReferMode: function (e) {
 			console.log('in main.app.js');
-			console.log(e);
-			console.log(e.detail);
+
+
 			if(this.referMode) {
+				console.log('refering annotaitonEl', this.referingAnnotationEl);
 				this.referMode = false;
+				this.referingAnnotationEl.toggleReferIcon();
 				this.referingAnnotation = undefined;
 			} else {
 				this.referMode = true;
@@ -919,6 +923,10 @@ Polymer({
 				this.referingAnnotation = e.detail;
 				this.$.toolSelector.selected = 'point';
 			}
+		},
+
+		showFullAnnotationList: function (e) {
+			this.$.sidePanel.increase();
 		},
 
 		setupPenEventHandlers() {

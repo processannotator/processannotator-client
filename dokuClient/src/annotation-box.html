@@ -57,7 +57,7 @@
 				transition: background-color 0.3s ease-in-out;
 				height: auto;
 				min-height: 7em;
-				max-height: 20em;
+
 				/*margin-bottom: 1em;*/
 				cursor: pointer;
 			}
@@ -96,6 +96,7 @@
 				min-height: 1.5em;
 				padding-top: 0.1em;
 				padding-bottom: 0.1em;
+				margin-right: 0.5em;
 				min-width: 1.5em;
 				background: #9B9B9B;
 				color: white;
@@ -106,7 +107,6 @@
 
 			.profile_name {
 				min-height: 100%;
-				padding-left: 0.5em;
 				padding-top: 0.1em;
 				padding-bottom: 0.1em;
 			}
@@ -176,11 +176,67 @@
 			#annotationText:focus {
 			}
 
-			#responses {
+			#responsesContainer {
+				display: flex;
+				flex-direction: row;
 				margin-top: 1em;
+			}
+
+			#responsesContainer.hidden {
+				display: none;
+			}
+
+			#toggleResponses {
+				/*min-width: 3em;*/
+				width: auto;
+				/*background-color: white;*/
+			}
+
+			#toggleResponsesBtn {
+				width: 3em;
+				transform: rotate(90deg);
+				transition: transform 0.375s;
+			}
+
+			#toggleResponsesBtn.minimized {
+				transform: rotate(0deg);
+			}
+
+			#responseList {
+				max-height: 1000px;
+				opacity: 1;
+				transition: all 0.5s;
+
+			}
+			#responseList.minimized {
+				max-height: 0px;
+				opacity: 0;
+
+
+			}
+			#hiddenRepliesInfo {
+				opacity: 0;
+				display: none;
+				height: 3em;
+  			line-height: 3em;
+  			white-space: nowrap;
+			}
+
+			#hiddenRepliesInfo.minimized {
+				opacity: 1;
+				display: block;
+			}
+
+
+
+			.response {
+
+				height: auto;
+				margin-bottom: 1em;
 			}
 			.response .profile_name {
 				font-size: 1.2em;
+
 			}
 
 
@@ -201,22 +257,41 @@
 				<br>
 				<iron-autogrow-textarea bind-value="{{annotation.description}}" on-input="keydown" placeholder="enter text…" id="annotationText"></iron-autogrow-textarea>
 
+			<div id="responsesContainer">
 
-			<div id="responses">
-				<!-- <div id="responsesToggle">
+				<div id="toggleResponses">
+					<paper-icon-button id="toggleResponsesBtn" src="../images/arrow-right.svg" class="minimized menu-item decrease" on-tap="toggleResponses"></paper-icon-button>
 
-				</div> -->
-				<template is="dom-repeat" items="[[annotation.responses]]">
-					<div class="response">
-						<div class="profile_name">
-							<span>[[item.creatorProfile.prename]]</span>
-							<span>[[item.creatorProfile.surname]]</span>
+
+				</div>
+
+				<div id="responses">
+					<!-- <div id="responsesToggle">
+
+					</div> -->
+					<div id="hiddenRepliesInfo" class="minimized">[[annotation.responses.length]] hidden replies</div>
+
+					<div id="responseList" class="minimized">
+
+
+					<template is="dom-repeat" items="[[annotation.responses]]">
+						<div class="response">
+							<div class$="[[annotation.status]]-color">
+								<div class="profile_name">
+									<span>[[item.creatorProfile.prename]]</span>
+									<span>[[item.creatorProfile.surname]]</span>
+									<span>replied</span>
+								</div>
+							</div>
+							<span id="creationDate">[[item.creationDate]]</span><br>
+							<span>[[item.text]]</span>
 						</div>
-						<span>[[item.text]]</span>
+					</template>
 					</div>
-				</template>
 
+				</div>
 			</div>
+
 
 			</div>
 
@@ -264,6 +339,11 @@
 			_annotationChanged: function() {
 				// this.$.letters_id.style.backgroundColor = this.annotation.statusColor;
 				// this.$.header.style.color = this.annotation.statusColor;
+				if(this.annotation.responses && this.annotation.responses.length > 0) {
+					this.$.responsesContainer.classList.remove('hidden');
+				} else {
+					this.$.responsesContainer.classList.add('hidden');
+				}
 			},
 			keydown: function (event) {
 				if (event.defaultPrevented)
@@ -303,6 +383,11 @@
 			},
 			openStatusDropdown: function (e) {
 					this.$.statusDropdown.toggle();
+			},
+			toggleResponses: function () {
+				this.$.toggleResponsesBtn.classList.toggle('minimized');
+				this.$.responseList.classList.toggle('minimized');
+				this.$.hiddenRepliesInfo.classList.toggle('minimized');
 			}
 		})
 	</script>

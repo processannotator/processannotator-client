@@ -208,7 +208,13 @@ width: 100%;
   min-width: 11px;
 	width: 0.5em;
 	height: 0.5em;
-  background-color: gray;
+
+}
+
+.circle:before {
+  content: ' \25CF';
+  font-size: 2em;
+  /*color: gray;*/
 }
 
 #onlineStatusText {
