@@ -3,3 +3,5 @@ bower_components
 node_modules
 build
 dist
+.pouchdb_server_config
+log.txt

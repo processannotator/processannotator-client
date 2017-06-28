@@ -2,8 +2,9 @@
 'use strict'; /*eslint global-strict:0*/
 
 // import SpeechRecognition from './speechRecognition'
-const SERVERADDR = '141.20.168.11';
-const PORT = '80';
+// Uses rollup-replace to replace ENV with the env set when starting rollup
+const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '141.20.168.11';
+const PORT = (ENV === 'dev') ? '5984' : '80';
 
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
@@ -44,8 +45,8 @@ Polymer({
 		this.lastUserCacheUpdate = -1;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
 		this.isOnline = window.navigator.onLine;
-		window.addEventListener("offline", this.updateOnlineStatus.bind(this));
-		window.addEventListener("online", this.updateOnlineStatus.bind(this));
+		window.addEventListener('offline', this.updateOnlineStatus.bind(this));
+		window.addEventListener('online', this.updateOnlineStatus.bind(this));
 
 
 		this.renderView = this.$.renderView;
@@ -88,7 +89,7 @@ Polymer({
 							surname: profileOverlay.surname,
 							color: profileOverlay.color,
 							email: profileOverlay.email
-						}).then((result) => { resolve(this.activeProfile) });
+						}).then((result) => { resolve(this.activeProfile); });
 					});
 					profileOverlay.open();
 
@@ -162,7 +163,10 @@ Polymer({
 				throw new Error('User tried to delete', project._id, 'but a DB with that name is not listed in the `info` db inside projectsInfo.projects. Perhaps the info DB wasnt properly created?');
 			} else {
 				doc.projects.splice(index, 1);
-				return localInfoDB.put(doc);
+				return localInfoDB.put(doc).then(() => {
+					localProjectDB.destroy();
+					remoteProjectDB.destroy();
+				});
 			}
 
 		} catch (err) {
@@ -200,7 +204,7 @@ Polymer({
 			console.log(info);
 			// Deactivate sync status after 100ms
 			if(!this.dbSyncActive) {
-				setTimeout(() => {this.dbSyncActive = false}, 100);
+				setTimeout(() => {this.dbSyncActive = false;}, 100);
 			}
 			this.dbSyncActive = true;
 
@@ -229,7 +233,7 @@ Polymer({
 		})
 		.on('complete', function(info) {})
 		.on('active', () => {console.log('active...');})
-		.on('error', function (err) {console.log(err)});
+		.on('error', function (err) {console.log(err);});
 
 		info = await localProjectDB.get('info');
 		this.activeProject.activeTopic = info.activeTopic;
@@ -274,7 +278,7 @@ Polymer({
 		};
 
 		return localProjectDB.put(annotation)
-		.catch(err => console.log)
+		.catch(err => console.log);
 	},
 
 	deleteAnnotation: function (annotation) {
@@ -328,7 +332,7 @@ Polymer({
 					projects: [],
 					activeProfile: '',
 					activeProject: {}
-				})
+				});
 
 				//trying to reload preferences after setting fresh initial one.
 				return this.loadPreferences();
@@ -406,6 +410,12 @@ Polymer({
 		// FIXME: create some kind of queue in the preferences to send out the request
 		// at a later time when the server is offline.
 
+		let fileEnding = file.name.split('.').pop();
+		if(fileEnding !== 'obj' && fileEnding !== 'dae') {
+			alert('For now you can only upload OBJ and DAE files.');
+			return;
+		}
+
 		if(await this.updateOnlineStatus() === false) {
 			alert('Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
 			return;
@@ -446,6 +456,8 @@ Polymer({
 				return localInfoDB.put(doc);
 			})
 			.catch((err) => {
+				console.log('Hm, something went wrong creating the new Project');
+				console.log(err);
 				if(err.status === 404) {
 					return localInfoDB.put({_id: 'projectsInfo', projects: [newProjectDescription]});
 				}
@@ -453,6 +465,17 @@ Polymer({
 
 			// Finally adding the new project to our app scope, notifying all listeners
 			this.push('projects', newProjectDescription);
+
+			// Set appropriate mime type for blob
+			let contentType = 'text/plain';
+
+			if(fileEnding === 'dae') {
+				contentType = 'model/vnd.collada+xml';
+			} else if (fileEnding === 'obj') {
+				contentType = 'text/plain';
+			}
+
+			let blob = new Blob([file], {type: contentType});
 
 			// independently of internet connection and remote DB already create local DB
 			// and add first topic with object/file
@@ -464,8 +487,10 @@ Polymer({
 				},
 				{
 					_id: 'topic_' + topicname,
-					_attachments: {
-						'file': { type: file.type, data: file, something: 'else'}
+					fileName: file.name,
+					fileEnding: fileEnding,
+					'_attachments': {
+						'file': { 'content_type': contentType, 'data': blob}
 					}
 				}]);
 			})
@@ -485,7 +510,7 @@ Polymer({
 		updateCachedUserProfile: async function (name) {
 			if(await this.updateOnlineStatus() === false) {
 				console.log('dont updateCachedUserDB, because offline');
-				throw new Error('Cant cache user profile because DB cant be reached')
+				throw new Error('Cant cache user profile because DB cant be reached');
 			}
 
 			let updatedProfile = await userDB.get('org.couchdb.user:' + name);
@@ -517,7 +542,7 @@ Polymer({
 						userProfile = await this.updateCachedUserProfile(name);
 					} catch (err_) {
 						console.log('Error in getting user profile, provide unknown user object instead.', err_);
-						userProfile = {prename: 'unknown', surname: 'user', color: 'grey'}
+						userProfile = {prename: 'unknown', surname: 'user', color: 'grey'};
 					}
 				}
 			} finally {
@@ -713,8 +738,14 @@ Polymer({
 			if((options.updateFile && options.updateFile === true)) {
 				try {
 					let info = await localProjectDB.get('info');
+					let activeTopic = await localProjectDB.get(info.activeTopic);
 					let blob = await localProjectDB.getAttachment(info.activeTopic, 'file');
+					console.log(activeTopic);
+					console.log(activeTopic.fileEnding);
+					this.renderView.fileName = activeTopic.fileName;
+					this.renderView.fileEnding = activeTopic.fileEnding;
 					this.renderView.file = blob;
+
 				} catch (err) {
 					console.log(err);
 				}
@@ -744,7 +775,7 @@ Polymer({
 			}
 
 			let projectOverlay = document.createElement('project-setup-overlay');
-			projectOverlay.classList.add("fullbleed");
+			projectOverlay.classList.add('fullbleed');
 			projectOverlay['with-back-drop'] = true;
 			projectOverlay['auto-fit-on-attach'] = true;
 			Polymer.dom(this.root).appendChild(projectOverlay);
@@ -784,18 +815,7 @@ Polymer({
 		},
 
 		handleDeleteProject: function (e) {
-
-			dialog.showMessageBox({
-				type: 'info',
-				buttons: ['cancel', 'delete local and remote project files'],
-				defaultId: 0,
-				title: 'Delete Project',
-				message: 'Are you sure you want to delete the project, including all annotations, files by all users inside \'' + e.detail.name + '\'? This will delete local and files on the server and can not be reversed.',
-				cancelId: 0
-			}, (response) => {
-				console.log('going to delete??', e.detail);
-				if(response === 1) this.deleteProjectDB(e.detail);
-			});
+			this.deleteProjectDB(e.detail);
 		},
 
 		resetLocalDB: function (e) {
