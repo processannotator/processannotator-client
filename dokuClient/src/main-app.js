@@ -425,8 +425,10 @@ Polymer({
 
 		userDB.getUser(this.activeProfile.name).then((response) => {
 			// Save intend of user to create new DB into it's 'projects' field.
-			// This field will get read on the server, which decices wether to create a
-			// DB for it.
+			// This field will get read on the server, which decides wether to create a
+			// DB for it. This is a security measure, so you cant just create a DB on the server
+			// but the server evaluates whether it is ok to create one. This may not apply
+			// to test couchdb server mode (when running a pouchdb-server eg.)
 
 			response.projects.push(newProjectDescription._id);
 
