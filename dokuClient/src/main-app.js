@@ -6,6 +6,7 @@
 const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '141.20.168.11';
 const PORT = (ENV === 'dev') ? '5984' : '80';
 
+
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
 
@@ -60,6 +61,7 @@ Polymer({
 		.on('error', err => {
 			console.log('ERROR');
 		});
+		
 
 		setInterval(this.updateOnlineStatus.bind(this), 1000 * 30);
 		this.updateOnlineStatus();

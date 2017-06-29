@@ -16,12 +16,15 @@
     "pouchdb": "^6.1.1",
     "pouchdb-all-dbs": "^1.0.1",
     "pouchdb-authentication": "^0.5.5",
+    "vcap_services": "^0.3.4",
+    "watson-developer-cloud": "^2.32.1",
+    "watson-speech": "^0.33.1",
     "worker-pouch": "^2.0.0"
   },
   "scripts": {
-    "dev": "concurrently --kill-others \"rollup --environment dev -c && http-server -s -c-1 -p 12345 -o\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
-    "dev-in-memory": "concurrently --kill-others \"rollup --environment dev -c && http-server -s -c-1 -p 12345 -o\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" --in-memory",
-    "production": "rollup --environment production -c && http-server -s -c-1 -p 8080",
+    "dev": "concurrently --kill-others \"rollup --environment dev -c && node server.js\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
+    "dev-in-memory": "concurrently --kill-others \"rollup --environment dev -c && node server.js\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" --in-memory",
+    "production": "rollup --environment production -c && node server.js",
     "install": "bower install --verbose"
   },
   "devDependencies": {

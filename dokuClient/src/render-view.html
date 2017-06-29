@@ -133,6 +133,10 @@
 			modelScale: {
 				type: Number,
 				value: 0.5
+			},
+			STTResult: {
+				type: String,
+				value: ''
 			}
 			// modelScaleString: {
 			// 	String,
@@ -167,24 +171,26 @@
 			console.log('ATTACHED');
 			
 			this.annotationGroup = this.$.canvas.annotations;
+			
 
 		},
 		clicked: function (evt) {
+			console.log(this.STTResult);
+			
+			
 			let pos = evt.detail.intersection.point.clone();
 			this.$.fileRepresentation.object3D.worldToLocal(pos);
+			
 			this.fire('create-annotation', {
-				description: 'New VR Annotation' + Math.round(Math.random() * 100),
+				description: this.STTResult,
 				position: pos
 			});
+			
 		},
 		onMouseEnter: function (evt) {
-			console.log(evt.detail);
-			console.log(this.$.rightVRController);
 		},
 		
 		onMouseLeave: function (evt) {
-			console.log(evt.detail);
-			console.log(this.$.rightVRController);
 		},
 		
 		onIntersection: function (evt) {
@@ -220,8 +226,12 @@
 		},
 		
 		onTriggerDown: function (evt) {
+			console.log('TRIGGERDOWN!!');
+			this.STTResult = '';
+			
 
 		},
+		
 		raycasterIntersection: function (evt) {
 			console.log(evt);
 		},
@@ -300,6 +310,27 @@
 			// init annotations to empty array
 			this.annotations = [];
 			this.annotation3DObjects = [];
+			
+			fetch('/api/speech-to-text/token')
+			.then(response => {return response.text()})
+			.then(token => {
+				console.log('token');
+				this.STTStream = WatsonSpeech.SpeechToText.recognizeMicrophone({
+					token: token,
+					object_mode: false // default
+				});
+				
+				this.STTStream.setEncoding('utf8'); // get text instead of Buffers for on data events
+				this.STTStream.on('data', data => {
+					this.STTResult = data;
+					console.log(this.STTResult);
+				});
+				this.STTStream.on('error', err => {
+					console.log('ERROR\n\n\n\n');
+					console.log(err);
+				});
+			});
+			
 			this.resize();
 			this.fire('initialized')
 		},
