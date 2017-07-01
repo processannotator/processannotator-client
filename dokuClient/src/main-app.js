@@ -219,7 +219,8 @@ Polymer({
 		.on('change', (info) => {
 			// only update also the file (for the renderer) if it's not an annotation
 			let updateFile = false;
-			if(info.doc.type !== 'annotation') {
+			// console.log(info.doc);
+			if(info.doc.type !== 'annotation' && info.doc._deleted === undefined) {
 				updateFile = true;
 			}
 			// Reduce calls to this.updateElements if there are many simultaneous changes!

@@ -10,6 +10,7 @@
     "aframe": "^0.5.0",
     "aframe-animation-component": "^3.2.5",
     "aframe-controller-cursor-component": "^0.2.7",
+    "aframe-look-at-component": "^0.5.1",
     "aframe-mouse-cursor-component": "^0.4.1",
     "bower": "^1.8.0",
     "http-server": "^0.10.0",

@@ -31,6 +31,7 @@
 			<a-entity camera look-controls wasd-controls user-height="1.6">
 				<!-- <a-entity raycaster="objects: #fileRepresentation" position="0 0 0.5" rotation="0 180 0"></a-entity> -->
 				<!-- <a-text value="Hello. Please move around and take a look." position="0 0 -5"> </a-text> -->
+				
 			</a-entity>
 
 
@@ -38,23 +39,39 @@
 				animation__mouseenter="startEvents: mouseenter; property: opacity; to:0.5; dur:3000"
 				animation__mouseleave="startEvents: mouseleave; property: opacity; to:1.0; dur:3000">
 			</a-obj-model> -->
-
-			<a-entity id="rightVRController" class="vrController" vive-controls="hand: right" on-triggerdown="onTriggerDown" controller-cursor> </a-entity>
+			
+			<a-entity light="type: ambient; color: #BBB"></a-entity>
+			
+			<a-entity id="rightVRController" class="vrController" laser-controls="hand: right" raycaster="objects: #fileRepresentation;" on-triggerdown="onTriggerDown" on-triggerup="onTriggerUp" on-raycaster-intersection="onIntersection">
+				
+				<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
+			
+				<a-text value$="[[STTResult.transcript]]" position="0 -0.1 0.0" scale="0.2 0.2 0.2"> </a-text>
+			
+			</a-entity>
 			
 			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" on-axismove="onAxisMove">
 
-				<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
-				<a-entity light="type: ambient; color: #BBB"></a-entity>
+
+				
 
 
 				<!-- The model attribute is added on file change depending on format -->
-				<a-entity id="fileRepresentation" material="color:green" scale$="[[modelScale]] [[modelScale]] [[modelScale]]" on-click="clicked" on-mouseenter="onMouseEnter" on-mouseleave="onMouseLeave">
+				<a-entity id="fileRepresentation" material="opacity:0.75; roughness: 0.2; metalness: 0.8" scale$="[[modelScale]] [[modelScale]] [[modelScale]]" on-click="clicked" on-mouseenter="onMouseEnter" on-mouseleave="onMouseLeave">
+					
+					<a-sphere color="red" scale="0.05 0.05 0.05" position$="[[_parsePos(intersectionPoint)]]"></a-sphere>
 				
 					<template id="annotationList" is="dom-repeat" items="[[annotations]]">
 						<a-entity position$="[[_parsePos(item.position)]]" opacity="0.0">
 							<!-- <a-sphere scale="0.06 0.06 0.06" color="red"></a-sphere> -->
 							<a-sphere color$="[[item.statusColor]]" scale="0.05 0.05 0.05" depth="2" animation__created="property: opacity; dur:200; to: 1.0; loop:false;"></a-sphere>
-						<a-text value$="[[item.description]]"></a-text>
+						
+						<a-entity rotation="0 -90 0">
+						
+							<a-text scale="1.5 1.5 1.5" look-at$="[[_parsePos(item.cameraPosition)]]" alpha-test="0.9" side="double" value$="[[item.description]]"></a-text>
+						
+						</a-entity>
+
 						</a-entity>
 
 					</template>
@@ -135,8 +152,8 @@
 				value: 0.5
 			},
 			STTResult: {
-				type: String,
-				value: ''
+				type: Object,
+				value: {transcript: ''}
 			}
 			// modelScaleString: {
 			// 	String,
@@ -157,7 +174,7 @@
 			console.log(result);
 			return result;
 			},
-		_parsePos: ({x,y,z}) => {let result = `${x/1} ${y/1} ${z/1}`; console.log(result); return result },
+		_parsePos: ({x,y,z}) => {return `${x/1} ${y/1} ${z/1}`;},
 
 		ready: function() {
 			// doesnt work with listeners on this very element
@@ -177,12 +194,19 @@
 		clicked: function (evt) {
 			console.log(this.STTResult);
 			
-			
-			let pos = evt.detail.intersection.point.clone();
+			console.log(evt.detail);
+			let intersection = evt.detail.intersection;
+			let pos = intersection.point.clone();
 			this.$.fileRepresentation.object3D.worldToLocal(pos);
+			let {x, y, z} = this.$.rightVRController.getAttribute('position');
+			let cameraPos = new THREE.Vector3(x, y, z);
+
+			this.$.fileRepresentation.object3D.worldToLocal(cameraPos);
+			console.log(cameraPos);
 			
 			this.fire('create-annotation', {
-				description: this.STTResult,
+				description: this.STTResult.transcript,
+				cameraPosition: cameraPos,
 				position: pos
 			});
 			
@@ -194,9 +218,9 @@
 		},
 		
 		onIntersection: function (evt) {
-			console.trace();
-			console.log('INTERSECTION');
-			console.log(evt.detail);
+			let pos = evt.detail.intersections[0].point.clone();
+			this.$.fileRepresentation.object3D.worldToLocal(pos);
+			this.intersectionPoint = pos;
 		},
 		
 		onAxisMove: function (evt) {
@@ -226,14 +250,11 @@
 		},
 		
 		onTriggerDown: function (evt) {
-			console.log('TRIGGERDOWN!!');
-			this.STTResult = '';
-			
-
+			this.triggerDown = true;
+			this.STTResult = {transcript: ''};
 		},
-		
-		raycasterIntersection: function (evt) {
-			console.log(evt);
+		onTriggerUp: function (evt) {
+			this.triggerDown = false;
 		},
 
 		startRendering: function() {
@@ -253,28 +274,6 @@
 		},
 
 		resetGroups: function () {
-			// Remove labels and annotations
-
-
-			// while (this.annotationGroup.hasChildNodes()) {
-  		// 	this.annotationGroup.removeChild(this.annotationGroup.lastChild);
-			// }
-
-
-			// this.labels = new Map();
-			// if(this.labelGroup && this.annotationGlGroups) {
-			//
-			// 	for( var i = this.labelGroup.children.length - 1; i >= 0; i--) {
-			// 		this.labelGroup.remove(this.labelGroup.children[i]);
-			// 		cssScene.remove(this.labelGroup.children[i]);
-			// 	}
-			//
-			// 	for( var i = this.annotationGlGroups.children.length - 1; i >= 0; i--) {
-			// 		this.annotationGlGroups.remove(this.annotationGlGroups.children[i]);
-			// 		cssScene.remove(this.annotationGlGroups.children[i]);
-			// 	}
-			// }
-
 		},
 
 
@@ -296,16 +295,6 @@
 
 			this.modus = {modelGrabbing: false};
 			this.filePath = '';
-			console.log('attached');
-			console.log(this.$.canvas);
-			console.log(this.$.fileRepresentation);
-			// setInterval(() => {
-			// 	this.fire('create-annotation', {
-			// 		description: 'blubb' + Math.round(Math.random() * 10),
-			// 		position: {x:Math.random() * 500, y:Math.random() * 500, z:Math.random() * 500},
-			// 	});
-			// }, 5000);
-
 
 			// init annotations to empty array
 			this.annotations = [];
@@ -317,16 +306,21 @@
 				console.log('token');
 				this.STTStream = WatsonSpeech.SpeechToText.recognizeMicrophone({
 					token: token,
-					object_mode: false // default
+					interim_results: true,
+					realtime: true,
+					smart_formatting: true,
+					objectMode: true // default false
 				});
 				
-				this.STTStream.setEncoding('utf8'); // get text instead of Buffers for on data events
+				// this.STTStream.setEncoding('utf8'); // get text instead of Buffers for on data events
 				this.STTStream.on('data', data => {
-					this.STTResult = data;
-					console.log(this.STTResult);
+					// console.log(data);
+					if(this.triggerDown) this.STTResult = data.results[0].alternatives[0];
+
+					// console.log(this.STTResult.results[0]);
 				});
 				this.STTStream.on('error', err => {
-					console.log('ERROR\n\n\n\n');
+					console.log('ERROR\n\n\n');
 					console.log(err);
 				});
 			});
@@ -400,7 +394,6 @@
 		},
 
 		mouseOrPenMoved(event) {
-			console.log('hello');
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
 			let penActive = event === undefined;
@@ -565,29 +558,6 @@
 			return label;
 		},
 
-		createArrow: function (point, labelpos, color) {
-			var material = new THREE.LineBasicMaterial({
-				color: color
-			})
-
-			var geometry = new THREE.Geometry()
-			geometry.vertices.push(
-				point,
-				labelpos
-			)
-
-			return new THREE.Line( geometry, material )
-		},
-
-		focusAnnotation: function (annotation) {
-			if (annotation.cameraPosition !== undefined) {
-				// The resetFrom function was added by me (modified .reset()) to allow
-				// reset from a saved position (eg. stored in the DB)
-				controls.resetFrom(annotation.cameraPosition, annotation.cameraUp);
-			} else {
-				return;
-			}
-		}
 	})
 	</script>
 
