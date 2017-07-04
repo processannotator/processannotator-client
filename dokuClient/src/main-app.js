@@ -2,6 +2,7 @@
 'use strict'; /*eslint global-strict:0*/
 
 import BNO055 from './bno055';
+var anime = require('animejs');
 // import SpeechRecognition from './speechRecognition'
 
 const electron = require('electron');
@@ -15,6 +16,7 @@ const POUCHCONF = (ENV === 'dev') ? {} : {};
 
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
 var sync;
+
 
 Polymer({
 	is: 'main-app',
@@ -288,17 +290,14 @@ Polymer({
 	// or by a button press on the physical pen.
 	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[], responses=[]}}) {
 
-
-
-
 		let created = new Date().toISOString();
 		let _id = `annotation_${created}`;
-		let referedBy;
+		let referedBy = [];
 		if(this.referingAnnotation) {
-			referedBy = this.referingAnnotation._id;
+			referedBy = [this.referingAnnotation._id];
 			// As this annotation is refered by another one, also add
 			// referTo field to the refering annotation:
-			this.referingAnnotation.referTo = _id;
+			this.referingAnnotation.referingTo.push(_id);
 			this.editAnnotation({detail: {annotation: this.referingAnnotation}});
 
 		}
@@ -310,6 +309,7 @@ Polymer({
 			motivation: 'commenting', // web annotation model
 			responses,
 			referedBy,
+			referingTo: [],
 			parentProject: this.activeProject._id,
 			parentTopic: this.activeProject.activeTopic,
 			parentObject: this.activeObject_id,

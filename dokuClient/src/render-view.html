@@ -115,6 +115,7 @@
 			},
 			selectedAnnotation: {
 				type: Object,
+				notify: true,
 				observer: "_selectedAnnotationChanged"
 			}
 		},
@@ -128,6 +129,17 @@
 		},
 		_isSelected: function (selectedAnnotation, annotation) {
 			return selectedAnnotation === annotation;
+		},
+
+		getStatusColor: function (status) {
+			if(status === 'problem') {
+				return 0xb82f2f;
+			} else if (status === 'task') {
+				return 0xdfd047;
+			} else if (status === 'comment') {
+				return 0x2f8bb7;
+			}
+
 		},
 
 
@@ -210,7 +222,7 @@
 			});
 
 			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
-			this.physicalPenSpotLight = new THREE.SpotLight( 0xffeedd, 1, 0, 0.5, 0.3, 2.0 );
+			this.physicalPenSpotLight = new THREE.SpotLight( 0xffeedd, 1, 0, 0.5, 0.3, 1 );
 
 			this.physicalPenModel.position.set(
 				1.5 * this.standardDistance,
@@ -220,7 +232,7 @@
 			);
 			const penAxisHelper = new THREE.AxisHelper(0.3 * this.standardDistance);
 			penAxisHelper.position.copy(this.physicalPenModel.position);
-			this.penGroupGL.add(penAxisHelper);
+			// this.penGroupGL.add(penAxisHelper);
 			this.physicalPenSpotLight.position.copy(this.physicalPenModel.position);
 			this.penGroupGL.add( this.physicalPenModel );
 			this.penGroupGL.add( this.physicalPenSpotLight );
@@ -247,11 +259,11 @@
 				this.mainGroupGL.setRotationFromQuaternion(quaternion);
 				this.mainGroupCSS.setRotationFromQuaternion(quaternion);
 			}
+
 		},
 
 		attached: function() {
-			this.modus = {modelGrabbing: false, hiddenLabels: false};
-
+			this.modus = {modelGrabbing: false, hiddenLabels: true};
 
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
@@ -284,30 +296,33 @@
 			cssRenderer.domElement.style.top = 0;
 
 
-			this.meshMaterial = new THREE.MeshLambertMaterial({
+			this.meshMaterial = new THREE.MeshStandardMaterial({
 				side: THREE.DoubleSide,
 				color: 0x787878,
 				roughness: 0.75,
 				metalness: 0.02
 			})
 
-			this.atmosphericLight = new THREE.DirectionalLight(0x556677, 0.5);
-			this.atmosphericLight.position.set(10 * this.standardDistance, 20 * this.standardDistance, -2.5 * this.standardDistance);
+			this.atmosphericLight = new THREE.DirectionalLight(0x556677, 0.6);
+			this.atmosphericLight.position.set(20 * this.standardDistance, 20 * this.standardDistance, -2.5 * this.standardDistance);
 
-			this.atmosphericLight2 = new THREE.DirectionalLight(0x1166bb, 0.5);
-			this.atmosphericLight2.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
+			this.atmosphericLight2 = new THREE.DirectionalLight(0x1166bb, 0.8);
+			this.atmosphericLight2.position.set(-20 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
 
-			// this.atmosphericLight3 = new THREE.DirectionalLight(0xff6600, 0.5);
-			// this.atmosphericLight3.position.set(-10 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
+			this.atmosphericLight3 = new THREE.DirectionalLight(0xff6600, 0.8);
+			this.atmosphericLight3.position.set(-20 * this.standardDistance, 20 * this.standardDistance, 2.5 * this.standardDistance);
 			//
-			// this.atmosphericLight4 = new THREE.DirectionalLight(0xff6600, 0.5);
-			// this.atmosphericLight4.position.set(0, -10 * this.standardDistance, 0);
+			this.atmosphericLight4 = new THREE.DirectionalLight(0xff6600, 0.5);
+			this.atmosphericLight4.position.set(0, -20 * this.standardDistance, 0);
 
-			this.light = new THREE.PointLight( 0xccddff, 1, 0 );
-			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.5, 1, 2.0 );
+			this.light = new THREE.PointLight( 0xccddff, 1, 1.0 );
+			this.spotLight = new THREE.SpotLight( 0xffddbb, 1, 0, 0.25, 1, 1.0 );
 
 			// glScene.add(this.atmosphericLight);
-			// glScene.add(this.light);
+			glScene.add(this.atmosphericLight2);
+			glScene.add(this.atmosphericLight3);
+			// glScene.add(this.atmosphericLight4);
+			glScene.add(this.light);
 			glScene.add(this.spotLight);
 
 			this.floorMaterial = new THREE.MeshStandardMaterial({
@@ -318,7 +333,7 @@
 			});
 			this.floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(this.standardDistance * 4, this.standardDistance * 4, 2, 2), this.floorMaterial);
 			glScene.add(this.floor);
-			console.log(this.floor.up);
+			// console.log(this.floor.up);
 			this.floor.rotateX(-0.5 * Math.PI);
 			// console.log(this.floor.up);
 			// setInterval(() => {
@@ -361,13 +376,13 @@
 			controls.keys = [65, 83, 68];
 
 			// add cursor pointer to 3D scene
-			var sphereGeometry = new THREE.SphereGeometry( this.standardDistance / 45, 6, 6 );
-			var sphereMaterial = new THREE.MeshLambertMaterial( {color: 0xff0000} );
-			this.pointerSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+			this.sphereGeometry = new THREE.SphereGeometry( this.standardDistance / 60, 10, 10 );
+			this.sphereMaterial = new THREE.MeshToonMaterial( {color: 0x122122, shininess: 0.5, diffuse: 0.5, reflectivity: 0  } );
+			this.pointerSphere = new THREE.Mesh( this.sphereGeometry, this.sphereMaterial );
 			glScene.add(this.pointerSphere);
 
 			var axisHelper = new THREE.AxisHelper( this.standardDistance );
-			glScene.add( axisHelper );
+			// glScene.add( axisHelper );
 
 			// create Raycaster used for polygon editing tool
 			this.raycaster = new THREE.Raycaster()
@@ -473,7 +488,7 @@
 						this.annotationGlGroups = new THREE.Object3D();
 
 					let mainGroupAxisHelper = new THREE.AxisHelper( this.standardDistance );
-					this.mainGroupGL.add(mainGroupAxisHelper)
+					// this.mainGroupGL.add(mainGroupAxisHelper)
 					this.mainGroupCSS.add(this.labelGroup);
 					this.mainGroupGL.add(this.annotationGlGroups);
 					this.mainGroupGL.add(this.fileRepresentation);
@@ -593,15 +608,18 @@
 			annotation3DObject.label = label;
 
 			// TODO: add arrow, label to a group/structure to be selectable
-			let arrow = this.createArrow(annotation.position, label.position, annotation.statusColor);
+			let arrow = this.createArrow(annotation.position, label.position, annotation.status);
 			annotationGlGroup.add(arrow);
 			annotation3DObject.arrow = arrow;
 
-
 			let sphere = new THREE.Mesh(
-				new THREE.SphereGeometry(this.standardDistance / 40, 6, 6),
-				new THREE.MeshLambertMaterial({ color: 0xff0000})
+				this.sphereGeometry,
+				this.sphereMaterial.clone()
 			);
+			sphere.scale.set(2.0, 2.0, 2.0);
+
+			sphere.material.color.setHex(this.getStatusColor(annotation.status));
+
 			sphere.position.copy(annotation.position);
 			annotationGlGroup.add(sphere);
 			annotation3DObject.sphere = sphere;
@@ -641,8 +659,19 @@
 				}
 
 				let visibleAnnotations = [];
-				if(this.hoveredAnnotation) visibleAnnotations.push(this.hoveredAnnotation.userData);
-				if(this.selectedAnnotation) visibleAnnotations.push(this.selectedAnnotation)
+				if(this.hoveredAnnotation) visibleAnnotations.push(this.hoveredAnnotation);
+				if(this.selectedAnnotation) {
+					visibleAnnotations.push(this.selectedAnnotation);
+					for (let _id of this.selectedAnnotation.referingTo) {
+						visibleAnnotations.push({_id});
+					}
+
+
+				}
+				// visibleAnnotations = visibleAnnotations.concat(this.annotations.filter(annotation => annotation.hidden));
+
+
+
 				for (let annotation of visibleAnnotations) {
 					if(!annotation) continue;
 					let {label, arrow} = this.annotation3DObjects.get(annotation._id);
@@ -697,20 +726,24 @@
 
 			// console.log(this.tool);
 
-			if(this.modus.hiddenLabels || this.tool === 'edit') {
+			Polymer.dom(this).classList.remove('polygonCursor');
+			Polymer.dom(this).classList.remove('fingerCursor');
+
+			if(true || this.modus.hiddenLabels || this.tool === 'edit') {
 				this.raycaster.setFromCamera(this.mouse, this.camera);
 				sphereIntersections = this.raycaster.intersectObjects(this.spheres);
 				this.hoveredAnnotation = undefined;
 				if(sphereIntersections.length !== 0) {
+					let _id = sphereIntersections[0].object.parent.userData._id;
 					// Get new hoveredAnnotation and make it visible
-					this.hoveredAnnotation = sphereIntersections[0].object.parent;
+					this.hoveredAnnotation = this.annotations.find(el => el._id === _id);
+					// console.log(sphereIntersections[0].object.parent);
+					Polymer.dom(this).classList.add('fingerCursor');
 				}
-				// FIXME: update only on actual change
-				this.updateAllAnnotationVisibility();
+
 			}
 
-			Polymer.dom(this).classList.remove('polygonCursor');
-			Polymer.dom(this).classList.remove('fingerCursor');
+
 
 			let intersections = [];
 			if (this.fileRepresentation) {
@@ -745,6 +778,9 @@
 			} else {
 
 			}
+
+			// FIXME: update only on actual change
+			this.updateAllAnnotationVisibility();
 
 		},
 
@@ -839,6 +875,21 @@
 			this.fileRepresentation.updateMatrixWorld()
 			this.raycaster.setFromCamera(this.mouse, this.camera);
 
+			let sphereIntersections = this.raycaster.intersectObjects(this.spheres, false);
+			if(sphereIntersections.length > 0) {
+				let _id = sphereIntersections[0].object.parent.userData._id;
+				let annotation = this.annotations.find(el => el._id === _id);
+
+				if(this.selectedAnnotation && this.selectedAnnotation._id === annotation._id) {
+					this.selectedAnnotation = undefined;
+				} else {
+					this.selectedAnnotation = annotation;
+				}
+				// annotation.hidden = !annotation.hidden;
+
+				return;
+			}
+
 			// Calculate objects intersecting the picking ray
 			// only use the first/frontmost intersection  -> [0]
 			var intersections = this.raycaster.intersectObject(this.fileRepresentation, true);
@@ -905,7 +956,6 @@
 						this.previewAnnotation = this.addAnnotationObject({
 							_id: 'previewAnnotation',
 							status: 'comment',
-							statusColor: 'blue',
 							description: "Press Enter to edit/create. Esc to cancel.",
 							position: localIntersectionPoint.clone(),
 							cameraPosition: controls.object.position.clone(),
@@ -917,6 +967,7 @@
 				break;
 
 				case 'setCamera':
+					console.log('SET CAMERA');
 					console.log(this.camera.quaternion, this.camera.position, this.camera.up);
 					this.resetCamera = this.camera.clone();
 
@@ -924,6 +975,7 @@
 
 				case 'resetCamera':
 					console.log(this.camera.quaternion, this.camera.position, this.camera.up);
+
 					this.camera.quaternion.copy(this.resetCamera.quaternion);
 					this.camera.position.copy(this.resetCamera.position);
 					this.camera.up.copy(this.resetCamera.up);
@@ -1038,18 +1090,23 @@
 			return label;
 		},
 
-		createArrow: function (point, labelpos, color) {
+		createArrow: function (point, labelpos, status) {
+
+			console.log(status);
+			console.log(this.getStatusColor(status));
+
 			var material = new THREE.LineBasicMaterial({
-				color: color
+				linewidth: 15,
+				color: this.getStatusColor(status)
 			})
 
 			var geometry = new THREE.Geometry()
 			geometry.vertices.push(
 				point,
 				labelpos
-			)
+			);
 
-			return new THREE.Line( geometry, material )
+			return new THREE.Line( geometry, material );
 		},
 
 		_toolChanged: function(e) {
@@ -1075,7 +1132,32 @@
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)
 				if(this.selectedAnnotation.cameraPosition !== undefined){
-					controls.resetFrom(this.selectedAnnotation.cameraPosition, this.selectedAnnotation.cameraUp);
+					let selectedAnnotation = this.selectedAnnotation;
+					console.log('RESET!!!!');
+					let animObj = {
+						x: this.camera.position.x,
+						y: this.camera.position.y,
+						z: this.camera.position.z,
+						x_up: this.camera.up.x,
+						y_up: this.camera.up.y,
+						z_up: this.camera.up.z
+					};
+
+					anime({
+						targets: animObj,
+						x: selectedAnnotation.cameraPosition.x,
+						y: selectedAnnotation.cameraPosition.y,
+						z: selectedAnnotation.cameraPosition.z,
+						up: selectedAnnotation.cameraUp,
+						round: 1,
+						easing: 'easeInQuart',
+						update: function() {
+							let pos = new THREE.Vector3(animObj.x, animObj.y, animObj.z);
+							let up = new THREE.Vector3(animObj.x_up, animObj.y_up, animObj.z_up);
+							controls.resetFrom(pos, up);
+						}
+					});
+
 				}
 			}
 
