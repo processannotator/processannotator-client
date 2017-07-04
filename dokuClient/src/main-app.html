@@ -97,7 +97,7 @@
 				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
 				<paper-button disabled class="menu-item">TOPIC</paper-button>
 				<paper-button disabled class="menu-item">OBJECT</paper-button>
-
+        <span>{{selectedAnnotation._id}}</span>
 
 				</div>
 
@@ -106,6 +106,7 @@
 
 
 						<div class="menu" id="tool-menu">
+
 							<iron-selector id="toolSelector" attr-for-selected="name" fallback-selection="none" selected="rotate" on-iron-select="toolChanged">
 							<!-- <iron-icon class="tool-box-icon" name="none">click</iron-icon> -->
 							&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
