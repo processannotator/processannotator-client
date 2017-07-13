@@ -5,7 +5,7 @@ The Backend consinsts of a running CouchDB instance and a *NodeJS* script that l
 
 ### Client
 
-- The Client is an [Electron](http://electron.atom.io/) application (Has access to NodeJS under the hood, and also serves a minimal chromium for rendering and also JS executation). It is basically a Website that runs locally on the users computer and has access to NodeJS, which a regular website does not. Right now we are not depending on NodeJS, so we could still think about making a hosted website client.
+- The Client is an [Electron](http://electron.atom.io/) application (Has access to NodeJS under the hood, and also serves a minimal chromium for rendering and also JS executation). It is basically a Website that runs locally on the users computer and has access to NodeJS, which a regular website does not. Right the main brance depends on NodeJS for bluetooth support. However the `A-Frame` branch runs as a regular website and does not require Electron.
 
 - The UI is done with HTML/CSS rendered in electrons chromium instance
 
