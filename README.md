@@ -1,7 +1,7 @@
 # ProjectAnnotator
 ## Overview
 ### Backend
-The Backend consinsts of a running CouchDB instance and a *NodeJS* script that handles realtime communication with clients via websockets and reates CouchDB databases on their behalve (because only admin users are allowed to do so)
+The Backend consinsts of a running CouchDB instance and a *NodeJS* script that listens to CouchDB events and does some maintanance work and helps creating project databases on the clients behalve (because only admin users are allowed to do so)
 
 ### Client
 
