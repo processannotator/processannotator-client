@@ -13,6 +13,9 @@ let sttConfig = extend(
   {
     version: 'v1',
     url: 'https://stream.watsonplatform.net/speech-to-text/api',
+    // Login credentials for local development directly here:
+    // TODO: should this repo become public, make this configurable to not leak
+    // credentials into the wild.
     username: process.env.STT_USERNAME || '37d55752-d735-4e64-a9bc-93a784100b57',
     password: process.env.STT_PASSWORD || 'e6CxgxvtuCB3'
   },
@@ -38,15 +41,15 @@ function handleSTT(req, res) {
   }
 
   };
-  
+
 
 app.use(express.static(__dirname));
 app.get('/api/speech-to-text/token', handleSTT);
-  
 
-  
-  
+
+
+
 
   app.listen(port, function() {
-  console.log('Example IBM Watson Speech JS SDK client app & token server live at http://localhost:%s/', port);
+  console.log('Server live at http://localhost:%s/', port);
 });
