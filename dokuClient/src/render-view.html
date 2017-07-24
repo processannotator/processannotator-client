@@ -894,7 +894,8 @@
 				let annotation = this.annotations.find(el => el._id === _id);
 
 				if(this.selectedAnnotation && this.selectedAnnotation._id === annotation._id) {
-					this.selectedAnnotation = undefined;
+					// uncomment to make it possible to deselect annotation by clicking again on it
+					//this.selectedAnnotation = undefined;
 				} else {
 					this.selectedAnnotation = annotation;
 				}

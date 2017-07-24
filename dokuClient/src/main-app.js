@@ -44,6 +44,7 @@ Polymer({
 	attached: async function () {
 		document.app = this;
 		console.log(this);
+
 		this.setupPenEventHandlers();
 
 		this.penButtonText = 'Connect Pen';
@@ -348,7 +349,7 @@ Polymer({
 		if(evt.detail.temporary && evt.detail.temporary === true) {
 			console.log('is temporary', evt.detail);
 			let index = this.annotations.findIndex((annotation) => annotation._id === editedAnnotation._id);
-			console.log(index);
+
 			this.splice('annotations', index, editedAnnotation);
 		} else {
 			localProjectDB.get(editedAnnotation._id).then((storedAnnotation) => {
@@ -795,7 +796,17 @@ Polymer({
 				}
 			}
 
-			this.annotations = await this.getAnnotations();
+			let updatedAnnotations = await this.getAnnotations();
+			let previousSelected;
+			// try selection of previous selected annotation for new list
+			if(this.selectedAnnotation) {
+				previousSelected = updatedAnnotations.find((annotation) => annotation._id === this.selectedAnnotation._id);
+			}
+
+			this.annotations = updatedAnnotations;
+			// reselect previous annotation after updating ^
+			if(previousSelected) this.$.annotationSelector.select(previousSelected);
+
 		},
 
 		handleResize: function(event) {
@@ -891,9 +902,11 @@ Polymer({
 			console.log('annotation box clicked', e);
 			console.log(e.target);
 			e.target.classList.toggle('selectedAnnotation');
+
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
 			this.$.annotationSelector.select(item);
 			console.log('SELECTED ANNO', this.selectedAnnotation);
+
 		},
 		annotationBoxMouseover: function (e) {
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
@@ -901,6 +914,7 @@ Polymer({
 		},
 
 		_selectedAnnotationChanged: function (e) {
+			if(this.renderView) this.renderView.render();
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;
 		},
 
