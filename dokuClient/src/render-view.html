@@ -683,19 +683,19 @@
 			}
 
 
-			if (this.labelGroup.children === undefined) return
+			// if (this.labelGroup.children === undefined) return
 
-			for(let label of this.labelGroup.children) {
-				let normalizedDirection = (label.position.clone().sub(this.camera.position)).normalize()
-				raycaster.set(this.camera.position.clone(), normalizedDirection)
-				raycaster.far = this.camera.position.distanceTo(label.position)
-				let intersections = raycaster.intersectObject(this.fileRepresentation, true)
-				if (intersections.length !== 0) {
-					label.element.style.opacity = 0.0
-				} else {
-					label.element.style.opacity = 0.9;
-				}
-			}
+			// for(let label of this.labelGroup.children) {
+			// 	let normalizedDirection = (label.position.clone().sub(this.camera.position)).normalize()
+			// 	raycaster.set(this.camera.position.clone(), normalizedDirection)
+			// 	raycaster.far = this.camera.position.distanceTo(label.position)
+			// 	let intersections = raycaster.intersectObject(this.fileRepresentation, true)
+			// 	if (intersections.length !== 0) {
+			// 		label.element.style.opacity = 0.0
+			// 	} else {
+			// 		label.element.style.opacity = 0.9;
+			// 	}
+			// }
 
 			this.render()
 
@@ -840,15 +840,16 @@
 		track: function (e) {
 			controls.enabled = true;
 			if(this.tool === 'edit') {
-				controls.enabled = false;
 				if(this.hoveredAnnotation) {
+					controls.enabled = false;
 					let newPosition = this.pointerSphere.position.clone();
 					this.mainGroupGL.worldToLocal(newPosition);
-					let id = this.hoveredAnnotation.userData._id;
+
+					let id = this.hoveredAnnotation._id;
 					clearTimeout(this.annotationEditTimeout);
 					this.annotationEditTimeout = setTimeout(() => {
 						this.fire('edit-annotation',
-							{temporary, annotation: {_id: id, position: newPosition,}, elem: this});
+							{annotation: {_id: id, position: newPosition}, elem: this});
 					}, 4000);
 
 
@@ -1129,11 +1130,15 @@
 		_selectedAnnotationChanged: function (newSelected, oldSelected) {
 			console.log('SELECTED ANNOTATION CHANGED IN RENDER VIEW');
 			if (this.selectedAnnotation) {
+				console.log('SELECTED ANNOTATION');
+				console.log(this.selectedAnnotation);
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)
 				if(this.selectedAnnotation.cameraPosition !== undefined){
 					let selectedAnnotation = this.selectedAnnotation;
 					console.log('RESET!!!!');
+					console.log('CAMERA OBJ');
+					console.log(this.camera);
 					let animObj = {
 						x: this.camera.position.x,
 						y: this.camera.position.y,
@@ -1142,6 +1147,8 @@
 						y_up: this.camera.up.y,
 						z_up: this.camera.up.z
 					};
+
+
 
 					anime({
 						targets: animObj,

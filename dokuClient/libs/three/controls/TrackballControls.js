@@ -352,6 +352,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 	// This was added by Tom Brewe
 	this.resetFrom = function (position, up) {
+		// console.log(position, up);
 		_this.target.copy( _this.target0 );
 		_this.object.position.copy(position );
 		_this.object.up.copy( up );
