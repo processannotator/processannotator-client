@@ -520,11 +520,10 @@ Polymer({
 			activeTopic: topicID
 		};
 
+		// Important: Save intend of user to create new DB into it's 'projects' field.
+		// This field will get read on the server, which decices wether to create a
+		// DB for it.
 		userDB.getUser(this.activeProfile.name).then((response) => {
-			// Save intend of user to create new DB into it's 'projects' field.
-			// This field will get read on the server, which decices wether to create a
-			// DB for it.
-
 			response.projects.push(newProjectDescription._id);
 
 			return userDB.putUser(
@@ -907,6 +906,7 @@ Polymer({
 
 			let item = Polymer.dom(this.root).querySelector('.annotationListTemplate').itemForElement(e.target);
 			this.$.annotationSelector.select(item);
+
 			console.log('SELECTED ANNO', this.selectedAnnotation);
 
 		},
@@ -943,6 +943,31 @@ Polymer({
 
 		showFullAnnotationList: function (e) {
 			this.$.sidePanel.increase();
+		},
+		getAnnotationDiff: function (e) {
+			let changedAnnotations = [];
+			let addedAnnotations = [];
+			let removedAnnotations = [];
+
+			// Get changed and new annotations
+			for (let newAnnotation of this.annotations) {
+				let oldAnnotation = oldAnnotations.find(({_id}) => _id === newAnnotation._id);
+
+				if(oldAnnotation && oldAnnotation._rev !== newAnnotation._rev) {
+					// changd annotation
+					changedAnnotations.push(newAnnotation)
+				} else if (oldAnnotation === undefined) {
+					// new annotation
+					addedAnnotations.push(newAnnotation)
+				}
+			}
+
+			// Get removed annotations
+			removedAnnotations = oldAnnotations === undefined ? [] : oldAnnotations.filter((oldAnnotation) => {
+				return this.annotations.find((annotation) => annotation._id === oldAnnotation._id) === undefined;
+			}) || [];
+
+			return {changedAnnotations, addedAnnotations, removedAnnotations}
 		},
 
 		setupPenEventHandlers() {
