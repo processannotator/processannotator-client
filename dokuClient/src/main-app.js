@@ -138,6 +138,8 @@ Polymer({
 	annotationsChanged: function () {
 		// TODO: get database annotations and diff them to new ones
 		// but also to a timeout!
+		//
+		// this would make it possible to easier select the just created annotation
 	},
 
 	// Return false if either whole computer is offline or databases are unreachable
@@ -802,11 +804,23 @@ Polymer({
 			// try selection of previous selected annotation for new list
 			if(this.selectedAnnotation) {
 				previousSelected = updatedAnnotations.find((annotation) => annotation._id === this.selectedAnnotation._id);
+			} else {
+				// Select newly created annotation
+				// HACK: Its a bit hacky, because we just assume that if the last annotation
+				// has no text, that it must be a newly created one. But it works.
+				let lastAnnotation = updatedAnnotations[updatedAnnotations.length - 1];
+				console.log('\n\n');
+				console.log(lastAnnotation);
+				if(lastAnnotation.description === '') previousSelected = lastAnnotation;
 			}
 
 			this.annotations = updatedAnnotations;
 			// reselect previous annotation after updating ^
-			if(previousSelected) this.$.annotationSelector.select(previousSelected);
+			if(previousSelected) {
+				console.log('SELECT');
+				console.log(previousSelected);
+				this.$.annotationSelector.select(previousSelected);
+			}
 
 		},
 
