@@ -289,7 +289,7 @@ Polymer({
 
 	// this is an event handler, triggering on enter-key event in this.renderView
 	// or by a button press on the physical pen.
-	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[], responses=[]}}) {
+	addAnnotation: function({detail: {description='', localPosition={x: 0,y: 0,z: 0}, worldPosition={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, localCameraPosition={x: 0, y: 0, z: 0}, worldCameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[], responses=[]}}) {
 
 		let created = new Date().toISOString();
 		let _id = `annotation_${created}`;
@@ -318,11 +318,13 @@ Polymer({
 			creator: this.activeProfile.name,
 			creationDate: created,
 			created, // same as above, conforms to web-annotation-model
-			cameraPosition,
+			worldCameraPosition,
+			localCameraPosition,
 			// cameraRotation,
 			cameraUp,
 			description,
-			position,
+			worldPosition,
+			localPosition,
 			polygon
 		};
 
@@ -960,11 +962,13 @@ Polymer({
 				if (eventName === 'buttonDown') {
 					// this.renderView.tap(eventName);
 					let position = this.renderView.pointerSphere.getWorldPosition();
-					this.renderView.mainGroupGL.worldToLocal(position);
+					let localPosition = position.clone();
+					this.renderView.fileRepresentation.worldToLocal(localPosition);
 					this.addAnnotation({
 						detail: {
 							description: `Annotation #${++annotationIndex}`,
-							position: position,
+							worldPosition: position,
+							localPosition: localPosition,
 							cameraPosition: this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
 							// cameraRotation: camera.rotation,
 							cameraUp: this.renderView.camera.up,
