@@ -62,7 +62,7 @@
 					<a-sphere color="red" scale="0.05 0.05 0.05" position$="[[_parsePos(intersectionPoint)]]"></a-sphere>
 
 					<template id="annotationList" is="dom-repeat" items="[[annotations]]">
-						<a-entity position$="[[_parsePos(item.position)]]" opacity="0.0">
+						<a-entity position$="[[_parsePos(item.localPosition)]]" opacity="0.0">
 							<!-- <a-sphere scale="0.06 0.06 0.06" color="red"></a-sphere> -->
 							<a-sphere color$="[[item.statusColor]]" scale="0.05 0.05 0.05" depth="2" animation__created="property: opacity; dur:200; to: 1.0; loop:false;"></a-sphere>
 
@@ -185,18 +185,21 @@
 			let pos = intersection.point.clone();
 			this.$.fileRepresentation.object3D.worldToLocal(pos);
 			let {x, y, z} = this.$.rightVRController.getAttribute('position');
-			let cameraPos = new THREE.Vector3(x, y, z);
+			let localCameraPos = new THREE.Vector3(x, y, z);
+			let worldCameraPos = localCameraPos.clone();
 
-			this.$.fileRepresentation.object3D.worldToLocal(cameraPos);
+			this.$.fileRepresentation.object3D.worldToLocal(worldCameraPos);
 			console.log(cameraPos);
 			console.warn('\n\nTODO: FILL IN ACTUAL cameraUp value!\n\n');
 			console.trace();
 			this.fire('create-annotation', {
 				description: this.STTResult.transcript,
-				cameraPosition: cameraPos,
+				localCameraPosition: cameraPos,
+				worldCameraPosition: worldCameraPos,
 				cameraUp: new THREE.Vector3(0,1,0),
 				polygon: [pos],
-				position: pos
+				localPosition: pos,
+				/* fill out world position */
 			});
 
 		},
