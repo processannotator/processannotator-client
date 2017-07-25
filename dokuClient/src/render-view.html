@@ -31,7 +31,7 @@
 			<a-entity camera look-controls wasd-controls user-height="1.6">
 				<!-- <a-entity raycaster="objects: #fileRepresentation" position="0 0 0.5" rotation="0 180 0"></a-entity> -->
 				<!-- <a-text value="Hello. Please move around and take a look." position="0 0 -5"> </a-text> -->
-				
+
 			</a-entity>
 
 
@@ -39,48 +39,43 @@
 				animation__mouseenter="startEvents: mouseenter; property: opacity; to:0.5; dur:3000"
 				animation__mouseleave="startEvents: mouseleave; property: opacity; to:1.0; dur:3000">
 			</a-obj-model> -->
-			
+
 			<a-entity light="type: ambient; color: #BBB"></a-entity>
-			
+
 			<a-entity id="rightVRController" class="vrController" laser-controls="hand: right" raycaster="objects: #fileRepresentation;" on-triggerdown="onTriggerDown" on-triggerup="onTriggerUp" on-raycaster-intersection="onIntersection">
-				
+
 				<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
-			
+
 				<a-text value$="[[STTResult.transcript]]" position="0 -0.1 0.0" scale="0.2 0.2 0.2"> </a-text>
-			
+
 			</a-entity>
-			
+
 			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" on-axismove="onAxisMove">
 
 
-				
+
 
 
 				<!-- The model attribute is added on file change depending on format -->
 				<a-entity id="fileRepresentation" material="opacity:0.75; roughness: 0.2; metalness: 0.8" scale$="[[modelScale]] [[modelScale]] [[modelScale]]" on-click="clicked" on-mouseenter="onMouseEnter" on-mouseleave="onMouseLeave">
-					
+
 					<a-sphere color="red" scale="0.05 0.05 0.05" position$="[[_parsePos(intersectionPoint)]]"></a-sphere>
-				
+
 					<template id="annotationList" is="dom-repeat" items="[[annotations]]">
 						<a-entity position$="[[_parsePos(item.position)]]" opacity="0.0">
 							<!-- <a-sphere scale="0.06 0.06 0.06" color="red"></a-sphere> -->
 							<a-sphere color$="[[item.statusColor]]" scale="0.05 0.05 0.05" depth="2" animation__created="property: opacity; dur:200; to: 1.0; loop:false;"></a-sphere>
-						
+
 						<a-entity rotation="0 -90 0">
-						
+
 							<a-text scale="1.5 1.5 1.5" look-at$="[[_parsePos(item.cameraPosition)]]" alpha-test="0.9" side="double" value$="[[item.description]]"></a-text>
-						
+
 						</a-entity>
 
 						</a-entity>
 
 					</template>
 				</a-entity>
-
-
-
-
-
 
 			</a-entity>
 
@@ -108,9 +103,6 @@
 	var render;
 	var animate;
 
-	function jsonEqual(a,b) {
-    return JSON.stringify(a) === JSON.stringify(b);
-	}
 
 	Polymer({
 		is: "render-view",
@@ -134,11 +126,13 @@
 			filePath: {
 				type: String,
 				notify: true,
-				observer: '_filePathChanged'
+				observer: '_filePathChanged',
+				value: ''
 			},
 			annotations: {
 				type: Array,
-				observer: "_annotationsChanged"
+				observer: "_annotationsChanged",
+				value: []
 			},
 			labels: {
 				type: Map
@@ -177,23 +171,15 @@
 		_parsePos: ({x,y,z}) => {return `${x/1} ${y/1} ${z/1}`;},
 
 		ready: function() {
-			// doesnt work with listeners on this very element
-			// so create start event listener
-			console.log('renderview ready');
 			this.ready = true;
 			this.rendering = false;
-
 		},
 		attached: function () {
 			console.log('ATTACHED');
-			
-			this.annotationGroup = this.$.canvas.annotations;
-			
-
 		},
 		clicked: function (evt) {
 			console.log(this.STTResult);
-			
+
 			console.log(evt.detail);
 			let intersection = evt.detail.intersection;
 			let pos = intersection.point.clone();
@@ -203,26 +189,29 @@
 
 			this.$.fileRepresentation.object3D.worldToLocal(cameraPos);
 			console.log(cameraPos);
-			
+			console.warn('\n\nTODO: FILL IN ACTUAL cameraUp value!\n\n');
+			console.trace();
 			this.fire('create-annotation', {
 				description: this.STTResult.transcript,
 				cameraPosition: cameraPos,
+				cameraUp: new THREE.Vector3(0,1,0),
+				polygon: [pos],
 				position: pos
 			});
-			
+
 		},
 		onMouseEnter: function (evt) {
 		},
-		
+
 		onMouseLeave: function (evt) {
 		},
-		
+
 		onIntersection: function (evt) {
 			let pos = evt.detail.intersections[0].point.clone();
 			this.$.fileRepresentation.object3D.worldToLocal(pos);
 			this.intersectionPoint = pos;
 		},
-		
+
 		onAxisMove: function (evt) {
 			this.trackPadEventCount++;
 
@@ -232,23 +221,22 @@
 				this.trackPadEventCount = 0;
 				return;
 			}
-			
+
 			// Discard the first few events because if inacuraccies from sensors
 			if(this.trackPadEventCount < 3) return;
 
-			
+
 			if(this.axis === undefined) {
 				this.axis = evt.detail.axis;
 				return;
 			}
-			
-			let axis = evt.detail.axis;
 
+			let axis = evt.detail.axis;
 			let y = (axis[1] - this.axis[1]) / 10;
 			this.modelScale += y;
 			this.axis = axis;
 		},
-		
+
 		onTriggerDown: function (evt) {
 			this.triggerDown = true;
 			this.STTResult = {transcript: ''};
@@ -257,53 +245,19 @@
 			this.triggerDown = false;
 		},
 
-		startRendering: function() {
-			if (this.rendering === false) {
-				console.log('started rendering');
-				this.rendering = true;
-				animate();
-			}
-		},
-
-		animate: function () {
-			requestAnimationFrame(this.animate.bind(this));
-			this.light.position.copy(this.camera.position).addScaledVector(this.camera.up, this.standardDistance);
-			this.spotLight.position.copy(this.camera.position);
-
-			controls.update();
-		},
-
-		resetGroups: function () {
-		},
-
 
 		physicalModelStateChanged: function () {
-			if (this.penGroupGLOrientation) {
-				// TODO Use quaternion instead of euler
-				// const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI, 0, 0));
-				const quaternion = this.physicalModelState.quat.clone();//.multiply(rotation);
-				// if (this.fileRepresentation) {
-				// 	this.fileRepresentation.setRotationFromQuaternion(quaternion);
-				// }
-				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
-				this.mouseOrPenMoved();
-				// this.render();
-			}
+			// Not implemented in A-Frame branch cause position/rotation change is handled via one
+			// of the vive controllers
 		},
 
 		attached: function() {
 
 			this.modus = {modelGrabbing: false};
-			this.filePath = '';
 
-			// init annotations to empty array
-			this.annotations = [];
-			this.annotation3DObjects = [];
-			
 			fetch('/api/speech-to-text/token')
 			.then(response => {return response.text()})
 			.then(token => {
-				console.log('token');
 				this.STTStream = WatsonSpeech.SpeechToText.recognizeMicrophone({
 					token: token,
 					interim_results: true,
@@ -311,7 +265,7 @@
 					smart_formatting: true,
 					objectMode: true // default false
 				});
-				
+
 				// this.STTStream.setEncoding('utf8'); // get text instead of Buffers for on data events
 				this.STTStream.on('data', data => {
 					// console.log(data);
@@ -324,18 +278,13 @@
 					console.log(err);
 				});
 			});
-			
+
 			this.resize();
-			this.fire('initialized')
+			this.fire('initialized');
 		},
 
-		getPenPosition() {
-			return this.penGroupGLOffset;
-		},
 
 		resize: function(event) {
-			console.log(this.$.canvas);
-			console.log(this.$.fileRepresentation);
 			let width = this.parentNode.getBoundingClientRect().width;
 			let height = this.parentNode.getBoundingClientRect().height;
 			// // console.log(width, height);
@@ -373,190 +322,40 @@
 		},
 
 		_annotationsChanged: function() {
-			console.log('_annotationsChanged');
+			// console.log('_annotationsChanged');
 		},
-
-		addAnnotationObject: function (annotation) {
-
-		},
-
 
 		toggleTrack: function(e) {
-			this.modus.modelGrabbing = !this.modus.modelGrabbing;
-			Polymer.dom(this).classList.toggle('track');
+			//this.modus.modelGrabbing = !this.modus.modelGrabbing;
+			// Polymer.dom(this).classList.toggle('track');
 		},
 
-		updateMouse: function (mouseEvent) {
-			this.mouse = new THREE.Vector2(
-				(mouseEvent.layerX / canvas.width) * 2 - 1,
-				-((mouseEvent.layerY / canvas.height) * 2 - 1)
-			);
-		},
-
-		mouseOrPenMoved(event) {
-			this.previousCameraPosition = controls.object.position.clone();
-			this.previousCameraRotation = controls.object.rotation.clone();
-			let penActive = event === undefined;
-			if (!penActive) {
-				this.updateMouse(event);
-			}
-
-			let intersections = [];
-
-			if (this.fileRepresentation) {
-				if (this.tool === 'polygon' || this.tool === 'point') {
-					this.raycaster.setFromCamera(this.mouse, this.camera);
-				} else if(penActive) {
-					const origin = this.physicalPenModel.getWorldPosition();
-					const normalizedDirection = origin.clone().negate().normalize();
-					this.raycaster.set(origin, normalizedDirection);
-				}
-				intersections = this.raycaster.intersectObject(this.fileRepresentation);
-
-			}
-
-			if (intersections.length !== 0) {
-
-				if (this.modus.modelGrabbing && this.tool !== 'rotate') {
-					Polymer.dom(this).classList.add('polygonCursor');
-				}
-				this.spotLight.target = this.pointerSphere;
-				this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
-
-			} else {
-				Polymer.dom(this).classList.remove('polygonCursor')
-			}
-
-		},
 
 		track: function (e) {
 
 		},
 
 		tap: function(e) {
-			console.log('tap');
-			if (jsonEqual(this.previousCameraPosition, this.camera.position) === false || jsonEqual(this.previousCameraRotation, this.camera.rotation) == false) {
-				console.log('moved! return!');
-			}
 
-			// Update values for: this.mouse
-			this.updateMouse(e.detail.sourceEvent);
-
-			// update the picking ray with the camera and mouse position
-			this.fileRepresentation.updateMatrixWorld()
-			this.raycaster.setFromCamera(this.mouse, this.camera);
-
-			// Calculate objects intersecting the picking ray
-			// only use the first/frontmost intersection  -> [0]
-			const intersections = this.raycaster.intersectObject(this.fileRepresentation);
-			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
-			// Transform intersection point from world coordinates
-			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
-			this.mainGroupGL.worldToLocal(intersection.point);
-
-			switch (this.tool) {
-
-				case 'point':
-
-						event.preventDefault();
-						// TODO: finish shape and create annotation
-						this.fire('create-annotation', {
-							description: '',
-							polygon: [intersection.point.clone()],
-							position: intersection.point.clone(),
-							cameraPosition: controls.object.position.clone(),
-							// cameraRotation: camera.rotation,
-							cameraUp: this.camera.up
-						});
-						if (this.previewAnnotation !== undefined) {
-							this.mainGroupGL.remove(this.previewAnnotation.arrow);
-							this.mainGroupGL.remove(this.previewAnnotation.polygon);
-							this.mainGroupCSS.remove(this.previewAnnotation.label);
-							this.previewAnnotation = undefined;
-						}
-						glScene.remove(this.previewPolygon);
-						this.previewPolygon = undefined;
-						this.verticesPolygonTool = [];
-						console.log('added polygon annotation');
-
-					break;
-
-				case 'polygon':
-					this.verticesPolygonTool.push(intersection.point.clone());
-
-					// create new preview polygon/shape when enough points are available
-					if (this.verticesPolygonTool.length >= 3) {
-							glScene.remove(this.previewPolygon);
-							this.previewPolygon = this.createPolygon(this.verticesPolygonTool, 0x00ff00);
-							glScene.add(this.previewPolygon);
-					}
-
-					// And show a temporary preview annotation if first tap.
-					if (this.previewAnnotation === undefined) {
-						this.previewAnnotation = this.addAnnotationObject({
-							_id: 'previewAnnotation',
-							status: 'comment',
-							statusColor: 'blue',
-							description: "Press Enter to edit/create. Esc to cancel.",
-							position: intersection.point.clone(),
-							cameraPosition: controls.object.position.clone(),
-							cameraUp: this.camera.up
-						});
-					}
-
-				break;
-				default:
-			}
 		},
 
 		createPolygon: function (vertices, color) {
-			// IDEA: move to helper object?
-			let polygon = new THREE.Geometry();
-			polygon.vertices = vertices;
-
-			// calculate faces of preview polygon
-			for (var i = 1; i < polygon.vertices.length - 1; i++) {
-				polygon.faces.push( new THREE.Face3( 0, i, i+1 ) )
-			}
-			return new THREE.Mesh(
-				polygon,
-				new THREE.MeshBasicMaterial( {
-					color: color,
-					side: THREE.DoubleSide
-				} )
-			);
-		},
-
-		createLabel: function (annotation, multFactor) {
-			let div = document.createElement('div');
-			let textElement = document.createElement('span');
-			div.style.opacity = '0.85';
-			div.style.fontSize = '30px';
-			div.style.padding = "0.35em";
-			div.style.background = "rgb(255, 255, 255)";
-			div.style.border = annotation.statusColor + " solid 0.125em";
-			div.style.transition = "opacity 0.5s";
-			div.innerHTML = annotation.description;
-			// div.addEventListener('mouseover', () => {
-			// 	this.fire('label-over', annotation._id);
-			// });
-			// div.addEventListener('mouseout', () => {
-			// 	this.fire('label-out', annotation._id);
-			// });
-
-			let label = new THREE.CSS3DSprite(div);
-			label.userData.div = div;
-
-			if (annotation.cameraPosition !== undefined) {
-				// Convert x,y,z object into Vector3 object.
-				let camPos = new THREE.Vector3(annotation.cameraPosition.x, annotation.cameraPosition.y, annotation.cameraPosition.z);
-				label.position.copy(annotation.cameraPosition).multiplyScalar(0.6);
-			} else {
-				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
-				label.position.multiplyScalar(multFactor);
-			}
-			return label;
-		},
+			// // IDEA: move to helper object?
+			// let polygon = new THREE.Geometry();
+			// polygon.vertices = vertices;
+			//
+			// // calculate faces of preview polygon
+			// for (var i = 1; i < polygon.vertices.length - 1; i++) {
+			// 	polygon.faces.push( new THREE.Face3( 0, i, i+1 ) )
+			// }
+			// return new THREE.Mesh(
+			// 	polygon,
+			// 	new THREE.MeshBasicMaterial( {
+			// 		color: color,
+			// 		side: THREE.DoubleSide
+			// 	} )
+			// );
+		}
 
 	})
 	</script>
