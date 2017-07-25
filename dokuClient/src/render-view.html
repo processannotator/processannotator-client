@@ -5,7 +5,14 @@
 <script src="../libs/three/loaders/OBJLoader.js"></script>
 <script src="../libs/three/loaders/ColladaLoader.js"></script>
 
+<!--
+	TODO: Import dependencies via `import` and rollup/webpack instead.
+	There are some issues with three.js though.
+-->
+
+
 <link rel="import" href="annotation-box-3d.html">
+
 
 <dom-module id="render-view">
 
@@ -161,13 +168,13 @@
 		},
 
 		animate: function () {
+			this.light.position.copy(this.camera.position).addScaledVector(this.camera.up, this.standardDistance);
+			this.spotLight.position.copy(this.camera.position);
 			requestAnimationFrame(this.animate.bind(this));
 			controls.update();
 		},
 
 		render: function() {
-			this.light.position.copy(this.camera.position).addScaledVector(this.camera.up, this.standardDistance);
-			this.spotLight.position.copy(this.camera.position);
 			glRenderer.render(glScene, this.camera);
 			cssRenderer.render(cssScene, this.camera);
 		},
@@ -508,55 +515,19 @@
 
 		_annotationsChanged: function(newAnnotations, oldAnnotations) {
 
-
-
 			// debug output of annotations
 			// first remove all previous annotations
 			//
-			// !!!IMPORTANT FIXME!!!: only update modified ones, instead of removing and completely re-creating
+			// !!!IMPORTANT Performance FIXME!!!: only update modified ones, instead of removing and completely re-creating
 			//
 			//
-			let changedAnnotations = [];
-			let addedAnnotations = [];
-			let removedAnnotations = [];
 
-			// Get changed and new annotations
-			for (let newAnnotation of this.annotations) {
-				let oldAnnotation = oldAnnotations.find(({_id}) => _id === newAnnotation._id);
 
-				if(oldAnnotation && oldAnnotation._rev !== newAnnotation._rev) {
-					// changd annotation
-					changedAnnotations.push(newAnnotation)
-				} else if (oldAnnotation === undefined) {
-					// new annotation
-					addedAnnotations.push(newAnnotation)
-				}
-			}
-
-			// Get removed annotations
-
-			removedAnnotations = oldAnnotations === undefined ? [] : oldAnnotations.filter((oldAnnotation) => {
-				return this.annotations.find((annotation) => annotation._id === oldAnnotation._id) === undefined;
-			}) || [];
-			console.log('changedAnnotations', changedAnnotations);
-			console.log('removedAnnotations', removedAnnotations);
-			console.log('addedAnnotations', addedAnnotations);
 
 			// Following part has to be async because the annotation-box-3d's may not ready yet in this tick.
 			// Polymer.dom.flush();
 			this.async(function() {
 
-				// this.removeAnnotationObjects(removedAnnotations);
-				// // For changed annotations, only remove the GL objects that are not created via dom-repeat
-				// // and keep labels intact when an annotation is just changed
-				// this.changeAnnotationObjects(changedAnnotations);
-				//
-				// for (let annotation of addedAnnotations) {
-				// 	this.addAnnotationObject(annotation);
-				// }
-
-
-				// console.log(newAnnotations, oldAnnotations);
 				this.resetGroups();
 				for (let annotation of this.annotations) {
 					this.addAnnotationObject(annotation);
@@ -936,7 +907,7 @@
 				this.fileRepresentation.worldToLocal(localIntersectionPoint);
 				this.mainGroupGL.worldToLocal(worldIntersectionPoint);
 				this.fileRepresentation.worldToLocal(localCameraPosition);
-				
+
 			}
 
 			switch (this.tool) {
