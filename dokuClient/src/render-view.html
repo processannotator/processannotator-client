@@ -205,6 +205,7 @@
 			this.penGroupGLOrientation = new THREE.Group();
 			this.penGroupGLOffset.add(this.penGroupGLOrientation);
 			this.penGroupGL = new THREE.Object3D();
+			this.penGroupGL.visible = false;
 			this.penGroupGLOrientation.add(this.penGroupGL);
 
 			glScene.add(this.penGroupGLOffset);
@@ -244,6 +245,7 @@
 
 		penStateChanged: function () {
 			if (this.penGroupGLOrientation) {
+				this.penGroupGL.visible = true;
 				const quaternion = this.penState.quat.clone();
 				this.penGroupGLOrientation.setRotationFromQuaternion(quaternion);
 
@@ -299,8 +301,10 @@
 			this.meshMaterial = new THREE.MeshStandardMaterial({
 				side: THREE.DoubleSide,
 				color: 0x787878,
-				roughness: 0.75,
-				metalness: 0.02
+				roughness: 0.2,
+				metalness: 0.8,
+				transparent: true,
+				opacity: 0.75
 			})
 
 			this.atmosphericLight = new THREE.DirectionalLight(0x556677, 0.6);
@@ -862,7 +866,7 @@
 							{annotation: {_id: id, position: newPosition}, elem: this}
 						);
 						this.movingAnnotation = undefined;
-					}, 2000);
+					}, 1000);
 
 
 					let targetAnnotation = this.annotations.filter(({_id}) => _id === id)[0];
