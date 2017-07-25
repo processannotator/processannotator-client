@@ -612,7 +612,7 @@
 			annotation3DObject.label = label;
 
 			// TODO: add arrow, label to a group/structure to be selectable
-			let arrow = this.createArrow(annotation.position, label.position, annotation.status);
+			let arrow = this.createArrow(annotation.worldPosition, label.position, annotation.status);
 			annotationGlGroup.add(arrow);
 			annotation3DObject.arrow = arrow;
 
@@ -624,7 +624,7 @@
 
 			sphere.material.color.setHex(this.getStatusColor(annotation.status));
 
-			sphere.position.copy(annotation.position);
+			sphere.position.copy(annotation.worldPosition);
 			annotationGlGroup.add(sphere);
 			annotation3DObject.sphere = sphere;
 			this.spheres.push(sphere);
@@ -803,7 +803,8 @@
 							description: '',
 							polygon: this.verticesPolygonTool,
 							position: this.verticesPolygonTool[0],
-							cameraPosition: controls.object.position.clone(),
+							worldCameraPosition: worldCameraPosition,
+							localCameraPosition: localCameraPosition,
 							// cameraRotation: camera.rotation,
 							cameraUp: this.camera.up
 						});
@@ -857,20 +858,23 @@
 
 					controls.enabled = false;
 					let newPosition = this.pointerSphere.position.clone();
-					this.mainGroupGL.worldToLocal(newPosition);
+					this.mainGroupGL.worldToLocal(newLocalPosition);
+					let newLocalPosition = newPosition.clone();
+					this.fileRepresentation.worldToLocal(newLocalPosition);
+
 
 					let id = this.movingAnnotation._id;
 					clearTimeout(this.annotationEditTimeout);
 					this.annotationEditTimeout = setTimeout(() => {
 						this.fire('edit-annotation',
-							{annotation: {_id: id, position: newPosition}, elem: this}
+							{annotation: {_id: id, worldPosition: newPosition, localPosition: newLocalPosition}, elem: this}
 						);
 						this.movingAnnotation = undefined;
 					}, 1000);
 
 
 					let targetAnnotation = this.annotations.filter(({_id}) => _id === id)[0];
-					targetAnnotation.position = newPosition;
+					targetAnnotation.worldPosition = newPosition;
 					console.log(targetAnnotation.position);
 					this.removeAnnotationObjects([targetAnnotation]);
 					this.addAnnotationObject(targetAnnotation);
@@ -918,29 +922,36 @@
 
 
 			var localIntersectionPoint;
+			var worldIntersectionPoint;
 			var localCameraPosition;
+			var worldCameraPosition;
+
 			if(intersection) {
-				var localIntersectionPoint = intersection.point.clone();
-				var localCameraPosition = controls.object.position.clone();
+				this.selectedAnnotation = undefined;
+				worldIntersectionPoint = intersection.point.clone();
+				localIntersectionPoint = worldIntersectionPoint.clone();
+				localCameraPosition = controls.object.position.clone();
+				worldCameraPosition = localCameraPosition.clone();
 
-				this.mainGroupGL.worldToLocal(localIntersectionPoint);
-				this.mainGroupGL.worldToLocal(localCameraPosition);
+				this.fileRepresentation.worldToLocal(localIntersectionPoint);
+				this.mainGroupGL.worldToLocal(worldIntersectionPoint);
+				this.fileRepresentation.worldToLocal(localCameraPosition);
+				
 			}
-
-			console.log(localIntersectionPoint);
-
 
 			switch (this.tool) {
 
 				case 'point':
-
+						console.log('CREATE NEW ANNOTATION AT COORDINATES:', localIntersectionPoint.clone());
 						event.preventDefault();
 						// TODO: finish shape and create annotation
 						this.fire('create-annotation', {
 							description: '',
-							polygon: [localIntersectionPoint.clone()],
-							position: localIntersectionPoint.clone(),
-							cameraPosition: controls.object.position.clone(),
+							polygon: [worldIntersectionPoint.clone()],
+							localPosition: localIntersectionPoint,
+							worldPosition: worldIntersectionPoint,
+							worldCameraPosition: worldCameraPosition,
+							localCameraPosition: localCameraPosition,
 							// cameraRotation: camera.rotation,
 							cameraUp: controls.object.up
 						});
@@ -960,6 +971,7 @@
 
 				break;
 				case 'polygon':
+					console.warn('FIX POLYGON POSITIONS BY APPLYING SAME TRANSFORMATIONS AS POINT; LATER ALSO SAVE LOCALPOSITION BY WORLDTOLOCAL FROM FILEREP');
 					this.verticesPolygonTool.push(localIntersectionPoint.clone());
 
 					// create new preview polygon/shape when enough points are available
@@ -975,8 +987,10 @@
 							_id: 'previewAnnotation',
 							status: 'comment',
 							description: "Press Enter to edit/create. Esc to cancel.",
-							position: localIntersectionPoint.clone(),
-							cameraPosition: controls.object.position.clone(),
+							localPosition: localIntersectionPoint.clone(),
+							worldPosition: worldIntersectionPoint.clone(),
+							localCameraPosition: localCameraPosition,
+							worldCameraPosition: worldCameraPosition,
 							cameraUp: this.camera.up
 						});
 					}
@@ -1096,13 +1110,13 @@
 			let label = new THREE.CSS3DSprite(div);
 			label.userData.div = div;
 
-			if (annotation.cameraPosition !== undefined) {
+			if (annotation.worldCameraPosition !== undefined) {
 				// Convert x,y,z object into Vector3 object.
-				let camPos = new THREE.Vector3(annotation.cameraPosition.x, annotation.cameraPosition.y, annotation.cameraPosition.z);
+				let camPos = new THREE.Vector3(annotation.worldCameraPosition.x, annotation.worldCameraPosition.y, annotation.worldCameraPosition.z);
 				let labelPos = this.mainGroupGL.worldToLocal(camPos);
 				label.position.copy(labelPos).multiplyScalar(0.6);
 			} else {
-				label.position.set(annotation.position.x, annotation.position.y, annotation.position.z);
+				label.position.set(annotation.worldPosition.x, annotation.worldPosition.y, annotation.worldPosition.z);
 				label.position.multiplyScalar(multFactor);
 			}
 			return label;
@@ -1151,7 +1165,7 @@
 				console.log(this.selectedAnnotation);
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)
-				if(this.selectedAnnotation.cameraPosition !== undefined){
+				if(this.selectedAnnotation.worldCameraPosition !== undefined){
 					let selectedAnnotation = this.selectedAnnotation;
 					console.log('RESET!!!!');
 					console.log('CAMERA OBJ');
@@ -1169,9 +1183,9 @@
 
 					anime({
 						targets: animObj,
-						x: selectedAnnotation.cameraPosition.x,
-						y: selectedAnnotation.cameraPosition.y,
-						z: selectedAnnotation.cameraPosition.z,
+						x: selectedAnnotation.worldCameraPosition.x,
+						y: selectedAnnotation.worldCameraPosition.y,
+						z: selectedAnnotation.worldCameraPosition.z,
 						up: selectedAnnotation.cameraUp,
 						round: 1,
 						easing: 'easeInQuart',
