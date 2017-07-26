@@ -61,7 +61,7 @@ Polymer({
 		.on('error', err => {
 			console.log('ERROR');
 		});
-		
+
 
 		setInterval(this.updateOnlineStatus.bind(this), 1000 * 30);
 		this.updateOnlineStatus();
@@ -844,7 +844,7 @@ Polymer({
 
 		_selectedAnnotationChanged: function (e) {
 			if(this.selectedAnnotation === undefined || this.selectedAnnotation === null) return;
-			this.renderView.focusAnnotation(this.selectedAnnotation);
+			// this.renderView.focusAnnotation(this.selectedAnnotation);
 		},
 
 		toolChanged: function (e) {

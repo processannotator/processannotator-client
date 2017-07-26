@@ -62,13 +62,13 @@
 					<a-sphere color="red" scale="0.05 0.05 0.05" position$="[[_parsePos(intersectionPoint)]]"></a-sphere>
 
 					<template id="annotationList" is="dom-repeat" items="[[annotations]]">
-						<a-entity position$="[[_parsePos(item.localPosition)]]" opacity="0.0">
+						<a-entity position$="[[_parsePos(item.localPosition)]]" opacity="1.0">
 							<!-- <a-sphere scale="0.06 0.06 0.06" color="red"></a-sphere> -->
 							<a-sphere color$="[[item.statusColor]]" scale="0.05 0.05 0.05" depth="2" animation__created="property: opacity; dur:200; to: 1.0; loop:false;"></a-sphere>
 
 						<a-entity rotation="0 -90 0">
 
-							<a-text scale="1.5 1.5 1.5" look-at$="[[_parsePos(item.cameraPosition)]]" alpha-test="0.9" side="double" value$="[[item.description]]"></a-text>
+							<a-text scale="1.5 1.5 1.5" look-at$="[[_parsePos(item.worldCameraPosition)]]" alpha-test="0.9" side="double" value$="[[item.description]]"></a-text>
 
 						</a-entity>
 
