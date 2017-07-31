@@ -27,11 +27,21 @@
 		</style>
 		<span>{{cameraRotation}}</span>
 		<a-scene embedded id="canvas">
+			
+							<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
 
-			<a-entity camera look-controls wasd-controls user-height="1.6">
+							<a-camera id="camera" camera look-controls wasd-controls user-height="1.6"> </a-camera>
+							
 				<!-- <a-entity raycaster="objects: #fileRepresentation" position="0 0 0.5" rotation="0 180 0"></a-entity> -->
 				<!-- <a-text value="Hello. Please move around and take a look." position="0 0 -5"> </a-text> -->
 
+
+
+			<a-entity position$="[[_parsePos(worldIntersectionPoint)]]">
+			
+				<a-text value$="[[STTResult.transcript]]" side="double"> </a-text>
+				<a-sphere color="white" radius="0.05"></a-sphere>
+			
 			</a-entity>
 
 
@@ -41,36 +51,38 @@
 			</a-obj-model> -->
 
 			<a-entity light="type: ambient; color: #BBB"></a-entity>
+			
+			
 
-			<a-entity id="rightVRController" class="vrController" laser-controls="hand: right" raycaster="objects: #fileRepresentation;" on-triggerdown="onTriggerDown" on-triggerup="onTriggerUp" on-raycaster-intersection="onIntersection">
+			<a-entity id="rightVRController" class="vrController" laser-controls="hand: right; interval: 30" raycaster="objects: #fileRepresentation;" on-triggerdown="onTriggerDown" on-triggerup="onTriggerUp" on-raycaster-intersection="onIntersection">
 
-				<a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
 
-				<a-text value$="[[STTResult.transcript]]" position="0 -0.1 0.0" scale="0.2 0.2 0.2"> </a-text>
+
+
 
 			</a-entity>
 
-			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left" on-axismove="onAxisMove">
+			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left; model: false" on-axismove="onAxisMove">
 
-
-
-
+					
 
 				<!-- The model attribute is added on file change depending on format -->
-				<a-entity id="fileRepresentation" material="opacity:0.75; roughness: 0.2; metalness: 0.8" scale$="[[modelScale]] [[modelScale]] [[modelScale]]" on-click="clicked" on-mouseenter="onMouseEnter" on-mouseleave="onMouseLeave">
-
-					<a-sphere color="red" scale="0.05 0.05 0.05" position$="[[_parsePos(intersectionPoint)]]"></a-sphere>
+				<a-entity id="fileRepresentation" material="opacity:0.75; roughness: 0.2; metalness: 0.8" scale$="[[modelScale]] [[modelScale]] [[modelScale]]" on-mouseenter="onMouseEnter" on-mouseleave="onMouseLeave">
+					
+	
 
 					<template id="annotationList" is="dom-repeat" items="[[annotations]]">
 						<a-entity position$="[[_parsePos(item.localPosition)]]" opacity="1.0">
-							<!-- <a-sphere scale="0.06 0.06 0.06" color="red"></a-sphere> -->
-							<a-sphere color$="[[item.statusColor]]" scale="0.05 0.05 0.05" depth="2" animation__created="property: opacity; dur:200; to: 1.0; loop:false;"></a-sphere>
 
-						<a-entity rotation="0 -90 0">
+							<a-sphere color$="[[item.statusColor]]" radius="0.05" depth="2" animation__created="property: opacity; dur:200; to: 1.0; loop:false;"></a-sphere>
 
-							<a-text scale="1.5 1.5 1.5" look-at$="[[_parsePos(item.worldCameraPosition)]]" alpha-test="0.9" side="double" value$="[[item.description]]"></a-text>
 
-						</a-entity>
+							<a-text scale="1.5 1.5 1.5" look-at="[camera]" alpha-test="0.9" side="double" value$="[[item.description]]"></a-text>
+						<!-- <a-entity rotation="0 -90 0">
+
+	
+
+						</a-entity> -->
 
 						</a-entity>
 
@@ -141,6 +153,14 @@
 				type: Object,
 				observer: "physicalModelStateChanged"
 			},
+			localIntersectionPoint: {
+				type: Object,
+				value: new THREE.Vector3(-1000, 0, 0)
+			},
+			worldIntersectionPoint: {
+				type: Object,
+				value: new THREE.Vector3(-1000, 0, 0)
+			},
 			modelScale: {
 				type: Number,
 				value: 0.5
@@ -168,7 +188,7 @@
 			console.log(result);
 			return result;
 			},
-		_parsePos: ({x,y,z}) => {return `${x/1} ${y/1} ${z/1}`;},
+		_parsePos: ({x,y,z}) => {return `${x} ${y} ${z}`;},
 
 		ready: function() {
 			this.ready = true;
@@ -178,29 +198,7 @@
 			console.log('ATTACHED');
 		},
 		clicked: function (evt) {
-			console.log(this.STTResult);
-
-			console.log(evt.detail);
-			let intersection = evt.detail.intersection;
-			let pos = intersection.point.clone();
-			this.$.fileRepresentation.object3D.worldToLocal(pos);
-			let {x, y, z} = this.$.rightVRController.getAttribute('position');
-			let localCameraPos = new THREE.Vector3(x, y, z);
-			let worldCameraPos = localCameraPos.clone();
-
-			this.$.fileRepresentation.object3D.worldToLocal(worldCameraPos);
-			console.log(cameraPos);
-			console.warn('\n\nTODO: FILL IN ACTUAL cameraUp value!\n\n');
-			console.trace();
-			this.fire('create-annotation', {
-				description: this.STTResult.transcript,
-				localCameraPosition: cameraPos,
-				worldCameraPosition: worldCameraPos,
-				cameraUp: new THREE.Vector3(0,1,0),
-				polygon: [pos],
-				localPosition: pos,
-				/* fill out world position */
-			});
+			
 
 		},
 		onMouseEnter: function (evt) {
@@ -210,9 +208,10 @@
 		},
 
 		onIntersection: function (evt) {
-			let pos = evt.detail.intersections[0].point.clone();
-			this.$.fileRepresentation.object3D.worldToLocal(pos);
-			this.intersectionPoint = pos;
+			this.worldIntersectionPoint = evt.detail.intersections[0].point.clone();
+			let localIntersectionPoint = this.worldIntersectionPoint.clone();
+			this.$.fileRepresentation.object3D.worldToLocal(localIntersectionPoint);
+			this.localIntersectionPoint = localIntersectionPoint;
 		},
 
 		onAxisMove: function (evt) {
@@ -246,6 +245,30 @@
 		},
 		onTriggerUp: function (evt) {
 			this.triggerDown = false;
+			
+			console.log(this.STTResult);
+			
+			
+			let {x, y, z} = this.$.rightVRController.getAttribute('position');
+			let localCameraPosition = new THREE.Vector3(x, y, z);
+			let worldCameraPosition = localCameraPosition.clone();
+			this.$.fileRepresentation.object3D.worldToLocal(localCameraPosition);
+			
+			let localPosition = this.localIntersectionPoint.clone();
+			let worldPosition = this.worldIntersectionPoint.clone();
+
+			this.fire('create-annotation', {
+				description: this.STTResult.transcript,
+				localCameraPosition: localCameraPosition,
+				worldCameraPosition: worldCameraPosition,
+				cameraUp: new THREE.Vector3(0,1,0),
+				polygon: [localPosition],
+				localPosition: localPosition,
+				worldPosition: worldPosition
+				/* fill out world position */
+			});
+			
+			
 		},
 
 

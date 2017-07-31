@@ -261,7 +261,17 @@ Polymer({
 
 	// this is an event handler, triggering on enter-key event in this.renderView
 	// or by a button press on the physical pen.
-	addAnnotation: function({detail: {description='', position={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[]}}) {
+	addAnnotation: function(
+		{detail: {
+			description='',
+			localCameraPosition={x: 0, y: 0, z: 0},
+			worldCameraPosition={x: 0, y: 0, z: 0},
+			localPosition={x: 0, y: 0, z: 0},
+			worldPosition={x: 0, y: 0, z: 0},
+			cameraRotation={x: 0, y: 0, z: 0},
+			cameraUp={x: 0, y: 0, z: 0},
+			polygon=[]}
+		}) {
 
 		let annotation = {
 			_id: 'annotation_' + new Date().toISOString(),
@@ -272,11 +282,13 @@ Polymer({
 			parentObject: this.activeObject_id,
 			creator: this.activeProfile.name,
 			creationDate: new Date().toISOString(),
-			cameraPosition,
+			localCameraPosition,
+			worldCameraPosition,
 			// cameraRotation,
 			cameraUp,
 			description,
-			position,
+			localPosition,
+			worldPosition,
 			polygon
 		};
 
