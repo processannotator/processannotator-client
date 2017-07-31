@@ -37,13 +37,7 @@
 
 
 
-			<a-entity position$="[[_parsePos(worldIntersectionPoint)]]">
-			
-				<a-text value$="[[STTResult.transcript]]" side="double"> </a-text>
-				<a-sphere color="white" radius="0.05"></a-sphere>
-			
-			</a-entity>
-
+	
 
 			<!-- <a-obj-model id="fileRepresentation" src$="[[filePath]]"  position="-3 0 -3" on-click="clicked" opacity="1.0"
 				animation__mouseenter="startEvents: mouseenter; property: opacity; to:0.5; dur:3000"
@@ -63,6 +57,14 @@
 			</a-entity>
 
 			<a-entity id="leftVRController" class="vrController" vive-controls="hand: left; model: false" on-axismove="onAxisMove">
+				
+				<a-entity position$="[[_parsePos(worldIntersectionPoint)]]">
+				
+					<a-text value$="[[STTResult.transcript]]" side="double"> </a-text>
+					<a-sphere color="white" radius="0.05"></a-sphere>
+				
+				</a-entity>
+
 
 					
 
@@ -77,12 +79,22 @@
 							<a-sphere color$="[[item.statusColor]]" radius="0.05" depth="2" animation__created="property: opacity; dur:200; to: 1.0; loop:false;"></a-sphere>
 
 
-							<a-text scale="1.5 1.5 1.5" look-at="[camera]" alpha-test="0.9" side="double" value$="[[item.description]]"></a-text>
-						<!-- <a-entity rotation="0 -90 0">
-
-	
-
-						</a-entity> -->
+						<a-entity>
+							
+							<!-- TODO: Figure out intelligent text positioning algo
+									perhaps, as long as there is none, just hide all texts until they are intersected
+									
+									Otherwise: Use predefined directions (1,0,0) (0, 1, 0) etc.
+									0. divide space into bigger cube volumes
+									1. Determine in which part of object we are, eg. top left middle
+									2. Is angle between normal of intersected face closer to which dir?
+									3. Check if preferred direction for that location is no intersecting with geometry: eg. when left (-x) check if straight line to left is available.
+									If not, go for next one. skip middle, check for top direction (+y), which is straight up. If this is available use that direction. Otherwise
+									
+									Or perhaps completely different via force directed text nodes
+						 -->
+							<a-text position$="[[_textPosition(item)]]" scale="1.5 1.5 1.5" look-at$="[[_parsePos(item.localCameraPosition)]]"  transparent="false" side="double" value$="[[item.description]]"></a-text>
+						</a-entity>
 
 						</a-entity>
 
@@ -189,6 +201,18 @@
 			return result;
 			},
 		_parsePos: ({x,y,z}) => {return `${x} ${y} ${z}`;},
+		_multiplyPos: (pos, mult) => pos.multiplyScalar(mult),
+		_textPosition: function(item) {
+			console.log('TEXTPOSITION');
+			// console.log(item);
+			let dir = new THREE.Vector3().subVectors(item.localCameraPosition, item.localPosition ).normalize().multiplyScalar(0.75);
+			return this._parsePos(dir);
+			// 	let r = new THREE.Vector3(Math.random(), Math.random(), Math.random());
+			// console.log(r);
+			// console.warn('HALLLLO\n\n');
+			// return `${r.x} ${r.y} ${r.z}`
+			
+		},
 
 		ready: function() {
 			this.ready = true;
@@ -256,6 +280,7 @@
 			
 			let localPosition = this.localIntersectionPoint.clone();
 			let worldPosition = this.worldIntersectionPoint.clone();
+			let lookAt = new THREE.Vector3(Math.random(),Math.random(),Math.random());
 
 			this.fire('create-annotation', {
 				description: this.STTResult.transcript,

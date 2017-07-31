@@ -5,6 +5,8 @@
 // Uses rollup-replace to replace ENV with the env set when starting rollup
 const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '141.20.168.11';
 const PORT = (ENV === 'dev') ? '5984' : '80';
+const POUCHCONF = (ENV === 'dev') ? {} : {};
+
 
 
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
@@ -52,8 +54,8 @@ Polymer({
 
 		this.renderView = this.$.renderView;
 
-		localInfoDB = new PouchDB('info');
-		remoteInfoDB = new PouchDB(this.remoteUrl + '/info');
+		localInfoDB = new PouchDB('info', POUCHCONF);
+		remoteInfoDB = new PouchDB(this.remoteUrl + '/info', POUCHCONF);
 		localInfoDB.sync(remoteInfoDB, {live: true, retry: true });
 		this.updateProjectList();
 		localInfoDB.changes( {live: true, since: 'now'} )
@@ -69,8 +71,8 @@ Polymer({
 
 		// Contains public user info (color, name) and is used for offline situations
 		// and to reduce traffic.
-		localCachedUserDB = new PouchDB('localCachedUserDB');
-		userDB = new PouchDB(this.remoteUrl + '/_users');
+		localCachedUserDB = new PouchDB('localCachedUserDB', POUCHCONF);
+		userDB = new PouchDB(this.remoteUrl + '/_users', POUCHCONF);
 
 		this.loadPreferences().then(() => {
 			return new Promise(async (resolve, reject) => {
@@ -192,8 +194,8 @@ Polymer({
 		this.lastUserCacheUpdate = -1;
 		this.activeProject = newProject;
 		this.annotations = [];
-		localProjectDB = new PouchDB(this.activeProject._id, {adapter: 'worker'});
-		remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, {adapter: 'worker'});
+		localProjectDB = new PouchDB(this.activeProject._id,  Object.assign({}, POUCHCONF, {adapter: 'worker'}));
+remoteProjectDB = new PouchDB(this.remoteUrl + '/' + this.activeProject._id, Object.assign({}, POUCHCONF, {adapter: 'worker'}));
 
 		this.savePreferences();
 		let info;
@@ -494,7 +496,7 @@ Polymer({
 
 			// independently of internet connection and remote DB already create local DB
 			// and add first topic with object/file
-			return new PouchDB(newProjectDescription._id).bulkDocs(
+			return new PouchDB(newProjectDescription._id, POUCHCONF).bulkDocs(
 				[{
 					_id: 'info',
 					name: projectname,
