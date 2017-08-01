@@ -1,13 +1,13 @@
 <script src="../libs/three/three.min.js"></script>
 <script src="../libs/three/controls/TrackballControls.js"></script>
 <script src="../libs/three/renderers/CSS3DRenderer.js"></script>
-<!-- <script src="../libs/three/loaders/STLLoader.js"></script> -->
 <script src="../libs/three/loaders/OBJLoader.js"></script>
 <script src="../libs/three/loaders/ColladaLoader.js"></script>
 
-<!--
+<!-- ^
 	TODO: Import dependencies via `import` and rollup/webpack instead.
-	There are some issues with three.js though.
+	There are some issues with three.js though, because the extras, like controls, loaders
+	are unfortunately not yet available as bundles without hacks.
 -->
 
 
@@ -62,6 +62,8 @@
 
 	<script>
 	'use strict' /*eslint global-strict:0*/
+
+	var anime = require('animejs');
 
 	// FIXME: shouldnt those global variables better reside inside the element
 	// vis this.glRenderer = ...

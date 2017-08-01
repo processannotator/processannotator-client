@@ -2,7 +2,6 @@
 'use strict'; /*eslint global-strict:0*/
 
 import BNO055 from './bno055';
-var anime = require('animejs');
 // import SpeechRecognition from './speechRecognition'
 
 const electron = require('electron');
