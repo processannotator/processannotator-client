@@ -10,7 +10,7 @@ const os = require('os');
 
 // automatically reload the renderer app when the bundle changes
 // IMPORTANT: Uncomment before running `npm run package`
-// require('electron-reload')(__dirname + '/src/main-app-bundle.js');
+// require('electron-reload')(__dirname + '/src/main-app.bundle.js');
 
 
 app.commandLine.appendSwitch('enable-file-cookies');
