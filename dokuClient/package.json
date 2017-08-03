@@ -17,14 +17,14 @@
     "worker-pouch": "^2.0.0"
   },
   "scripts": {
-    "polymer-bundle": "polymer-bundler ./src/main-app.html --strip-comments --inline-scripts --inline-css --rewrite-urls-in-templates > build/src/main-app.bundle.html",
+    "polymer-bundle": "polymer-bundler ./src/main-app.html --strip-comments --inline-scripts --inline-css --rewrite-urls-in-templates > build/src/main-app.html",
     "build": "rollup -c",
-    "build_new": "rollup -c rollup.inline.config.js && rm -rf ./build && mkdir -p build/src && npm run polymer-bundle && cp ./index.js ./build/index.js && cp ./index.html build/index.html && cp -r node_modules build/ && cp -r images build/ && cp -r fonts build/",
+    "build-for-package": "rollup -c rollup.production.config.js && rm -rf ./build && mkdir -p build/src && npm run polymer-bundle && cp ./index.js ./build/index.js && cp ./index.html build/index.html && cp -r node_modules build/ && cp -r images build/ && cp -r fonts build/",
     "build_dev_server": "rollup --environment dev -c",
     "install": "./node_modules/.bin/electron-rebuild && bower install --verbose",
     "start": "npm run build && electron .",
     "start_dev_server": "printf \"There are issues with installing leveldown (pouchdb server) and electron, therefore make sure to install pouchdb-server globally if you want to test locally!\" && concurrently --kill-others \"npm run build_dev_server && electron .\" \"pouchdb-server --in-memory --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
-    "package": "npm run build_new && electron-packager ./build ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
+    "package": "npm run build-for-package && electron-packager ./build ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.18.0",

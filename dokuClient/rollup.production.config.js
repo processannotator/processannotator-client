@@ -3,6 +3,9 @@ import replace from 'rollup-plugin-replace';
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 
+
+// This rollup config ist used for creating production bundles
+
 export default {
   format: 'iife',
   plugins: [
@@ -21,5 +24,5 @@ export default {
 
   ],
   entry: 'src/main-app.js',
-  dest: 'src/main-app.bundle.js'
+  dest: 'build/main-app.bundle.js'
 };
