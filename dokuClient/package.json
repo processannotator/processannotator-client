@@ -19,12 +19,13 @@
   "scripts": {
     "polymer-bundle": "polymer-bundler ./src/main-app.html --strip-comments --inline-scripts --inline-css --rewrite-urls-in-templates > build/src/main-app.html",
     "build": "rollup -c",
-    "build-for-package": "rollup -c rollup.production.config.js && rm -rf ./build && mkdir -p build/src && npm run polymer-bundle && cp ./index.js ./build/index.js && cp ./index.html build/index.html && cp -r node_modules build/ && cp -r images build/ && cp -r fonts build/",
-    "build_dev_server": "rollup --environment dev -c",
-    "install": "./node_modules/.bin/electron-rebuild && bower install --verbose",
+    "experimental-build-for-package": "rollup -c rollup.production.config.js && rm -rf ./build && mkdir -p build/src && npm run polymer-bundle && cp ./index.js ./build/index.js && cp ./index.html build/index.html && cp -r node_modules build/ && cp -r images build/ && cp -r fonts build/",
+    "build-dev-server": "rollup --environment dev -c",
+    "install": "electron-rebuild && bower install --verbose",
     "start": "npm run build && electron .",
-    "start_dev_server": "printf \"There are issues with installing leveldown (pouchdb server) and electron, therefore make sure to install pouchdb-server globally if you want to test locally!\" && concurrently --kill-others \"npm run build_dev_server && electron .\" \"pouchdb-server --in-memory --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
-    "package": "npm run build-for-package && electron-packager ./build ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite"
+    "start-dev-server": "printf \"There are issues with installing leveldown (pouchdb server) and electron, therefore make sure to install pouchdb-server globally if you want to test locally!\" && concurrently --kill-others \"npm run build-dev-server && electron .\" \"pouchdb-server --in-memory --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
+    "package": "npm run build && electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite",
+    "package-single": "electron-packager . ProcessAnnotator --platform=darwin --arch=x64 --out=dist --overwrite" 
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.18.0",
@@ -33,8 +34,8 @@
     "concurrently": "^3.4.0",
     "devtron": "^1.1.1",
     "electron": "^1.6.11",
-    "electron-packager": "^8.2.0",
-    "electron-rebuild": "^1.5.11",
+    "electron-packager": "8.2.0",
+    "electron-rebuild": "^1.6.0",
     "polymer-bundler": "^3.0.1",
     "rollup": "^0.36.4",
     "rollup-plugin-babel": "^2.7.1",
