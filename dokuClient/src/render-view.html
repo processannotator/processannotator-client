@@ -833,8 +833,8 @@
 
 					controls.enabled = false;
 					let newPosition = this.pointerSphere.position.clone();
-					this.mainGroupGL.worldToLocal(newLocalPosition);
 					let newLocalPosition = newPosition.clone();
+					this.mainGroupGL.worldToLocal(newLocalPosition);
 					this.fileRepresentation.worldToLocal(newLocalPosition);
 
 
