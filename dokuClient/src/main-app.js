@@ -498,16 +498,14 @@ Polymer({
 
 		let fileEnding = file.name.split('.').pop();
 		if(fileEnding !== 'obj' && fileEnding !== 'dae') {
-			dialog.showErrorBox('DokuClient', 'For now you can only upload OBJ and DAE files.');
+			alert('For now you can only upload OBJ and DAE files.');
 			return;
 		}
 
 		if(await this.updateOnlineStatus() === false) {
-			dialog.showErrorBox('DokuClient', 'Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
+			alert('Error connecting to the database for Project creation. Please check if you are connected to the internet and try again.');
 			return;
 		}
-
-
 
 		function normalizeCouchDBName(name) {
 			return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_$()+/-]/g, '$');
@@ -521,10 +519,13 @@ Polymer({
 			activeTopic: topicID
 		};
 
-		// Important: Save intend of user to create new DB into it's 'projects' field.
-		// This field will get read on the server, which decices wether to create a
-		// DB for it.
 		userDB.getUser(this.activeProfile.name).then((response) => {
+			// Save intend of user to create new DB into it's 'projects' field.
+			// This field will get read on the server, which decides wether to create a
+			// DB for it. This is a security measure, so you cant just create a DB on the server
+			// but the server evaluates whether it is ok to create one. This may not apply
+			// to test couchdb server mode (when running a pouchdb-server eg.)
+
 			response.projects.push(newProjectDescription._id);
 
 			return userDB.putUser(
@@ -541,6 +542,8 @@ Polymer({
 				return localInfoDB.put(doc);
 			})
 			.catch((err) => {
+				console.log('Hm, something went wrong creating the new Project');
+				console.log(err);
 				if(err.status === 404) {
 					return localInfoDB.put({_id: 'projectsInfo', projects: [newProjectDescription]});
 				}
@@ -549,10 +552,6 @@ Polymer({
 			// Finally adding the new project to our app scope, notifying all listeners
 			this.push('projects', newProjectDescription);
 
-			// independently of internet connection and remote DB already create local DB
-			// and add first topic with object/file
-
-			// TODO: decide mimetype!!
 			// Set appropriate mime type for blob
 			let contentType = 'text/plain';
 
@@ -564,7 +563,8 @@ Polymer({
 
 			let blob = new Blob([file], {type: contentType});
 
-
+			// independently of internet connection and remote DB already create local DB
+			// and add first topic with object/file
 			return new PouchDB(newProjectDescription._id, POUCHCONF).bulkDocs(
 				[{
 					_id: 'info',
@@ -573,8 +573,10 @@ Polymer({
 				},
 				{
 					_id: 'topic_' + topicname,
+					fileName: file.name,
+					fileEnding: fileEnding,
 					'_attachments': {
-						'file': { 'content_type': 'text/plain', 'data': blob}
+						'file': { 'content_type': contentType, 'data': blob}
 					}
 				}]);
 			})
@@ -810,7 +812,7 @@ Polymer({
 				let lastAnnotation = updatedAnnotations[updatedAnnotations.length - 1];
 				console.log('\n\n');
 				console.log(lastAnnotation);
-				if(lastAnnotation.description === '') previousSelected = lastAnnotation;
+				if(lastAnnotation && lastAnnotation.description === '') previousSelected = lastAnnotation;
 			}
 
 			this.annotations = updatedAnnotations;
@@ -999,9 +1001,11 @@ Polymer({
 			const onPenEvent = (eventName) => {
 				if (eventName === 'buttonDown') {
 					// this.renderView.tap(eventName);
-					let position = this.renderView.pointerSphere.getWorldPosition();
+					let worldPosition = this.renderView.pointerSphere.getWorldPosition();
 					let localPosition = position.clone();
 					this.renderView.fileRepresentation.worldToLocal(localPosition);
+					this.renderView.mainGroupGL.worldToLocal(worldPosition);
+
 					this.addAnnotation({
 						detail: {
 							description: `Annotation #${++annotationIndex}`,
@@ -1009,7 +1013,7 @@ Polymer({
 							localPosition: localPosition,
 							cameraPosition: this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
 							// cameraRotation: camera.rotation,
-							cameraUp: this.renderView.camera.up,
+							// cameraUp: this.renderView.controls.object.up,
 						},
 					});
 				}

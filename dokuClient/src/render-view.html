@@ -16,7 +16,7 @@
 <link rel="import" href="annotation-box-3d.html">
 
 
-<dom-module id="render-view">
+<dom-module id="render-view">^
 
 	<template>
 		<style is="custom-style">
@@ -315,7 +315,8 @@
 				roughness: 0.2,
 				metalness: 0.8,
 				transparent: true,
-				opacity: 0.75
+				opacity: 0.75,
+				alphaTest: 0.05
 			})
 
 			this.atmosphericLight = new THREE.DirectionalLight(0x556677, 0.6);
@@ -342,8 +343,9 @@
 
 			this.floorMaterial = new THREE.MeshStandardMaterial({
 				color: 0xb9b9b9,
+
 				transparent: true,
-				opacity: 0.5,
+				opacity: 0.1,
 				side: THREE.DoubleSide
 			});
 			this.floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(this.standardDistance * 4, this.standardDistance * 4, 2, 2), this.floorMaterial);
@@ -441,7 +443,7 @@
 
 			// load the file and use it for display
 			var loader;
-			console.log(this.fileEnding);
+			console.log('FILE ENDING:', this.fileEnding);
 			if(this.fileEnding === 'obj') {
 				loader = new THREE.OBJLoader();
 			} else if (this.fileEnding === 'dae') {
