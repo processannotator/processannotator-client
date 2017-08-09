@@ -234,10 +234,10 @@
 			});
 
 			this.physicalPenModel = new THREE.Mesh( penGeometry, penMaterial );
-			this.physicalPenSpotLight = new THREE.SpotLight( 0xffeedd, 1, 0, 0.5, 0.3, 1 );
+			this.physicalPenSpotLight = new THREE.SpotLight( 0xffeedd, 1, 3 * this.standardDistance, 0.20, 0.8, 1 );
 
 			this.physicalPenModel.position.set(
-				1.5 * this.standardDistance,
+				2.0 * this.standardDistance,
 				// 0,
 				0,
 				0
@@ -315,8 +315,7 @@
 				roughness: 0.2,
 				metalness: 0.8,
 				transparent: true,
-				opacity: 0.75,
-				alphaTest: 0.05
+				opacity: 0.75
 			})
 
 			this.atmosphericLight = new THREE.DirectionalLight(0x556677, 0.6);
@@ -345,7 +344,7 @@
 				color: 0xb9b9b9,
 
 				transparent: true,
-				opacity: 0.1,
+				opacity: 0.05,
 				side: THREE.DoubleSide
 			});
 			this.floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(this.standardDistance * 4, this.standardDistance * 4, 2, 2), this.floorMaterial);

@@ -1002,18 +1002,24 @@ Polymer({
 				if (eventName === 'buttonDown') {
 					// this.renderView.tap(eventName);
 					let worldPosition = this.renderView.pointerSphere.getWorldPosition();
-					let localPosition = position.clone();
+					let localPosition = worldPosition.clone();
 					this.renderView.fileRepresentation.worldToLocal(localPosition);
 					this.renderView.mainGroupGL.worldToLocal(worldPosition);
+
+					let worldCameraPosition = this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(2.0);
+					let localCameraPosition = worldCameraPosition.clone();
+					this.renderView.fileRepresentation.worldToLocal(localCameraPosition);
 
 					this.addAnnotation({
 						detail: {
 							description: `Annotation #${++annotationIndex}`,
-							worldPosition: position,
+							worldPosition: worldPosition,
 							localPosition: localPosition,
-							cameraPosition: this.renderView.physicalPenModel.getWorldPosition().multiplyScalar(1.3),
+							worldCameraPosition: worldCameraPosition,
+							localCameraPosition: localCameraPosition,
+
 							// cameraRotation: camera.rotation,
-							// cameraUp: this.renderView.controls.object.up,
+							cameraUp: this.renderView.physicalPenModel.up.clone(),
 						},
 					});
 				}
