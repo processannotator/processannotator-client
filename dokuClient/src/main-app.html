@@ -138,7 +138,7 @@
 						<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
 					</div> -->
 
-					<render-view id="renderView" active-profile="[[activeProfile]]" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" on-toggle-refer-mode="toggleReferMode" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}">
+					<render-view id="renderView" active-profile="[[activeProfile]]" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" on-toggle-refer-mode="toggleReferMode" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}" pen-status="[[penStatus]]">
 
           </render-view>
 

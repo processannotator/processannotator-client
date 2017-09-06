@@ -395,7 +395,7 @@ Polymer({
 			}
 
 			let response = await this.login(preferences.activeProfile.name, preferences.activeProfile.password);
-			respose = await userDB.getSession();
+			response = await userDB.getSession();
 			if (!response.name || (response.userCtx && !response.userCtx.name)) {
 			}
 			this.updateProjectList();
