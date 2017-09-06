@@ -120,6 +120,9 @@
 				type: Object,
 				observer: "physicalModelStateChanged"
 			},
+			penStatus: {
+				type: String
+			},
 			hoveredAnnotation: {
 				type: Object,
 				observer: "_hoveredAnnotationChanged"
@@ -642,9 +645,12 @@
 				if(this.hoveredAnnotation) visibleAnnotations.push(this.hoveredAnnotation);
 				if(this.selectedAnnotation) {
 					visibleAnnotations.push(this.selectedAnnotation);
-					for (let _id of this.selectedAnnotation.referingTo) {
-						visibleAnnotations.push({_id});
+					if(this.selectedAnnotation.referingTo) {
+						for (let _id of this.selectedAnnotation.referingTo) {
+							visibleAnnotations.push({_id});
+						}
 					}
+
 
 
 				}
@@ -711,6 +717,7 @@
 			Polymer.dom(this).classList.remove('fingerCursor');
 
 			if(true || this.modus.hiddenLabels || this.tool === 'edit') {
+				// console.log(this.mouse, this.camera);
 				this.raycaster.setFromCamera(this.mouse, this.camera);
 				sphereIntersections = this.raycaster.intersectObjects(this.spheres);
 				this.hoveredAnnotation = undefined;
@@ -1089,8 +1096,11 @@
 			if (annotation.worldCameraPosition !== undefined) {
 				// Convert x,y,z object into Vector3 object.
 				let camPos = new THREE.Vector3(annotation.worldCameraPosition.x, annotation.worldCameraPosition.y, annotation.worldCameraPosition.z);
-				let labelPos = this.mainGroupGL.worldToLocal(camPos);
-				label.position.copy(labelPos).multiplyScalar(0.6);
+				if(camPos && this.mainGroupGL) {
+					let labelPos = this.mainGroupGL.worldToLocal(camPos);
+					label.position.copy(labelPos).multiplyScalar(0.6);
+
+				}
 			} else {
 				label.position.set(annotation.worldPosition.x, annotation.worldPosition.y, annotation.worldPosition.z);
 				label.position.multiplyScalar(multFactor);
@@ -1141,36 +1151,40 @@
 				console.log(this.selectedAnnotation);
 				// The resetFrom function was added by me (modified .reset()) to allow
 				// reset from a saved position (eg. stored in the DB)
-				if(this.selectedAnnotation.worldCameraPosition !== undefined){
-					let selectedAnnotation = this.selectedAnnotation;
-					console.log('RESET!!!!');
-					console.log('CAMERA OBJ');
-					console.log(this.camera);
-					let animObj = {
-						x: this.camera.position.x,
-						y: this.camera.position.y,
-						z: this.camera.position.z,
-						x_up: this.camera.up.x,
-						y_up: this.camera.up.y,
-						z_up: this.camera.up.z
-					};
+				let selectedAnnotation = this.selectedAnnotation;
+				if(selectedAnnotation.worldCameraPosition !== undefined){
+					console.log(this.penStatus);
+
+					if(this.penStatus === 'connected') {
+						controls.resetFrom(selectedAnnotation.worldCameraPosition, selectedAnnotation.up);
+					} else {
+						console.log(this.camera);
+						let animObj = {
+							x: this.camera.position.x,
+							y: this.camera.position.y,
+							z: this.camera.position.z,
+							x_up: this.camera.up.x,
+							y_up: this.camera.up.y,
+							z_up: this.camera.up.z
+						};
 
 
 
-					anime({
-						targets: animObj,
-						x: selectedAnnotation.worldCameraPosition.x,
-						y: selectedAnnotation.worldCameraPosition.y,
-						z: selectedAnnotation.worldCameraPosition.z,
-						up: selectedAnnotation.cameraUp,
-						round: 1,
-						easing: 'easeInQuart',
-						update: function() {
-							let pos = new THREE.Vector3(animObj.x, animObj.y, animObj.z);
-							let up = new THREE.Vector3(animObj.x_up, animObj.y_up, animObj.z_up);
-							controls.resetFrom(pos, up);
-						}
-					});
+						anime({
+							targets: animObj,
+							x: selectedAnnotation.worldCameraPosition.x,
+							y: selectedAnnotation.worldCameraPosition.y,
+							z: selectedAnnotation.worldCameraPosition.z,
+							up: selectedAnnotation.cameraUp,
+							round: 1,
+							easing: 'easeInQuart',
+							update: function() {
+								let pos = new THREE.Vector3(animObj.x, animObj.y, animObj.z);
+								let up = new THREE.Vector3(animObj.x_up, animObj.y_up, animObj.z_up);
+								controls.resetFrom(pos, up);
+							}
+						});
+					}
 
 				}
 			}
