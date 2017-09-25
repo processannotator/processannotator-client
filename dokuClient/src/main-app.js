@@ -2,6 +2,7 @@
 'use strict'; /*eslint global-strict:0*/
 
 import BNO055 from './bno055';
+// import NeonionDB from './NeonionDB';
 // import SpeechRecognition from './speechRecognition'
 
 const electron = require('electron');
@@ -9,11 +10,9 @@ const ipc = electron.ipcRenderer;
 const { dialog } = electron.remote;
 // Uses rollup-replace to replace ENV with the env set when starting rollup
 const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '141.20.168.11';
-
+const PORT = 8301;
 
 var db;
-var sync;
-
 
 Polymer({
 	is: 'main-app',
@@ -42,7 +41,7 @@ Polymer({
 		document.app = this;
 
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
-		db = new neonionDB(this.remoteUrl);
+		db = new NeonionDB(this.remoteUrl);
 
 		this.setupPenEventHandlers();
 
@@ -289,18 +288,7 @@ Polymer({
 				throw	new Error('No preferences loaded.');
 			}
 
-			let response = await this.login(preferences.activeProfile.name, preferences.activeProfile.password);
-			response = await userDB.getSession();
-			if (!response.name || (response.userCtx && !response.userCtx.name)) {
-			}
 			this.updateTargetList();
-
-			// got session, that means login works and user remains logged in, get more userInfo now.
-			let updatedProfile = await userDB.getUser(this.activeProfile.name);
-
-			// use fresh profile info to set local profile (eg. when user logged in from other device and changed colors etc.)
-			this.activeProfile = Object.assign(updatedProfile, this.activeProfile);
-
 			return this.preferences;
 
 		} catch (err) {
@@ -364,7 +352,7 @@ Polymer({
 
 	},
 
-	setNewTarget: async function({targetname, file, emails}) {
+	setNewTarget: async function({targetname, file}) {
 
 		let fileEnding = file.name.split('.').pop();
 		if(fileEnding !== 'obj' && fileEnding !== 'dae') {
@@ -490,8 +478,7 @@ Polymer({
 
 				this.setNewTarget({
 					projectname: targetOverlay.projectname,
-					file: targetOverlay.file,
-					emails: ['test@test.test']
+					file: targetOverlay.file
 				});
 
 				Polymer.dom(this.root).removeChild(targetOverlay);
