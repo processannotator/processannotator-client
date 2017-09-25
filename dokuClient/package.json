@@ -1,5 +1,5 @@
 {
-  "name": "DokuClient",
+  "name": "DokuClient Neonion-rest Branch",
   "version": "0.3.0",
   "main": "index.js",
   "authors": [
@@ -13,7 +13,6 @@
     "noble": "^1.8.1",
     "pouchdb": "^6.2.0",
     "pouchdb-all-dbs": "^1.0.1",
-    "pouchdb-authentication": "^0.5.5",
     "worker-pouch": "^2.0.0"
   },
   "scripts": {
@@ -33,7 +32,7 @@
     "babel-watch": "^2.0.3",
     "concurrently": "^3.4.0",
     "devtron": "^1.1.1",
-    "electron": "^1.6.11",
+    "electron": "^1.7.8",
     "electron-packager": "8.2.0",
     "electron-rebuild": "^1.6.0",
     "polymer-bundler": "^3.0.1",
