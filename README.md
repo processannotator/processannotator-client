@@ -16,7 +16,7 @@ The Backend consinsts of a running CouchDB instance and a *NodeJS* script that l
 
 ## Getting Started
 ### Prerequisites
-To use *ProjectAnnotator* with your own infrastructure you first need to install following dependencies **on your server** (For testing this can be identical with your localhost/client of course):
+To use *ProcessAnnotator* with your own infrastructure you first need to install following dependencies **on your server** (For testing this can be identical with your localhost/client of course):
 - couchdb
 - nodejs (>5 tested, might or might not work with lower versions)
 - npm (should get installed with nodejs)
@@ -71,7 +71,7 @@ sudo cp ../systemd/system/processannotator.service /etc/systemd/system/processan
 clone the repo and run the client:
 ```.sh
 git clone git@github.com:nylki/ProjectAnnotator.git
-cd ProjectAnnotator/dokuClient
+cd ProjectAnnotator/client
 # Install dependencies
 npm install
 # Start app
@@ -85,4 +85,4 @@ npm run package
 ```
 
 For more detailed info, see:
-https://github.com/nylki/ProcessAnnotator/tree/master/dokuClient
+https://github.com/nylki/ProcessAnnotator/tree/master/client
