@@ -2,6 +2,7 @@
 
 const electron = require('electron');
 const noble = require('noble');
+const fs = require('fs');
 const dialog = electron.dialog;
 const app = electron.app; // Module to control application life.
 const ipc = electron.ipcMain; // module for interprocess communication (renderer <-> backend)
@@ -262,6 +263,12 @@ app.on('ready', function() {
 
   ipc.on('quit', app.quit);
 
+  ipc.on('getConfig', function (event, arg) {
+    // read config file and send to back to render process
+    var config = JSON.parse(fs.readFileSync('process-annotator.config.json', 'utf8'));
+    event.returnValue = config;
+  });
+
 	ipc.on('resetLocalDB', function() {
 
 			session.clearStorageData({
@@ -285,7 +292,7 @@ app.on('ready', function() {
 
 	setupNoble();
 
-  mainWindow.openDevTools();
+  // mainWindow.openDevTools();
 
   // Open dev tools if --dev parameter is passed in.
   if (process.argv.indexOf('--dev') !== -1) {

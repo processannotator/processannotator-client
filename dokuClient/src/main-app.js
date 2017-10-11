@@ -8,9 +8,13 @@ const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const { dialog } = electron.remote;
 // Uses rollup-replace to replace ENV with the env set when starting rollup
-const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '141.20.168.11';
-const PORT = (ENV === 'dev') ? '5984' : '80';
-const POUCHCONF = (ENV === 'dev') ? {} : {};
+
+
+// Set default couchdb address and port
+// gets overwritten when requesting the config from node process.
+let SERVERADDR = '127.0.0.1';
+let PORT = '80';
+let POUCHCONF = {};
 
 
 var localInfoDB, remoteInfoDB, localProjectDB, userDB, remoteProjectDB, localCachedUserDB;
@@ -42,7 +46,11 @@ Polymer({
 
 	attached: async function () {
 		document.app = this;
-		console.log(this);
+
+		// Request config from node process
+		let config = ipc.sendSync('getConfig');
+		SERVERADDR = config.couchdb.address || SERVERADDR;
+		PORT = config.couchdb.port || PORT;
 
 		this.setupPenEventHandlers();
 
@@ -60,6 +68,7 @@ Polymer({
 		this.hasCachedUserDB = false;
 		this.lastUserCacheUpdate = -1;
 		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
+		console.log(this.remoteUrl);
 		this.isOnline = window.navigator.onLine;
 		window.addEventListener("offline", this.updateOnlineStatus.bind(this));
 		window.addEventListener("online", this.updateOnlineStatus.bind(this));

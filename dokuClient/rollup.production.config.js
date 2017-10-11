@@ -9,9 +9,7 @@ import commonjs from 'rollup-plugin-commonjs';
 export default {
   format: 'iife',
   plugins: [
-    replace({
-      ENV: JSON.stringify( process.env.dev ? 'dev' : 'production' )
-    }),
+
     babel(),
     resolve({
       module: true,
