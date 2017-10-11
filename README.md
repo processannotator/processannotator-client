@@ -83,3 +83,6 @@ If you want to distribute the app, run:
 npm run package
 // this creates distributable binaries
 ```
+
+For more detailed info, see:
+https://github.com/nylki/ProcessAnnotator/tree/master/dokuClient
