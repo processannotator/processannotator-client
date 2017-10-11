@@ -15,7 +15,13 @@ npm install -g add-cors-to-couchdb
 add-cors-to-couchdb
 ```
 
-After that edit /etc/couchdb/local.ini to have fields from ./local.ini from here(bind=0.0.0.0, public user fields, proper ssl certificates etc.)
+After that edit /etc/couchdb/local.ini to have fields from ./local.ini from here(bind=0.0.0.0, public user fields, proper ssl certificates etc.). You should add/edit the following to your `local.ini`:
+
+```
+public_fields = surname, prename, color
+allow_persistent_cookies = true
+users_db_public = true
+```
 
 
 Then route port 80 to 5984
