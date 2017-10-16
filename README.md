@@ -1,7 +1,8 @@
 # ProjectAnnotator
+
 ## Overview
-### Backend
-The Backend consinsts of a running CouchDB instance and a *NodeJS* script that listens to CouchDB events and does some maintanance work and helps creating project databases on the clients behalve (because only admin users are allowed to do so)
+### Backend/Server
+The Backend consinsts of a running CouchDB instance and a *NodeJS* script that listens to CouchDB events and does some maintanance work and helps creating project databases on the clients behalve (because only admin users are allowed to do so).
 
 ### Client
 
@@ -68,7 +69,9 @@ sudo cp ../systemd/system/processannotator.service /etc/systemd/system/processan
 ```
 
 ## Running the electron client
+
 clone the repo and run the client:
+
 ```.sh
 git clone git@github.com:nylki/ProjectAnnotator.git
 cd ProjectAnnotator/client

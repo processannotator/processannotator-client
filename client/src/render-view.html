@@ -415,7 +415,7 @@
 			this.annotation3DObjects = new Map();
 			this.hoveredAnnotation = null;
 
-			this.annotationEditTimeout = undefined;
+			this.annotationMoveTimeout = undefined;
 
 			this.resize();
 			this.fire('initialized')
@@ -602,7 +602,7 @@
 			sphere.scale.set(2.0, 2.0, 2.0);
 
 			sphere.material.color.setHex(this.getStatusColor(annotation.status));
-
+			console.log(annotation);
 			sphere.position.copy(annotation.worldPosition);
 			annotationGlGroup.add(sphere);
 			annotation3DObject.sphere = sphere;
@@ -704,25 +704,27 @@
 		mouseOrPenMoved(event) {
 			this.previousCameraPosition = controls.object.position.clone();
 			this.previousCameraRotation = controls.object.rotation.clone();
-			let sphereIntersections = [];
 
-			let penActive = event === undefined;
-			if (!penActive) {
+
+			// To determine whether the pen is active we got an event
+			// this is a HACK; should be made more intuitive.
+			this.penActive = event === undefined;
+			if (!this.penActive) {
 				this.updateMouse(event);
 			}
 
-			// console.log(this.tool);
 
 			Polymer.dom(this).classList.remove('polygonCursor');
 			Polymer.dom(this).classList.remove('fingerCursor');
 
-			if(true || this.modus.hiddenLabels || this.tool === 'edit') {
+			let sphereIntersection;
+
+			if(true /* testing: always true*/ || this.modus.hiddenLabels || this.tool === 'move') {
 				// console.log(this.mouse, this.camera);
-				this.raycaster.setFromCamera(this.mouse, this.camera);
-				sphereIntersections = this.raycaster.intersectObjects(this.spheres);
+				sphereIntersection = this.getSphereIntersection();
 				this.hoveredAnnotation = undefined;
-				if(sphereIntersections.length !== 0) {
-					let _id = sphereIntersections[0].object.parent.userData._id;
+				if(sphereIntersection !== undefined) {
+					let _id = sphereIntersection.object.parent.userData._id;
 					// Get new hoveredAnnotation and make it visible
 					this.hoveredAnnotation = this.annotations.find(el => el._id === _id);
 					// console.log(sphereIntersections[0].object.parent);
@@ -733,26 +735,34 @@
 
 
 
-			let intersections = [];
+			let objectIntersections = [];
+
 			if (this.fileRepresentation) {
 				// console.log('tool',this.tool);
-				if (!penActive && (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'edit')) {
+				if (!this.penActive && (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'move')) {
 					this.raycaster.setFromCamera(this.mouse, this.camera);
-				} else if(penActive) {
+				} else if(this.penActive) {
 					// console.log('use pen position for raycaster');
 					const origin = this.physicalPenModel.getWorldPosition();
 					const normalizedDirection = origin.clone().negate().normalize();
 					this.raycaster.set(origin, normalizedDirection);
 				}
-				if(penActive || this.tool !== 'rotate') {
-					intersections = this.raycaster.intersectObject(this.fileRepresentation, true);
+
+				if(this.penActive || this.tool !== 'rotate') {
+					objectIntersections = this.getObjectIntersections();
 				}
 			}
 
-			if (intersections.length !== 0 || sphereIntersections.length !== 0) {
+
+			let originalIntersection;
+			if (objectIntersections !== undefined) {
+				originalIntersection = objectIntersections[0];
+			}
+
+			if (originalIntersection !== undefined || sphereIntersection !== undefined) {
 
 				if (this.modus.modelGrabbing && this.tool !== 'rotate') {
-					if(this.hoveredAnnotation && this.tool === 'edit') {
+					if(this.hoveredAnnotation && this.tool === 'move') {
 						Polymer.dom(this).classList.add('fingerCursor');
 					} else {
 						Polymer.dom(this).classList.add('polygonCursor');
@@ -760,7 +770,13 @@
 
 				}
 				this.spotLight.target = this.pointerSphere;
-				if(intersections.length !== 0) this.pointerSphere.position.set(intersections[0].point.x, intersections[0].point.y , intersections[0].point.z);
+				if(originalIntersection !== undefined) {
+					let objectIntersections = this.getObjectIntersections();
+
+					// The pointerSphere is in global space and
+					// requires the original intersection position
+					this.pointerSphere.position.copy(originalIntersection);
+				}
 				this.render();
 
 			} else {
@@ -828,7 +844,10 @@
 
 		track: function (e) {
 			controls.enabled = true;
-			if(this.tool === 'edit') {
+			e.stopPropagation();
+			if(this.tool === 'move') {
+
+
 
 				// the user wants to move the hovered annotation
 				// therefore remember a reference to this annotation
@@ -840,25 +859,25 @@
 				} else if(this.movingAnnotation) {
 
 					controls.enabled = false;
-					let newPosition = this.pointerSphere.position.clone();
-					let newLocalPosition = newPosition.clone();
-					this.mainGroupGL.worldToLocal(newLocalPosition);
-					this.fileRepresentation.worldToLocal(newLocalPosition);
+
+					let objectIntersections = this.getObjectIntersections();
+					if (objectIntersections !== undefined) {
+						var [originalIntersection, localPosition, worldPosition] = objectIntersections;
+					}
 
 
 					let id = this.movingAnnotation._id;
-					clearTimeout(this.annotationEditTimeout);
-					this.annotationEditTimeout = setTimeout(() => {
+					clearTimeout(this.annotationMoveTimeout);
+					this.annotationMoveTimeout = setTimeout(() => {
 						this.fire('edit-annotation',
-							{annotation: {_id: id, worldPosition: newPosition, localPosition: newLocalPosition}, elem: this}
+							{annotation: {_id: id, worldPosition, localPosition}, elem: this}
 						);
 						this.movingAnnotation = undefined;
 					}, 1000);
 
 
 					let targetAnnotation = this.annotations.filter(({_id}) => _id === id)[0];
-					targetAnnotation.worldPosition = newPosition;
-					console.log(targetAnnotation.position);
+					targetAnnotation.worldPosition = worldPosition;
 					this.removeAnnotationObjects([targetAnnotation]);
 					this.addAnnotationObject(targetAnnotation);
 
@@ -866,22 +885,75 @@
 				}
 			}
 		},
+		getSphereIntersection: function () {
+			this.raycaster.setFromCamera(this.mouse, this.camera);
+
+			let intersections = this.raycaster.intersectObjects(this.spheres, false);
+			if(intersections.length > 0) {
+				return intersections[0];
+			}
+		},
+
+		getObjectIntersections: function () {
+
+			if (!this.penActive && (this.tool === 'polygon' || this.tool === 'point' || this.tool === 'move')) {
+				this.raycaster.setFromCamera(this.mouse, this.camera);
+			} else if(this.penActive) {
+				// console.log('use pen position for raycaster');
+				const origin = this.physicalPenModel.getWorldPosition();
+				const normalizedDirection = origin.clone().negate().normalize();
+				this.raycaster.set(origin, normalizedDirection);
+			}
+
+			this.fileRepresentation.updateMatrixWorld();
+
+			// Calculate objects intersecting the picking ray
+			const intersections = this.raycaster.intersectObject(this.fileRepresentation, true);
+
+			// only use the first/frontmost intersection  -> [0]
+			const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : undefined;
+
+			// Transform intersection point from world coordinates
+			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
+			let localIntersectionPoint;
+			let worldIntersectionPoint;
+			let localCameraPosition;
+			let worldCameraPosition;
+
+			if(intersection) {
+				this.selectedAnnotation = undefined;
+				worldIntersectionPoint = intersection.point.clone();
+				localIntersectionPoint = intersection.point.clone();
+				localCameraPosition = controls.object.position.clone();
+				worldCameraPosition = localCameraPosition.clone();
+
+				this.fileRepresentation.worldToLocal(localIntersectionPoint);
+				this.mainGroupGL.worldToLocal(worldIntersectionPoint);
+				this.fileRepresentation.worldToLocal(localCameraPosition);
+
+				// console.log('\n\noriginal Intersection:', JSON.stringify(intersection.point));
+				// console.log('\nworld intersection (worldToMainGroup)', JSON.stringify(worldIntersectionPoint));
+				// console.log('\nlocal intersection (worldToFileRep)', JSON.stringify(localIntersectionPoint));
+
+				return [intersection.point.clone(), localIntersectionPoint, worldIntersectionPoint, localCameraPosition, worldCameraPosition];
+			}
+
+		},
+
 		tap: function(e) {
 			console.log('tap in render view');
 			if (jsonEqual(this.previousCameraPosition, this.camera.position) === false || jsonEqual(this.previousCameraRotation, this.camera.rotation) == false) {
 				console.log('moved! return!');
 			}
 
-			// Update values for: this.mouse
+			// Update values for this.mouse form event object so raycaster works
 			this.updateMouse(e.detail.sourceEvent);
 
-			// update the picking ray with the camera and mouse position
-			this.fileRepresentation.updateMatrixWorld()
-			this.raycaster.setFromCamera(this.mouse, this.camera);
-
-			let sphereIntersections = this.raycaster.intersectObjects(this.spheres, false);
-			if(sphereIntersections.length > 0) {
-				let _id = sphereIntersections[0].object.parent.userData._id;
+			// First check on annotation sphere intersection
+			// If we clicked one, toggle selection of it.
+			let sphereIntersection = this.getSphereIntersection();
+			if(sphereIntersection !== undefined) {
+				let _id = sphereIntersection.object.parent.userData._id;
 				let annotation = this.annotations.find(el => el._id === _id);
 
 				if(this.selectedAnnotation && this.selectedAnnotation._id === annotation._id) {
@@ -892,34 +964,18 @@
 				}
 				// annotation.hidden = !annotation.hidden;
 
-				return;
+				// if clicked on annotation, do not try to create annoation
+				// and return immediately.
+				return
 			}
 
-			// Calculate objects intersecting the picking ray
-			// only use the first/frontmost intersection  -> [0]
-			var intersections = this.raycaster.intersectObject(this.fileRepresentation, true);
-			console.log(intersections.length);
-			var intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
-			// Transform intersection point from world coordinates
-			// to the local coordinate space of the mainGroupGL/mainGroupCSS (both equival. matrix)
-
-
-			var localIntersectionPoint;
-			var worldIntersectionPoint;
-			var localCameraPosition;
-			var worldCameraPosition;
-
-			if(intersection) {
-				this.selectedAnnotation = undefined;
-				worldIntersectionPoint = intersection.point.clone();
-				localIntersectionPoint = worldIntersectionPoint.clone();
-				localCameraPosition = controls.object.position.clone();
-				worldCameraPosition = localCameraPosition.clone();
-
-				this.fileRepresentation.worldToLocal(localIntersectionPoint);
-				this.mainGroupGL.worldToLocal(worldIntersectionPoint);
-				this.fileRepresentation.worldToLocal(localCameraPosition);
-
+			let objectIntersections = this.getObjectIntersections();
+			if (objectIntersections !== undefined) {
+				var [originalIntersection,
+						localIntersectionPoint,
+						worldIntersectionPoint,
+						localCameraPosition,
+						worldCameraPosition] = objectIntersections;
 			}
 
 			switch (this.tool) {
@@ -950,7 +1006,7 @@
 						console.log('added polygon annotation');
 
 					break;
-				case 'edit':
+				case 'move':
 
 				break;
 				case 'polygon':

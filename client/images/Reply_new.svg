@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.2 (39069) - http://www.bohemiancoding.com/sketch -->
+    <title>Reply_new</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Reply_new" fill="#FFFFFF">
+            <rect id="Rectangle-2" transform="translate(16.974874, 13.474874) rotate(45.000000) translate(-16.974874, -13.474874) " x="13.9748737" y="12.4748737" width="6" height="2"></rect>
+            <rect id="Rectangle-2" transform="translate(16.974874, 16.474874) scale(1, -1) rotate(45.000000) translate(-16.974874, -16.474874) " x="13.9748737" y="15.4748737" width="6" height="2"></rect>
+            <rect id="Rectangle-5" x="9" y="14" width="8" height="2"></rect>
+            <rect id="Rectangle-5" x="9" y="7" width="8" height="2"></rect>
+            <path d="M9,7.02746439 C6.75002477,7.27618653 5,9.18372317 5,11.5 C5,13.8162768 6.75002477,15.7238135 9,15.9725356 L9,13.9499909 C7.85887984,13.7183558 7,12.709479 7,11.5 C7,10.290521 7.85887984,9.28164422 9,9.05000906 L9,7.02746439 Z" id="Combined-Shape"></path>
+        </g>
+    </g>
+</svg>

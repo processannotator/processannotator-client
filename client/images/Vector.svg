@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.2 (39069) - http://www.bohemiancoding.com/sketch -->
+    <title>Vector</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Vector" fill="#FFFFFF">
+            <g id="Path-Vector-Copy-7" transform="translate(4.000000, 4.000000)">
+                <circle id="Oval-19" cx="3" cy="3" r="3"></circle>
+                <circle id="Oval-19-Copy" cx="3" cy="13" r="3"></circle>
+                <path d="M13,16 C11.3431458,16 10,14.6568542 10,13 C10,11.3431458 11.3431458,10 13,10 C14.6568542,10 16,11.3431458 16,13 C16,14.6568542 14.6568542,16 13,16 Z M13,15 C14.1045695,15 15,14.1045695 15,13 C15,11.8954305 14.1045695,11 13,11 C11.8954305,11 11,11.8954305 11,13 C11,14.1045695 11.8954305,15 13,15 Z" id="Combined-Shape"></path>
+                <circle id="Oval-19-Copy-3" cx="13" cy="3" r="3"></circle>
+            </g>
+            <g id="square" transform="translate(6.000000, 6.000000)">
+                <rect id="Rectangle-3" x="2" y="0" width="8" height="2"></rect>
+                <rect id="Rectangle" x="0" y="2" width="2" height="8"></rect>
+                <rect id="Rectangle-4" x="10" y="2" width="2" height="7"></rect>
+                <rect id="Rectangle-2" x="2" y="10" width="7" height="2"></rect>
+            </g>
+        </g>
+    </g>
+</svg>

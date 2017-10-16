@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.2 (39069) - http://www.bohemiancoding.com/sketch -->
+    <title>MoveIcon</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="MoveIcon" stroke="#FFFFFF">
+            <g id="Move_Icon" transform="translate(3.000000, 3.000000)">
+                <circle id="Oval-2" fill="#FFFFFF" cx="2.88" cy="14.88" r="2.88"></circle>
+                <circle id="Oval-2" cx="15" cy="3" r="3"></circle>
+            </g>
+            <path d="M8.5,15.5 L15.645752,8.39794922" id="Line" stroke-linecap="square"></path>
+            <polyline id="Path-2" transform="translate(13.914742, 9.914742) rotate(45.000000) translate(-13.914742, -9.914742) " points="10.4481895 11.9180392 13.8867008 7.84501342 17.3812949 11.984471"></polyline>
+        </g>
+    </g>
+</svg>
