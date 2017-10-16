@@ -579,7 +579,7 @@
 		},
 
 		addAnnotationObject: function (annotation) {
-			let annotation3DObject = {};
+			let annotation3DObject = {_id: annotation._id};
 			let annotationGlGroup = new THREE.Object3D();
 			annotationGlGroup.userData = {_id: annotation._id};
 			let multFactor = 2.0;
@@ -595,13 +595,14 @@
 			annotationGlGroup.add(arrow);
 			annotation3DObject.arrow = arrow;
 
+			let statusColor = this.getStatusColor(annotation.status);
 			let sphere = new THREE.Mesh(
 				this.sphereGeometry,
 				this.sphereMaterial.clone()
 			);
 			sphere.scale.set(2.0, 2.0, 2.0);
 
-			sphere.material.color.setHex(this.getStatusColor(annotation.status));
+			sphere.material.color.setHex(statusColor);
 			console.log(annotation);
 			sphere.position.copy(annotation.worldPosition);
 			annotationGlGroup.add(sphere);
@@ -613,9 +614,9 @@
 
 			// if annotation has polygon info, create it and add it to the scene
 			if (annotation.polygon !== undefined) {
-				let polygon = this.createPolygon(annotation.polygon, annotation.creatorProfile.color);
-				annotationGlGroup.add(polygon)
-				annotation3DObject.polygon = polygon
+				let polygon = this.createPolygon(annotation.polygon, statusColor);
+				annotationGlGroup.add(polygon);
+				annotation3DObject.polygon = polygon;
 			}
 			this.annotationGlGroups.add(annotationGlGroup);
 			annotation3DObject.glGroup = annotationGlGroup;
@@ -642,6 +643,8 @@
 				}
 
 				let visibleAnnotations = [];
+
+				if(this.previewAnnotation) visibleAnnotations.push(this.previewAnnotation);
 				if(this.hoveredAnnotation) visibleAnnotations.push(this.hoveredAnnotation);
 				if(this.selectedAnnotation) {
 					visibleAnnotations.push(this.selectedAnnotation);
@@ -735,7 +738,7 @@
 
 
 
-			let objectIntersections = [];
+			let objectIntersections;
 
 			if (this.fileRepresentation) {
 				// console.log('tool',this.tool);
@@ -756,7 +759,7 @@
 
 			let originalIntersection;
 			if (objectIntersections !== undefined) {
-				originalIntersection = objectIntersections[0];
+				originalIntersection = objectIntersections.originalIntersection;
 			}
 
 			if (originalIntersection !== undefined || sphereIntersection !== undefined) {
@@ -797,15 +800,27 @@
 				case 13: /*Enter*/
 					if (this.tool === 'polygon' && this.verticesPolygonTool.length !== 0){
 						event.preventDefault();
-						// TODO: finish shape and create annotation
+
+
+						let {originalIntersection,
+								localIntersectionPoint,
+								worldIntersectionPoint,
+								localCameraPosition,
+								worldCameraPosition} = this.verticesPolygonTool[0];
+
+						let localPosPolygon = this.verticesPolygonTool.map(({localIntersectionPoint}) => localIntersectionPoint);
+						let polygon = this.verticesPolygonTool.map(({worldIntersectionPoint}) => worldIntersectionPoint);
+
 						this.fire('create-annotation', {
 							description: '',
-							polygon: this.verticesPolygonTool,
-							position: this.verticesPolygonTool[0],
-							worldCameraPosition: worldCameraPosition,
-							localCameraPosition: localCameraPosition,
+							polygon,
+							localPosPolygon, 												/* for future proof, include polygon in local coords */
+							localPosition: localIntersectionPoint,	/* for future proof, include position in local coords */
+							worldPosition: worldIntersectionPoint,
+							worldCameraPosition,
+							localCameraPosition,
 							// cameraRotation: camera.rotation,
-							cameraUp: this.camera.up
+							cameraUp: controls.object.up
 						});
 						if (this.previewAnnotation !== undefined) {
 							this.mainGroupGL.remove(this.previewAnnotation.arrow);
@@ -813,7 +828,7 @@
 							this.mainGroupCSS.remove(this.previewAnnotation.label);
 							this.previewAnnotation = undefined;
 						}
-						glScene.remove(this.previewPolygon);
+						this.mainGroupGL.remove(this.previewPolygon);
 						this.previewPolygon = undefined;
 						this.verticesPolygonTool = [];
 						console.log('added polygon annotation');
@@ -822,7 +837,7 @@
 					case 27 /* Escape */:
 						console.log(this.previewAnnotation);
 						if (this.previewPolygon !== undefined){
-							glScene.remove(this.previewPolygon);
+							this.mainGroupGL.remove(this.previewPolygon);
 							this.previewPolygon = undefined;
 						}
 
@@ -846,9 +861,6 @@
 			controls.enabled = true;
 			e.stopPropagation();
 			if(this.tool === 'move') {
-
-
-
 				// the user wants to move the hovered annotation
 				// therefore remember a reference to this annotation
 				// in case we loose hovering when user moves cursor too fast
@@ -862,22 +874,27 @@
 
 					let objectIntersections = this.getObjectIntersections();
 					if (objectIntersections !== undefined) {
-						var [originalIntersection, localPosition, worldPosition] = objectIntersections;
+						var {originalIntersection, localIntersectionPoint, worldIntersectionPoint} = objectIntersections;
 					}
-
 
 					let id = this.movingAnnotation._id;
 					clearTimeout(this.annotationMoveTimeout);
 					this.annotationMoveTimeout = setTimeout(() => {
 						this.fire('edit-annotation',
-							{annotation: {_id: id, worldPosition, localPosition}, elem: this}
+							{annotation: {
+								_id: id,
+								worldPosition: worldIntersectionPoint,
+								localPosition: localIntersectionPoint
+								},
+								elem: this
+							}
 						);
 						this.movingAnnotation = undefined;
 					}, 1000);
 
 
 					let targetAnnotation = this.annotations.filter(({_id}) => _id === id)[0];
-					targetAnnotation.worldPosition = worldPosition;
+					targetAnnotation.worldPosition = worldIntersectionPoint;
 					this.removeAnnotationObjects([targetAnnotation]);
 					this.addAnnotationObject(targetAnnotation);
 
@@ -921,7 +938,6 @@
 			let worldCameraPosition;
 
 			if(intersection) {
-				this.selectedAnnotation = undefined;
 				worldIntersectionPoint = intersection.point.clone();
 				localIntersectionPoint = intersection.point.clone();
 				localCameraPosition = controls.object.position.clone();
@@ -935,7 +951,7 @@
 				// console.log('\nworld intersection (worldToMainGroup)', JSON.stringify(worldIntersectionPoint));
 				// console.log('\nlocal intersection (worldToFileRep)', JSON.stringify(localIntersectionPoint));
 
-				return [intersection.point.clone(), localIntersectionPoint, worldIntersectionPoint, localCameraPosition, worldCameraPosition];
+				return {originalIntersection: intersection.point.clone(), localIntersectionPoint, worldIntersectionPoint, localCameraPosition, worldCameraPosition};
 			}
 
 		},
@@ -953,6 +969,7 @@
 			// If we clicked one, toggle selection of it.
 			let sphereIntersection = this.getSphereIntersection();
 			if(sphereIntersection !== undefined) {
+
 				let _id = sphereIntersection.object.parent.userData._id;
 				let annotation = this.annotations.find(el => el._id === _id);
 
@@ -971,19 +988,20 @@
 
 			let objectIntersections = this.getObjectIntersections();
 			if (objectIntersections !== undefined) {
-				var [originalIntersection,
+				var {originalIntersection,
 						localIntersectionPoint,
 						worldIntersectionPoint,
 						localCameraPosition,
-						worldCameraPosition] = objectIntersections;
+						worldCameraPosition} = objectIntersections;
 			}
+			this.selectedAnnotation = undefined;
+
 
 			switch (this.tool) {
 
 				case 'point':
 						console.log('CREATE NEW ANNOTATION AT COORDINATES:', localIntersectionPoint.clone());
 						event.preventDefault();
-						// TODO: finish shape and create annotation
 						this.fire('create-annotation', {
 							description: '',
 							polygon: [worldIntersectionPoint.clone()],
@@ -1011,27 +1029,34 @@
 				break;
 				case 'polygon':
 					console.warn('FIX POLYGON POSITIONS BY APPLYING SAME TRANSFORMATIONS AS POINT; LATER ALSO SAVE LOCALPOSITION BY WORLDTOLOCAL FROM FILEREP');
-					this.verticesPolygonTool.push(localIntersectionPoint.clone());
-
+					this.verticesPolygonTool.push(objectIntersections);
+					console.log(this.verticesPolygonTool);
 					// create new preview polygon/shape when enough points are available
 					if (this.verticesPolygonTool.length >= 3) {
-							glScene.remove(this.previewPolygon);
-							this.previewPolygon = this.createPolygon(this.verticesPolygonTool, 0x00ff00);
-							glScene.add(this.previewPolygon);
+							this.mainGroupGL.remove(this.previewPolygon);
+
+							// Extract world coordinate vertices as list
+							let polygonVertices = this.verticesPolygonTool.map(({worldIntersectionPoint}) => worldIntersectionPoint);
+
+							this.previewPolygon = this.createPolygon(polygonVertices, 0x00ff00);
+							this.mainGroupGL.add(this.previewPolygon);
 					}
 
 					// And show a temporary preview annotation if first tap.
 					if (this.previewAnnotation === undefined) {
+
 						this.previewAnnotation = this.addAnnotationObject({
 							_id: 'previewAnnotation',
 							status: 'comment',
-							description: "Press Enter to edit/create. Esc to cancel.",
+							description: "Add corners by clicking. Press Enter to create. Esc to cancel.",
 							localPosition: localIntersectionPoint.clone(),
 							worldPosition: worldIntersectionPoint.clone(),
-							localCameraPosition: localCameraPosition,
-							worldCameraPosition: worldCameraPosition,
+							localCameraPosition,
+							worldCameraPosition,
 							cameraUp: this.camera.up
 						});
+
+						console.log('preview annotation', this.previewAnnotation);
 					}
 
 					this.render();
@@ -1134,7 +1159,15 @@
 
 			// div.annotation = annotation;
 			Polymer.dom.flush();
-			let div = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
+			let div;
+			// render the preview annotation differently, create adhoc annotation
+			if(annotation._id === 'previewAnnotation') {
+				div = document.createElement('div');
+				div.style.backgroundColor = "white";
+				div.innerHTML = annotation.description;
+			} else {
+				div = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
+			}
 
 
 			// TODO: disable any raycaster stuff etc. when interacting with label
@@ -1158,7 +1191,7 @@
 
 				}
 			} else {
-				label.position.set(annotation.worldPosition.x, annotation.worldPosition.y, annotation.worldPosition.z);
+				label.position.copy(annotation.worldPosition);
 				label.position.multiplyScalar(multFactor);
 			}
 			return label;
