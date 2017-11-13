@@ -1,0 +1,207 @@
+
+<script src="../bower_components/webcomponentsjs/webcomponents.min.js"></script>
+<script src="../node_modules/pouchdb/dist/pouchdb.min.js"></script>
+<!-- <script src="../node_modules/pouchdb-authentication/dist/pouchdb.authentication.min.js"></script> -->
+<script src="../node_modules/pouchdb-all-dbs/dist/pouchdb.all-dbs.min.js"></script>
+<script src="../node_modules/worker-pouch/dist/pouchdb.worker-pouch.min.js"></script>
+
+
+
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<!-- <link rel="import" href="../bower_components/iron-list/iron-list.html"> -->
+
+<link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animatable.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animations.html">
+<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
+<!-- <link rel="import" href="../bower_components/paper-fab/paper-fab.html"> -->
+
+<link href="main-app.css" rel="stylesheet">
+<link rel="import" href="profile-setup-overlay.html">
+<link rel="import" href="project-setup-overlay.html">
+
+<link rel="import" href="render-view.html">
+<link rel="import" href="dashboard.html">
+<link rel="import" href="annotation-box.html">
+<link rel="import" href="side-panel.html">
+
+
+
+<dom-module id="main-app">
+
+  <style is="custom-style">
+
+  iron-icon {
+    --iron-icon-height: 100%;
+    --iron-icon-width: 1rem;
+
+  }
+
+  paper-spinner-lite {
+    --paper-spinner-color: #c8c8c8;
+    padding: 0.2em;
+    height: 1em;
+    width: 1em;
+  }
+
+	#projectTitleSidePanel {
+		background-color: rgba(31, 102, 12, 0.5);
+		font-family: 'SourceSansPro-Semibold';
+		letter-spacing: 0px;
+		text-align: center;
+		color: #ffffff;
+		padding: 0.25em;
+	}
+
+	.comment-color {
+		color: #2f8bb7 !important;
+	}
+
+
+	.task-color {
+		color: #dfd047 !important;
+	}
+
+
+	.problem-color {
+		color: #b82f2f !important;
+	}
+  </style>
+
+
+
+<body>
+
+	<template>
+
+
+		<profile-setup-overlay id="profileSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
+		</profile-setup-overlay>
+		<project-setup-overlay id="projectSetupOverlay" class="fullbleed" with-backdrop auto-fit-on-attach="true">
+		</project-setup-overlay>
+
+		<!-- TODO: use paper-header-panel for toggling and shit -->
+		<div class="top-container">
+
+			<div class="main-container">
+
+			<div id="main-menu" class="menu">
+        <!-- <iron-icon icon="notification:sync"></iron-icon> -->
+        <!-- <div>online: {{onlineStatus}}</div> -->
+				<paper-button class="menu-item appname"><span>process.</span><span style="font-weight: bold">annotator</span></paper-button>
+				<paper-button id="projectMenuItem" class="menu-item" on-tap="toggleDashboard"><span>PROJECT</span></paper-button>
+				<paper-button disabled class="menu-item">TOPIC</paper-button>
+				<paper-button disabled class="menu-item">OBJECT</paper-button>
+        <span>{{selectedAnnotation._id}}</span>
+
+				</div>
+
+
+				<div id="workspace">
+
+
+						<div class="menu" id="tool-menu">
+
+							<iron-selector id="toolSelector" attr-for-selected="name" fallback-selection="none" selected="rotate" on-iron-select="toolChanged">
+							<!-- <iron-icon class="tool-box-icon" name="none">click</iron-icon> -->
+							&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+              <!-- <iron-icon class="tool-box-icon" name="bottom" src="../images/path-vector-copy-7.svg"></iron-icon> -->
+              <!-- <iron-icon class="tool-box-icon" name="setCamera" src="../images/path-vector-copy-7.svg"></iron-icon>
+              <iron-icon class="tool-box-icon" name="resetCamera" src="../images/path-vector-copy-7.svg"></iron-icon> -->
+
+							<iron-icon class="tool-box-icon" title="polygon annotation" hidden$="{{penButtonConnected}}" name="polygon" src="../images/path-vector-copy-7.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" title="move and rotate camera" name="rotate" src="../images/rotate.svg"></iron-icon>
+							<iron-icon class="tool-box-icon" title="add point annotation" hidden$="{{penButtonConnected}}" name="point" src="../images/selection.svg"></iron-icon>
+              <iron-icon class="tool-box-icon" title="move annotation" hidden$="{{penButtonConnected}}" name="edit" src="../images/move-icon.svg"></iron-icon>
+
+
+						</iron-selector>
+            <paper-button name="point" id="connectPenButton" class="menu-item" on-tap="connectOrDisconnectPen">{{penButtonText}}<paper-spinner-lite id="penConnectSpinner" alt="connecting with pen" hidden$="{{!penButtonConnecting}}" active="{{penButtonConnecting}}"></paper-spinner-lite></paper-button>
+
+            <span class="menu-item" id="onlineStatusText">{{onlineStatusText}}<paper-spinner-lite id="dbSyncSpinner" alt="db sync active" active="{{dbSyncActive}}"></paper-spinner-lite></span>
+
+            <paper-button class="menu-item" id="resetDBButton" on-tap="resetLocalDB">Reset DB</paper-button>
+
+						</div>
+
+
+
+
+					<dash-board id="dashboard" remote-url="[[remoteUrl]]" on-boom="handleCreateProject" projects="[[projects]]" on-switch-project-click="handleSwitchProject" on-delete-project-click="handleDeleteProject"></dash-board>
+
+
+						<!-- <div class="tutorial">
+						<paper-fab hidden$="{{projectOpened}}" title="heart" icon="add" on-tap="createProject"></paper-fab>
+					</div> -->
+
+					<render-view id="renderView" active-profile="[[activeProfile]]" annotations="{{annotations}}" on-create-annotation="addAnnotation" on-edit-annotation="editAnnotation" on-label-over="mouseOverAnnotationLabel" on-label-out="mouseOutAnnotationLabel" on-toggle-refer-mode="toggleReferMode" tool="{{objectTool}}" selected-annotation="{{selectedAnnotation}}" pen-status="[[penStatus]]">
+
+          </render-view>
+
+		</div>
+
+	</div>
+
+
+
+</div>
+
+
+
+<div class="session-container">
+
+
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+	<div class="session-box"></div>
+
+	<!-- TODO: create custom web components 'session' and 'timeline' -->
+	<!-- <timeline></timeline> -->
+</div>
+
+<!--
+The side-panel manages 3 states and their animations: minimized, normal and bigger.
+The states can be evaluated to trigger extra functionality. We are checking for the `minimized` property, to show a different visualization of annotations when the side panel is minimized/narrow.
+-->
+<side-panel id="sidePanel" project="[[activeProject]]" state="{{sidePanelState}}" minimized="{{sidePanelMinimized}}">
+
+	<div id="projectTitleSidePanel" hidden$="[[sidePanelMinimized]]">
+		[[activeProject.name]]
+	</div>
+
+  <div id="annotationList" hidden$="[[sidePanelMinimized]]">
+    <template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
+      <annotation-box id="annotationbox_[[item._id]]" annotation="{{item}}" index="[[index]]" on-annotation-edited-by-user="editAnnotation" on-annotation-deleted-by-user="deleteAnnotation" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box>
+    </template>
+  </div>
+
+  <div id="minifiedAnnotationList" hidden$="[[!sidePanelMinimized]]" on-tap="showFullAnnotationList">
+    <template is="dom-repeat" class="annotationListTemplate" items="{{annotations}}" as="item">
+      <div class$="circle [[item.status]]-color">
+      </div>
+      <br>
+    </template>
+  </div>
+
+  <array-selector id="annotationSelector" items="{{annotations}}" selected="{{selectedAnnotation}}" toggle></array-selector>
+
+
+
+
+</side-panel>
+
+</template>
+
+
+<!-- Loading the main script in the end -->
+<script src="main-app.bundle.js" charset="utf-8"></script>
+</dom-module>
