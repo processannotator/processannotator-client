@@ -1,8 +1,0 @@
-*bundle.js*
-bower_components
-node_modules
-build
-src/main-app-bundle.*
-dist
-.pouchdb_server_config
-log.txt
