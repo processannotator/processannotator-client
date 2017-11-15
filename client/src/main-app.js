@@ -2,17 +2,18 @@
 'use strict'; /*eslint global-strict:0*/
 
 import BNO055 from './bno055';
-// import NeonionDB from './NeonionDB';
-// import SpeechRecognition from './speechRecognition'
 
+// import SpeechRecognition from './speechRecognition'
+const equal = require('deep-equal');
 const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const { dialog } = electron.remote;
 // Uses rollup-replace to replace ENV with the env set when starting rollup
-const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '141.20.168.11';
+const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '127.0.0.1';
 const PORT = 8301;
+let POUCHCONF = {};
 
-var db;
+var db, localInfoDB;
 
 Polymer({
 	is: 'main-app',
@@ -28,9 +29,13 @@ Polymer({
 		},
 		annotations: {
 			type: Array,
-			notify: true
+			notify: true,
 			// observer: 'annotationsChangedObserver'
-		}
+		},
+		penStatus: {
+			type: String,
+			value: 'disconnected'
+		},
 
 	},
 	observers: [
@@ -40,11 +45,8 @@ Polymer({
 	attached: async function () {
 		document.app = this;
 
-		this.remoteUrl = 'http://' + SERVERADDR + ':' + PORT;
-		db = new NeonionDB(this.remoteUrl);
-
 		this.setupPenEventHandlers();
-
+		this.previouslyFetchedAnnotations = [];
 		this.penButtonText = 'Connect Pen';
 		this.objectButtonText = 'Connect Object';
 		this.penButtonConnecting = false;
@@ -53,9 +55,8 @@ Polymer({
 		this.onlineStatus = false;
 		this.OnlineStatusText = '-';
 
-
-		this.projects = [];
-		this.activeTarget = {_id: 'collabdb', activeTopic: 'topic_1'};
+		this.targets = [];
+		this.activeTarget = {_id: 'target:1', activeTopic: 'topic_1'};
 
 		this.isOnline = window.navigator.onLine;
 		window.addEventListener("offline", this.updateOnlineStatus.bind(this));
@@ -63,6 +64,9 @@ Polymer({
 
 
 		this.renderView = document.querySelector('render-view');
+		localInfoDB = new PouchDB('info', POUCHCONF);
+		localInfoDB.changes({live: true, since: 'now'})
+			.on('change', this.updateTargetList);
 
 		setInterval(this.updateOnlineStatus.bind(this), 1000 * 30);
 		this.updateOnlineStatus();
@@ -91,6 +95,10 @@ Polymer({
 		// but also to a timeout!
 		//
 		// this would make it possible to easier select the just created annotation
+	},
+
+	updateTargetList: async function () {
+		this.targets = await NeonionRest.fetchTargets({host: SERVERADDR, port: PORT});
 	},
 
 	// Return false if either whole computer is offline or databases are unreachable
@@ -132,8 +140,8 @@ Polymer({
 	deleteTarget: async function (targetID) {
 
 		// HACK: Only in testing phase, any user can delete any project DB by
-		// modifying the array projectsInfo.projects of the `info` db
-		// In the future only allow db members to delete their project db, by modifying a users projects array.
+		// modifying the array targetsInfo.targets of the `info` db
+		// In the future only allow db members to delete their project db, by modifying a users targets array.
 
 		try {
 			await db.deleteTarget(targetID);
@@ -150,35 +158,27 @@ Polymer({
 
 	// Takes a new target object and reloads annotations, the file blob etc.
 	switchTarget: async function(targetID) {
-		console.log('switch to annotation target with name', this.activeTarget);
+		console.log('switch to annotation target with ID', targetID);
 		this.annotations = [];
-		let target = db.getTarget(targetID);
-		let annotations = db.getAnnotations(targetID);
+		this.activeTarget = await NeonionRest.fetchTarget({id:targetID, host: SERVERADDR, port: PORT});
+		console.log('ACTIVE TARGET:', this.activeTarget);
+		db = new NeonionRest.NeonionRestTarget({id:targetID, host: SERVERADDR, port: PORT});
 
 		this.savePreferences();
-		setTimeout(() => {
 
-			// check for changes.
-			//
-			// only update also the file (for the renderer) if it's not an annotation
-			// let updateFile = false;
-			// if(info.doc.type !== 'annotation' && !info._deleted && !info.deleted) {
-			// 	console.log('\n\nUpdate file because:',info, info.doc.type);
-			// 	updateFile = true;
-			// }
-			// // Reduce calls to this.updateElements if there are many simultaneous changes!
-			// // Therefore only update every 30ms
-			// // This would not be valid if we only actually update individual elements from changes,
-			// // as we would have to notify updateElements about the actual changed docs. this is not true yet and may never be, just wanted to note this here in case we ever decide to do so:)
-			// clearTimeout(this.updateTimeout);
-			// this.updateTimeout = setTimeout(() => {
-			// 	this.updateOnlineStatus();
-			// 	this.updateElements({updateFile: updateFile});
-			// }, 10);
+		// Clear any previous target's timeouts
+		// then define and immediately start recursive timeout
+		// which starts a new timeout after elements have been updated
+		clearTimeout(this.updateAnnotationsTimeout);
 
-		}, 2000);
+		var recursiveUpdateAnnotations = async () => {
+			await this.updateElements({updateFile: false});
+			this.updateAnnotationsTimeout = setTimeout(recursiveUpdateAnnotations, 4000);
+		}
+		recursiveUpdateAnnotations();
 
-		await this.updateElements({updateFile: true});
+
+
 
 	},
 
@@ -187,7 +187,7 @@ Polymer({
 	addAnnotation: function({detail: {description='', localPosition={x: 0,y: 0,z: 0}, worldPosition={x: 0, y: 0, z: 0}, cameraPosition={x: 0, y: 0, z: 0}, localCameraPosition={x: 0, y: 0, z: 0}, worldCameraPosition={x: 0, y: 0, z: 0}, cameraRotation={x: 0, y: 0, z: 0}, cameraUp={x: 0, y: 0, z: 0}, polygon=[], responses=[]}}) {
 
 		let created = new Date().toISOString();
-		let _id = `annotation_${created}`;
+		let id = `annotation:${created}`;
 		let referedBy = [];
 		if(this.referingAnnotation) {
 			referedBy = [this.referingAnnotation._id];
@@ -199,8 +199,6 @@ Polymer({
 		}
 
 		let annotation = {
-			_id,
-			type: 'annotation',
 			status: 'comment',
 			motivation: 'commenting', // web annotation model
 			responses,
@@ -208,8 +206,6 @@ Polymer({
 			referingTo: [],
 			parentProject: this.activeTarget._id,
 			parentTopic: this.activeTarget.activeTopic,
-			parentObject: this.activeObject_id,
-			target: this.activeObject_id,
 			creator: this.activeProfile.name,
 			creationDate: created,
 			created, // same as above, conforms to web-annotation-model
@@ -223,11 +219,11 @@ Polymer({
 			polygon
 		};
 
-		console.log(annotation);
 
-		return db.createAnnotation(annotation)
-		.then(() => {
-			console.log('Added annotation.');
+		// annotation = JSON.parse(JSON.stringify(annotation));
+		return db.createAnnotation({info:annotation, id})
+		.then((res) => {
+			console.log('Added annotation.', res);
 			console.log('refer mode active?', this.referMode);
 			if(this.referMode) this.toggleReferMode();
 		})
@@ -298,7 +294,7 @@ Polymer({
 
 				let result = await localInfoDB.put({
 					_id: '_local/lastSession',
-					projects: [],
+					targets: [],
 					activeProfile: '',
 					activeTarget: {}
 				})
@@ -346,7 +342,7 @@ Polymer({
 
 		// The testkey is necessary, otherwise the user will get deleted and won't get the proper db role.
 		metadata.testkey = 'testuserkey';
-		metadata.projects = [];
+		metadata.targets = [];
 		// No further signup required for this (neonion-rest) fork
 		// profile ise simply used to supply a name for new annotations
 
@@ -405,7 +401,8 @@ Polymer({
 
 		getAnnotations: async function() {
 			if(db === undefined) return false;
-			let result = await db.getAnnotations(this.activeTarget.id);
+			return db.fetchAnnotations();
+
 		},
 
 
@@ -414,38 +411,50 @@ Polymer({
 			if((options.updateFile && options.updateFile === true)) {
 				try {
 					// Update activeTarget object with most recent version
-					this.activeTarget = await db.getTarget(this.activeTarget.id);
+					console.log(this.activeTarget);
+					this.activeTarget = await NeonionRest.fetchTarget({id:this.activeTarget.id, host: SERVERADDR, port: PORT});
 					// Get most recent target file from DB and pipe it into renderview
-					let blob = await db.getAttachment(this.activeTarget.id, 'file');
-					this.renderView.fileEnding = activeTopic.fileEnding;
-					this.renderView.fileName = activeTopic.fileName;
+
+					// TODO: Read the "file" field from the target entry and use that url/file (optionally cache it)
+					// for now, testing it is always target1 using shuttle for a web url
+					let blob = await fetch('https://people.sc.fsu.edu/~jburkardt/data/obj/shuttle.obj').then(res => res.blob());
+					this.renderView.fileEnding = 'obj';
+					this.renderView.fileName = this.activeTarget.id;
 					this.renderView.file = blob;
 				} catch (err) {
 					console.log(err);
 				}
 			}
 
-			let updatedAnnotations = await this.getAnnotations();
-			let previousSelected;
-			// try selection of previous selected annotation for new list
-			if(this.selectedAnnotation) {
-				previousSelected = updatedAnnotations.find((annotation) => annotation.id === this.selectedAnnotation.id);
-			} else {
-				// Select newly created annotation
-				// HACK: Its a bit hacky, because we just assume that if the last annotation
-				// has no text, that it must be a newly created one. But it works.
-				let lastAnnotation = updatedAnnotations[updatedAnnotations.length - 1];
-				if(lastAnnotation && lastAnnotation.description === '') previousSelected = lastAnnotation;
-			}
+			const updatedAnnotations = await this.getAnnotations();
 
-			this.annotations = updatedAnnotations;
-			// reselect previous annotation after updating ^
+			// Check if there is any difference between the current ones and the updated ones
+			// console.log(JSON.stringify(this.previouslyFetchedAnnotations));
+			// console.log(JSON.stringify(updatedAnnotations));
+
+			if(equal(this.previouslyFetchedAnnotations, updatedAnnotations)) {
+				console.log('updated annotations are equal. Dont continue');
+				return;
+			}
+			console.log('NEW updated annotations, use them!');
+
+			// Save a version that won't change state in the appendChild
+			// for diffing/comparing
+			this.previouslyFetchedAnnotations = updatedAnnotations.slice();
+
+			// try selection of previous selected annotation for new list
+			let previousSelectedID;
+			if(this.selectedAnnotation) {
+				previousSelectedID = this.selectedAnnotation.id;
+			}
+			// Now replace main annotations object for use in app
+			this.annotations = updatedAnnotations.slice();
+
+			// Either select the actual previously selected annotation or pick the most recent one (last in list)
+			let previousSelected = this.annotations.find((annotation) => annotation.id === previousSelectedID) || this.annotations[this.annotations.length - 1];
 			if(previousSelected) {
-				console.log('SELECT');
-				console.log(previousSelected);
 				this.$.annotationSelector.select(previousSelected);
 			}
-
 		},
 
 		handleResize: function(event) {
@@ -487,10 +496,6 @@ Polymer({
 			targetOverlay.open();
 		},
 
-		updateTargetList: async function () {
-			this.projects = await db.getTargets();
-		},
-
 		toggleDashboard: function (e) {
 			this.$.dashboard.toggle();
 			this.$.projectMenuItem.classList.toggle('selected');
@@ -500,7 +505,7 @@ Polymer({
 		},
 
 		handleSwitchTarget: function (e) {
-			console.console.log(e);
+			console.log('Switch Target', e.detail.id);
 			return this.switchTarget(e.detail.id);
 		},
 

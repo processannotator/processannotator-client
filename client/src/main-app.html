@@ -4,7 +4,7 @@
 <!-- <script src="../node_modules/pouchdb-authentication/dist/pouchdb.authentication.min.js"></script> -->
 <script src="../node_modules/pouchdb-all-dbs/dist/pouchdb.all-dbs.min.js"></script>
 <script src="../node_modules/worker-pouch/dist/pouchdb.worker-pouch.min.js"></script>
-
+<script src="../libs/neonion-rest.bundle.js"></script>
 
 
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
@@ -131,7 +131,7 @@
 
 
 
-					<dash-board id="dashboard" remote-url="[[remoteUrl]]" on-boom="handleCreateProject" projects="[[projects]]" on-switch-project-click="handleSwitchProject" on-delete-project-click="handleDeleteProject"></dash-board>
+					<dash-board id="dashboard" remote-url="[[remoteUrl]]" on-boom="handleCreateTarget" targets="[[targets]]" on-switch-target-click="handleSwitchTarget" on-delete-target-click="handleDeleteTarget"></dash-board>
 
 
 						<!-- <div class="tutorial">

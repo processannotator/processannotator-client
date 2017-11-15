@@ -35,7 +35,7 @@ it's not supposed to actually handle the editing itself, just:
 
 	}
 
-	#createProjectBtn {
+	#createTargetBtn {
 		height: 100%;
 		color: rgb(43, 126, 165);
 
@@ -65,18 +65,18 @@ it's not supposed to actually handle the editing itself, just:
 	</style>
 
 	<!-- <paper-material id="base" elevation="3"> -->
-	<div class="project sub menu">
-		<paper-button class="menu-item" id="createProjectBtn" on-tap="createProjectClick">Create New Project<iron-icon icon="add"></iron-icon></paper-button>
+	<div class="target sub menu">
+		<paper-button class="menu-item" id="createTargetBtn" on-tap="createTargetClick">Create New target<iron-icon icon="add"></iron-icon></paper-button>
 	</div>
 
 		<h1>Switch</h1>
 			<div class="scrollContainer">
-				<template id="projectList" is="dom-repeat" items="{{projects}}" as="project">
+				<template id="projectList" is="dom-repeat" items="{{targets}}" as="target">
 					<paper-item>
-						<paper-button on-tap="projectSelectClick">
-							{{project.name}}
+						<paper-button on-tap="selectTargetClick">
+							{{target.id}}
 						</paper-button>
-						<paper-button on-tap="deleteProjectClick">
+						<paper-button on-tap="deleteTargetClick">
 							X
 						</paper-button>
 					</paper-item>
@@ -97,7 +97,7 @@ Polymer({
 	],
 	properties: {
 		isVisible: Boolean,
-		projects: Array,
+		targets: Array,
 		animationConfig: {
 			value: function() {
 				return {
@@ -134,16 +134,16 @@ Polymer({
 			this.style.display = "none";
 		}
 	},
-	createProjectClick: function () {
+	createTargetClick: function () {
 		console.log('click');
 		this.fire('boom');
 	},
-	deleteProjectClick: function (e) {
-		this.fire('delete-project-click', e.model.project);
+	deleteTargetClick: function (e) {
+		this.fire('delete-target-click', e.model.target);
 	},
 
-	projectSelectClick: function(e) {
-		this.fire('switch-project-click', e.model.project);
+	selectTargetClick: function(e) {
+		this.fire('switch-target-click', e.model.target);
 		this.toggle();
 	}
 });

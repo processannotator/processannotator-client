@@ -53,7 +53,7 @@
 
 				<template is="dom-repeat" items="{{annotations}}" as="item">
 
-					<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item._id]]" active-profile="[[activeProfile]]" annotation="{{item}}" index="[[index]]" selected="[[_isSelected(selectedAnnotation._id, item._id)]]"  on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
+					<annotation-box-3d class="annotationBox3D" id="annotationbox3d_[[item.id]]" active-profile="[[activeProfile]]" annotation="{{item}}" index="[[index]]" selected="[[_isSelected(selectedAnnotation.id, item.id)]]"  on-annotation-deleted-by-user="onAnnotationDeleted" on-tap="annotationBoxClicked" on-mouseover="annotationBoxMouseover"></annotation-box-3d>
 
 				</template>
 
@@ -530,17 +530,17 @@
 			//
 			//
 
-
-
 			// Following part has to be async because the annotation-box-3d's may not ready yet in this tick.
 			// Polymer.dom.flush();
 			this.async(function() {
 
 				this.resetGroups();
-				for (let annotation of this.annotations) {
-					this.addAnnotationObject(annotation);
-				}
+				if(!this.annotations || this.annotations.length === 0) return;
 
+				for (let annotation of this.annotations) {
+					if(annotation.worldPosition !== undefined)
+						this.addAnnotationObject(annotation);
+				}
 
 				this.render();
 			});
@@ -550,11 +550,11 @@
 
 		removeAnnotationObjects: function (annotations) {
 			for (let annotation of annotations) {
-				let glGroup = this.annotation3DObjects.get(annotation._id).glGroup;
+				let glGroup = this.annotation3DObjects.get(annotation.id).glGroup;
 				this.annotationGlGroups.remove(glGroup);
 
 				console.log('also remove the labels please!');
-				let label = this.labels.get(annotation._id);
+				let label = this.labels.get(annotation.id);
 				console.log(label);
 				this.labelGroup.remove(label);
 				cssScene.remove(label);
@@ -565,11 +565,11 @@
 
 		changeAnnotationObjects: function (annotations) {
 			for (let annotation of annotations) {
-				let glGroup = this.annotation3DObjects.get(annotation._id).glGroup;
+				let glGroup = this.annotation3DObjects.get(annotation.id).glGroup;
 				this.annotationGlGroups.remove(glGroup);
 
 				console.log('also remove the labels please!');
-				let label = this.labels.get(annotation._id);
+				let label = this.labels.get(annotation.id);
 				console.log(label);
 				this.labelGroup.remove(label);
 				cssScene.remove(label);
@@ -581,12 +581,12 @@
 		addAnnotationObject: function (annotation) {
 			let annotation3DObject = {};
 			let annotationGlGroup = new THREE.Object3D();
-			annotationGlGroup.userData = {_id: annotation._id};
+			annotationGlGroup.userData = {id: annotation.id};
 			let multFactor = 2.0;
 
 			let label = this.createLabel(annotation, multFactor);
 
-			this.labels.set(annotation._id, label);
+			this.labels.set(annotation.id, label);
 			this.labelGroup.add(label);
 			annotation3DObject.label = label;
 
@@ -613,13 +613,13 @@
 
 			// if annotation has polygon info, create it and add it to the scene
 			if (annotation.polygon !== undefined) {
-				let polygon = this.createPolygon(annotation.polygon, annotation.creatorProfile.color);
+				let polygon = this.createPolygon(annotation.polygon, this.getStatusColor(annotation.status));
 				annotationGlGroup.add(polygon)
 				annotation3DObject.polygon = polygon
 			}
 			this.annotationGlGroups.add(annotationGlGroup);
 			annotation3DObject.glGroup = annotationGlGroup;
-			this.annotation3DObjects.set(annotation._id, annotation3DObject);
+			this.annotation3DObjects.set(annotation.id, annotation3DObject);
 			return annotation3DObject;
 		},
 		_hoveredAnnotationChanged: function () {
@@ -646,8 +646,8 @@
 				if(this.selectedAnnotation) {
 					visibleAnnotations.push(this.selectedAnnotation);
 					if(this.selectedAnnotation.referingTo) {
-						for (let _id of this.selectedAnnotation.referingTo) {
-							visibleAnnotations.push({_id});
+						for (let id of this.selectedAnnotation.referingTo) {
+							visibleAnnotations.push({id});
 						}
 					}
 
@@ -660,7 +660,7 @@
 
 				for (let annotation of visibleAnnotations) {
 					if(!annotation) continue;
-					let {label, arrow} = this.annotation3DObjects.get(annotation._id);
+					let {label, arrow} = this.annotation3DObjects.get(annotation.id);
 					arrow.visible = true;
 					label.element.style.display = 'block';
 					label.element.style.opacity = 0.9;
@@ -722,9 +722,9 @@
 				sphereIntersections = this.raycaster.intersectObjects(this.spheres);
 				this.hoveredAnnotation = undefined;
 				if(sphereIntersections.length !== 0) {
-					let _id = sphereIntersections[0].object.parent.userData._id;
+					let id = sphereIntersections[0].object.parent.userData.id;
 					// Get new hoveredAnnotation and make it visible
-					this.hoveredAnnotation = this.annotations.find(el => el._id === _id);
+					this.hoveredAnnotation = this.annotations.find(el => el.id === id);
 					// console.log(sphereIntersections[0].object.parent);
 					Polymer.dom(this).classList.add('fingerCursor');
 				}
@@ -846,17 +846,17 @@
 					this.fileRepresentation.worldToLocal(newLocalPosition);
 
 
-					let id = this.movingAnnotation._id;
+					let id = this.movingAnnotation.id;
 					clearTimeout(this.annotationEditTimeout);
 					this.annotationEditTimeout = setTimeout(() => {
 						this.fire('edit-annotation',
-							{annotation: {_id: id, worldPosition: newPosition, localPosition: newLocalPosition}, elem: this}
+							{annotation: {id: id, worldPosition: newPosition, localPosition: newLocalPosition}, elem: this}
 						);
 						this.movingAnnotation = undefined;
 					}, 1000);
 
 
-					let targetAnnotation = this.annotations.filter(({_id}) => _id === id)[0];
+					let targetAnnotation = this.annotations.filter(({id}) => id === id)[0];
 					targetAnnotation.worldPosition = newPosition;
 					console.log(targetAnnotation.position);
 					this.removeAnnotationObjects([targetAnnotation]);
@@ -881,10 +881,10 @@
 
 			let sphereIntersections = this.raycaster.intersectObjects(this.spheres, false);
 			if(sphereIntersections.length > 0) {
-				let _id = sphereIntersections[0].object.parent.userData._id;
-				let annotation = this.annotations.find(el => el._id === _id);
+				let id = sphereIntersections[0].object.parent.userData.id;
+				let annotation = this.annotations.find(el => el.id === id);
 
-				if(this.selectedAnnotation && this.selectedAnnotation._id === annotation._id) {
+				if(this.selectedAnnotation && this.selectedAnnotation.id === annotation.id) {
 					// uncomment to make it possible to deselect annotation by clicking again on it
 					//this.selectedAnnotation = undefined;
 				} else {
@@ -967,7 +967,7 @@
 					// And show a temporary preview annotation if first tap.
 					if (this.previewAnnotation === undefined) {
 						this.previewAnnotation = this.addAnnotationObject({
-							_id: 'previewAnnotation',
+							id: 'previewAnnotation',
 							status: 'comment',
 							description: "Press Enter to edit/create. Esc to cancel.",
 							localPosition: localIntersectionPoint.clone(),
@@ -1078,16 +1078,16 @@
 
 			// div.annotation = annotation;
 			Polymer.dom.flush();
-			let div = this.$$(`#annotationbox3d_${CSS.escape(annotation._id)}`);
+			let div = this.$$(`#annotationbox3d_${CSS.escape(annotation.id)}`);
 
 
 			// TODO: disable any raycaster stuff etc. when interacting with label
 
 			// div.addEventListener('mouseover', () => {
-			// 	this.fire('label-over', annotation._id);
+			// 	this.fire('label-over', annotation.id);
 			// });
 			// div.addEventListener('mouseout', () => {
-			// 	this.fire('label-out', annotation._id);
+			// 	this.fire('label-out', annotation.id);
 			// });
 
 			let label = new THREE.CSS3DSprite(div);
@@ -1158,7 +1158,7 @@
 					if(this.penStatus === 'connected') {
 						controls.resetFrom(selectedAnnotation.worldCameraPosition, selectedAnnotation.up);
 					} else {
-						console.log(this.camera);
+						console.log('selected annotation', selectedAnnotation);
 						let animObj = {
 							x: this.camera.position.x,
 							y: this.camera.position.y,
@@ -1169,14 +1169,15 @@
 						};
 
 
-
 						anime({
 							targets: animObj,
 							x: selectedAnnotation.worldCameraPosition.x,
 							y: selectedAnnotation.worldCameraPosition.y,
 							z: selectedAnnotation.worldCameraPosition.z,
-							up: selectedAnnotation.cameraUp,
-							round: 1,
+							x_up: selectedAnnotation.cameraUp.x,
+							y_up: selectedAnnotation.cameraUp.y,
+							z_up: selectedAnnotation.cameraUp.z,
+							duration: 1000,
 							easing: 'easeInQuart',
 							update: function() {
 								let pos = new THREE.Vector3(animObj.x, animObj.y, animObj.z);
@@ -1184,6 +1185,7 @@
 								controls.resetFrom(pos, up);
 							}
 						});
+
 					}
 
 				}
