@@ -1,0 +1,44 @@
+{
+  "name": "DokuClient",
+  "version": "0.3.0",
+  "main": "main.js",
+  "authors": [
+    "Tom Brewe <tom.brewe@fu-berlin.de>",
+    "Anouk Hoffmeister <anouk.hoffmeister@hu-berlin.de>"
+  ],
+  "dependencies": {
+    "aframe": "^0.6.1",
+    "aframe-animation-component": "^3.2.5",
+    "aframe-controller-cursor-component": "^0.2.7",
+    "aframe-look-at-component": "^0.5.1",
+    "aframe-mouse-cursor-component": "^0.4.1",
+    "bower": "^1.8.0",
+    "http-server": "^0.10.0",
+    "pouchdb": "^6.3.4",
+    "pouchdb-all-dbs": "^1.0.1",
+    "pouchdb-authentication": "^0.5.5",
+    "vcap_services": "^0.3.4",
+    "watson-developer-cloud": "^2.32.1",
+    "watson-speech": "^0.33.1",
+    "worker-pouch": "^2.0.0"
+  },
+  "scripts": {
+    "start": "npm run production",
+    "dev": "concurrently --kill-others \"rollup --environment dev -c && node server.js\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" ",
+    "dev-in-memory": "concurrently --kill-others \"rollup --environment dev -c && node server.js\" \"pouchdb-server --config ./.pouchdb_server_config/config.json --dir ./.pouchdb_server_config/dbs/ --logPath ./.pouchdb_server_config/logs/\" --in-memory",
+    "production": "rollup --environment production -c && node server.js",
+    "install": "bower install --verbose"
+  },
+  "devDependencies": {
+    "babel-plugin-external-helpers": "^6.18.0",
+    "babel-preset-env": "^1.1.8",
+    "babel-watch": "^2.0.3",
+    "concurrently": "^3.4.0",
+    "eslint": "^4.0.0",
+    "pouchdb-server": "^2.3.7",
+    "rollup": "^0.36.4",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-replace": "^1.1.1",
+    "rollup-watch": "^2.5.0"
+  }
+}

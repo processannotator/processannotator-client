@@ -1,0 +1,12 @@
+{
+  "presets": [
+    ["env", {
+      "targets": {
+        "chrome": 53
+      },
+      "modules": false,
+      "loose": false
+    }]
+  ],
+  "plugins": ["external-helpers"]
+}
