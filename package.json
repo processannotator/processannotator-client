@@ -31,7 +31,7 @@
     "babel-watch": "^2.0.3",
     "concurrently": "^3.4.0",
     "devtron": "^1.1.1",
-    "electron": "^1.7.9",
+    "electron": "1.7.9",
     "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.6.0",
     "polymer-bundler": "^3.0.1",
