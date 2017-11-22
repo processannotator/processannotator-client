@@ -4,16 +4,16 @@
 
 This is the client component of processannotator.
 
-## different branches
-The original process.annotator is located under the master branch.
+## list of branches
 
 - [master branch](https://github.com/processannotator/processannotator-client/tree/master)
-original process.annotator)
+(the original process.annotator codebase)
+
 - [A-Frame branch](https://github.com/processannotator/processannotator-client/tree/aframe)
- (non-electron version using A-Frame instead of raw three.js, no pen hardware support)
+ (non-electron version using A-Frame instead of raw three.js, no bluetooth pen hardware support though)
  
 - [neonion-REST branch](https://github.com/processannotator/processannotator-client/tree/neonion-REST)
-(the original process.annotator code base, but stripped down couchdb/pouchdb code and experimental support for the neonion-REST API access)
+(the original process.annotator code base, but couchdb/pouchdb code removed, to experiment with the neonion-REST api as a the database endpoint)
 
 
 ## prerequisites
