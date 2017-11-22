@@ -11,6 +11,7 @@
     "animejs": "^2.0.2",
     "bower": "^1.8.0",
     "deep-equal": "^1.0.1",
+    "neonion-rest-jsfetch": "git+https://github.com/nylki/neonion-rest-js.git",
     "noble": "^1.8.1",
     "pouchdb": "^6.2.0",
     "pouchdb-all-dbs": "^1.0.1",

@@ -5,6 +5,7 @@ import BNO055 from './bno055';
 
 // import SpeechRecognition from './speechRecognition'
 const equal = require('deep-equal');
+const NeonionRest = require('neonion-rest-jsfetch');
 const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const { dialog } = electron.remote;
@@ -19,6 +20,7 @@ Polymer({
 	is: 'main-app',
 
 	properties: {
+		
 		objectTool: {
 			type: Object
 		},
