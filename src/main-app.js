@@ -10,8 +10,8 @@ const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const { dialog } = electron.remote;
 // Uses rollup-replace to replace ENV with the env set when starting rollup
-const SERVERADDR = (ENV === 'dev') ? '127.0.0.1' : '127.0.0.1';
-const PORT = 8301;
+let SERVERADDR = '127.0.0.1';
+let PORT = 8301;
 let POUCHCONF = {};
 
 var db, localInfoDB;
@@ -20,7 +20,7 @@ Polymer({
 	is: 'main-app',
 
 	properties: {
-		
+
 		objectTool: {
 			type: Object
 		},
@@ -46,6 +46,11 @@ Polymer({
 
 	attached: async function () {
 		document.app = this;
+
+		// Request config from node process
+		let config = ipc.sendSync('getConfig');
+		SERVERADDR = config.couchdb.address || SERVERADDR;
+		PORT = config.couchdb.port || PORT;
 
 		this.setupPenEventHandlers();
 		this.previouslyFetchedAnnotations = [];
