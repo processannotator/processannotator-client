@@ -7,7 +7,7 @@ const app = electron.app; // Module to control application life.
 const ipc = electron.ipcMain; // module for interprocess communication (renderer <-> backend)
 const BrowserWindow = electron.BrowserWindow; // Module to create native browser window.
 const os = require('os');
-
+const fs = require('fs');
 // automatically reload the renderer app when the bundle changes
 // IMPORTANT: Uncomment before running `npm run package`
 // require('electron-reload')(__dirname + '/src/main-app.bundle.js');

@@ -49,8 +49,8 @@ Polymer({
 
 		// Request config from node process
 		let config = ipc.sendSync('getConfig');
-		SERVERADDR = config.couchdb.address || SERVERADDR;
-		PORT = config.couchdb.port || PORT;
+		SERVERADDR = config.neonionREST.address || SERVERADDR;
+		PORT = config.neonionREST.port || PORT;
 
 		this.setupPenEventHandlers();
 		this.previouslyFetchedAnnotations = [];
