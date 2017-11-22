@@ -33,5 +33,8 @@
     "iron-iconset": "PolymerElements/iron-iconset#^1.0.5",
     "iron-autogrow-textarea": "PolymerElements/iron-autogrow-textarea#^1.0.14",
     "paper-spinner": "PolymerElements/paper-spinner#^1.2.1"
+  },
+  "resolutions": {
+    "iron-selector": "^2.0.0"
   }
 }
