@@ -262,6 +262,12 @@ app.on('ready', function() {
 
   ipc.on('quit', app.quit);
 
+  ipc.on('getConfig', function (event, arg) {
+    // read config file and send to back to render process
+    var config = JSON.parse(fs.readFileSync('process-annotator.config.json', 'utf8'));
+    event.returnValue = config;
+  });
+
 	ipc.on('resetLocalDB', function() {
 
 			session.clearStorageData({
